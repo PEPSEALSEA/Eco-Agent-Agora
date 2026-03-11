@@ -146,7 +146,7 @@ export default function ProfilePage() {
               {history.slice(0, 5).map((session) => (
                 <div 
                   key={session.id} 
-                  onClick={() => router.push(`/debrief/${session.id}`)}
+                  onClick={() => router.push(`/debrief?sessionId=${session.id}`)}
                   className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between hover:border-cyan-500/50 cursor-pointer transition-all"
                 >
                   <div>

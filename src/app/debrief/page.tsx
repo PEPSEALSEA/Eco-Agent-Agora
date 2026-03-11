@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
 import { ArrowLeft, RefreshCcw, TrendingUp, Zap, HelpCircle } from 'lucide-react';
 
-export default function DebriefPage() {
-  const { sessionId } = useParams();
+function DebriefContent() {
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get('sessionId');
   const router = useRouter();
   const { user } = useAuth();
   const [messages, setMessages] = useState<any[]>([]);
@@ -19,6 +20,8 @@ export default function DebriefPage() {
   const [whatIfResponse, setWhatIfResponse] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!sessionId) return;
+    
     const fetchData = async () => {
       const { data: sessionData } = await supabase
         .from('sessions')
@@ -68,7 +71,7 @@ export default function DebriefPage() {
     }
   };
 
-  if (loading) {
+  if (loading || !sessionId) {
     return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading debrief...</div>;
   }
 
@@ -84,7 +87,7 @@ export default function DebriefPage() {
             <ArrowLeft size={18} className="mr-2" /> Back to Scenarios
           </button>
           <h1 className="text-3xl font-bold">Negotiation Debrief</h1>
-          <button onClick={() => router.push(`/negotiate/${sessionId}`)} className="flex items-center text-cyan-400 hover:text-cyan-300">
+          <button onClick={() => router.push(`/negotiate?sessionId=${sessionId}`)} className="flex items-center text-cyan-400 hover:text-cyan-300">
             <RefreshCcw size={18} className="mr-2" /> Replay
           </button>
         </header>
@@ -168,5 +171,13 @@ export default function DebriefPage() {
         </footer>
       </div>
     </div>
+  );
+}
+
+export default function DebriefPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>}>
+      <DebriefContent />
+    </Suspense>
   );
 }

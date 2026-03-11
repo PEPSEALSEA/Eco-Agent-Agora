@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
@@ -23,8 +23,9 @@ type Message = {
   created_at?: string;
 };
 
-export default function NegotiatePage() {
-  const { sessionId } = useParams();
+function NegotiateContent() {
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get('sessionId');
   const router = useRouter();
   const { user } = useAuth();
   const [session, setSession] = useState<any>(null);
@@ -37,6 +38,8 @@ export default function NegotiatePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!sessionId) return;
+
     const fetchData = async () => {
       // Fetch session
       const { data: sessionData, error: sessionError } = await supabase
@@ -76,7 +79,7 @@ export default function NegotiatePage() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || !user || sending) return;
+    if (!input.trim() || !user || sending || !sessionId) return;
 
     setSending(true);
     const userMessageContent = input;
@@ -186,7 +189,6 @@ export default function NegotiatePage() {
 
       // 5. Update Skills (Simplified logic)
       const skills = ['opening_conversation', 'handling_pushback', 'finding_common_ground', 'empathy_expression', 'logical_argument'];
-      // Just pick one for now or loop through relevant ones
       const skillName = skills[Math.floor(Math.random() * skills.length)];
       await supabase.rpc('increment_skill_xp', { 
         p_user_id: user.id, 
@@ -201,7 +203,7 @@ export default function NegotiatePage() {
     }
   };
 
-  if (loading) {
+  if (loading || !sessionId) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-cyan-500"></div>
@@ -265,7 +267,7 @@ export default function NegotiatePage() {
             {scenario.title}
           </h1>
           <button 
-            onClick={() => router.push(`/debrief/${sessionId}`)}
+            onClick={() => router.push(`/debrief?sessionId=${sessionId}`)}
             className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-all"
           >
             End & Debrief
@@ -325,5 +327,13 @@ export default function NegotiatePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function NegotiatePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>}>
+      <NegotiateContent />
+    </Suspense>
   );
 }

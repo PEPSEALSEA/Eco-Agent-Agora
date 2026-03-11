@@ -50,7 +50,7 @@ export default function ScenariosPage() {
       return;
     }
 
-    router.push(`/negotiate/${data.id}`);
+    router.push(`/negotiate?sessionId=${data.id}`);
   };
 
   if (loading) {
