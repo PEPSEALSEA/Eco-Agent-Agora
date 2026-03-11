@@ -61,9 +61,6 @@ CREATE TABLE public.skill_progress (
   UNIQUE(user_id, skill_name)
 );
 
--- Enable RLS (Optional, but recommended)
--- For this prototype, we'll assume the user runs this in the SQL Editor.
-
 -- Seed Data for Scenarios
 INSERT INTO public.scenarios (title, description, target_group, characters) VALUES
 ('ดีลราคากับเกษตรกร', 'เจรจาต่อรองราคารับซื้อผลิตผลกับกลุ่มเกษตรกรที่ต้องการความเป็นธรรม', 'professional', '[
@@ -74,7 +71,9 @@ INSERT INTO public.scenarios (title, description, target_group, characters) VALU
 ('งานกลุ่มพัง', 'จัดการความขัดแย้งในงานกลุ่มที่เพื่อนบางคนไม่ช่วยงาน', 'kids', '[
   {"name": "เพื่อนที่ไม่ทำงาน", "role": "ผู้ร่วมทีม", "agenda": "มีปัญหาส่วนตัวที่บ้านเลยไม่อยากทำ", "personality": "เก็บตัว ตั้งรับ"},
   {"name": "เพื่อนที่อยากให้จบเร็วๆ", "role": "ผู้ร่วมทีม", "agenda": "อยากให้งานเสร็จๆ ไป จะได้ไปเล่นเกม", "personality": "ใจร้อน เน้นทางลัด"},
-  {"name": "ครู", "role": "อาจารย์ที่ปรึกษา", "agenda": "สังเกตการณ์และคอยกระตุ้นให้เด็กแก้ปัญหากันเอง", "personality": "ใจดีแต่เข้มงวด"}
+  {"name": "ครู", "role": "อาจารย์ที่ปรึกษา", "agenda": "สังเกตการณ์และคอยกระตุ้นให้เด็กแก้ปัญกันเอง", "personality": "ใจดีแต่เข้มงวด"}
+]');
+
 -- Function to increment skill XP
 CREATE OR REPLACE FUNCTION increment_skill_xp(p_user_id UUID, p_skill_name TEXT, p_xp INTEGER)
 RETURNS VOID AS $$
@@ -88,3 +87,17 @@ BEGIN
     updated_at = now();
 END;
 $$ LANGUAGE plpgsql;
+
+-- Trigger to sync auth.users with public.users
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.users (id, email)
+  VALUES (new.id, new.email);
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
