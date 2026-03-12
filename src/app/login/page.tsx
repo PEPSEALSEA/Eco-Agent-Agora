@@ -11,6 +11,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  const getRedirectUrl = (path: string) => {
+    const origin = window.location.origin;
+    // Handle GitHub Pages subpath
+    const base = origin.includes('github.io') ? '/Eco-Agent-Agora' : '';
+    return `${origin}${base}${path}`;
+  };
+
   const handleAuth = async (isSignUp: boolean) => {
     setLoading(true);
     setError(null);
@@ -20,7 +27,7 @@ export default function LoginPage() {
             email, 
             password,
             options: {
-              emailRedirectTo: `${window.location.origin}/scenarios`,
+              emailRedirectTo: getRedirectUrl('/scenarios'),
             }
           })
         : await supabase.auth.signInWithPassword({ email, password });
@@ -48,7 +55,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/scenarios`,
+          redirectTo: getRedirectUrl('/scenarios'),
         },
       });
       if (error) throw error;
