@@ -98,10 +98,12 @@ function NegotiateContent() {
       TASK: Provide an initial greeting and opening statement from the key characters to start the negotiation. 
       The player is a negotiator trying to achieve the following: ${scenario.target_group === 'professional' ? 'Resolve the conflict fairly while meeting business goals.' : 'Help friends resolve their conflict.'}
       
+      CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.
+      
       Format:
       {
-        "characters": [{"name": "...", "mood": "neutral", "message": "..."}],
-        "feedback": {"score": 5, "text": "The negotiation has begun.", "dimensions": {"length": "appropriate", "coverage": "initial", "logic": "starting"}}
+        "characters": [{"name": "...", "mood": "neutral", "message": "ข้อความภาษาไทย..."}],
+        "feedback": {"score": 5, "text": "เริ่มการเจรจา...", "dimensions": {"length": "appropriate", "coverage": "initial", "logic": "starting"}}
       }
     `;
 
@@ -119,7 +121,7 @@ function NegotiateContent() {
       setMessages(aiMessages);
     } catch (err: any) {
       console.error(err);
-      setError('AI initiation failed. You can still type to start.');
+      setError('การเริ่มต้น AI ล้มเหลว คุณยังสามารถพิมพ์เพื่อเริ่มได้');
     } finally {
       setSending(false);
     }
@@ -127,7 +129,7 @@ function NegotiateContent() {
 
   const handleSend = async () => {
     if (!input.trim() || !user || sending || !sessionId) {
-      if (!user) setError('You must be logged in to send messages.');
+      if (!user) setError('คุณต้องเข้าสู่ระบบเพื่อส่งข้อความ');
       return;
     }
 
@@ -147,7 +149,7 @@ function NegotiateContent() {
 
     if (userMsgError) {
       console.error(userMsgError);
-      setError('Failed to send message to database');
+      setError('ไม่สามารถส่งข้อความไปยังฐานข้อมูลได้');
       setSending(false);
       return;
     }
@@ -159,10 +161,11 @@ function NegotiateContent() {
       You are a multi-character negotiation simulator. Play ALL characters in one JSON response.
       Characters: ${JSON.stringify(scenario.characters)}
       Rules: Respond based on agenda/personality. Adjust tone based on user's message.
+      CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.
       Format:
       {
-        "characters": [{"name": "...", "mood": "open|neutral|resistant", "message": "..."}],
-        "feedback": {"score": 1-10, "text": "...", "dimensions": {"length": "...", "coverage": "...", "logic": "..."}}
+        "characters": [{"name": "...", "mood": "open|neutral|resistant", "message": "ข้อความภาษาไทย..."}],
+        "feedback": {"score": 1-10, "text": "ข้อเสนอแนะภาษาไทย...", "dimensions": {"length": "...", "coverage": "...", "logic": "..."}}
       }
     `;
 
@@ -231,7 +234,7 @@ function NegotiateContent() {
 
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'The AI is currently unavailable. Please try again.');
+      setError(err.message || 'AI ไม่พร้อมใช้งานในขณะนี้ โปรดลองอีกครั้ง');
     } finally {
       setSending(false);
     }
@@ -262,19 +265,19 @@ function NegotiateContent() {
             </p>
             <div className="bg-cyan-500/10 border border-cyan-500/20 p-4 rounded-xl mb-8 text-left">
               <h3 className="text-xs font-bold text-cyan-400 uppercase mb-2 flex items-center">
-                <Info size={14} className="mr-2" /> Your Mission
+                <Info size={14} className="mr-2" /> ภารกิจของคุณ
               </h3>
               <p className="text-sm text-gray-200">
                 {scenario.target_group === 'professional' 
-                  ? "Navigate this professional dispute and find a solution that satisfies stakeholders while protecting your interests."
-                  : "Help your friends resolve their differences and get things back on track."}
+                  ? "จัดการข้อพิพาททางธุรกิจนี้และค้นหาทางออกที่ตอบสนองผู้มีส่วนได้ส่วนเสียในขณะที่ปกป้องผลประโยชน์ของคุณ"
+                  : "ช่วยเพื่อนของคุณแก้ไขความขัดแย้งและทำให้ทุกอย่างกลับมาเป็นปกติ"}
               </p>
             </div>
             <button
               onClick={handleStart}
               className="px-12 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-xl shadow-cyan-500/20 text-lg hover:scale-105 active:scale-95"
             >
-              Begin Negotiation
+              เริ่มการเจรจา
             </button>
           </div>
         </div>
@@ -286,24 +289,24 @@ function NegotiateContent() {
           onClick={() => router.push('/scenarios')}
           className="flex items-center text-gray-400 hover:text-white mb-8 transition-colors text-sm"
         >
-          <ArrowLeft size={16} className="mr-2" /> Training Grounds
+          <ArrowLeft size={16} className="mr-2" /> ลานฝึกซ้อม
         </button>
 
         <section className="mb-8">
           <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center">
-            <Info size={14} className="mr-2 text-cyan-400" /> Mission Objective
+            <Info size={14} className="mr-2 text-cyan-400" /> เป้าหมายภารกิจ
           </h2>
           <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
             <p className="text-xs text-gray-300 leading-relaxed">
               {scenario.target_group === 'professional' 
-                ? "Reach a fair price agreement without losing the farmers trust." 
-                : "Get everyone back to work on the project before the deadline."}
+                ? "บรรลุข้อตกลงราคาที่ยุติธรรมโดยไม่สูญเสียความไว้วางใจ" 
+                : "ทำให้ทุกคนกลับมาทำงานในโครงการก่อนกำหนดเวลา"}
             </p>
           </div>
         </section>
 
         <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center">
-          <Users size={14} className="mr-2 text-purple-400" /> Stakeholders
+          <Users size={14} className="mr-2 text-purple-400" /> ผู้มีส่วนได้ส่วนเสีย
         </h2>
         <div className="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar">
           {characters.map((char, i) => (
@@ -334,120 +337,130 @@ function NegotiateContent() {
         </div>
       </aside>
 
-      {/* Chat Area */}
+      {/* Main Stage Area */}
       <main className="flex-1 flex flex-col items-center justify-between p-6 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 to-black relative">
         <header className="w-full max-w-4xl flex justify-between items-center mb-6 z-10">
           <div>
             <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
               {scenario.title}
             </h1>
-            <p className="text-[10px] text-gray-400">Negotiation Level: Intermediate</p>
+            <p className="text-[10px] text-gray-400">ระดับการเจรจา: ปานกลาง</p>
           </div>
           <button 
             onClick={() => router.push(`/debrief?sessionId=${sessionId}`)}
             className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-all hover:border-red-500/50 hover:text-red-400"
           >
-            End Session
+            ยุติเซสชัน
           </button>
         </header>
 
-        {/* The Stage / Visual Chat */}
-        <div className="w-full max-w-4xl flex-1 overflow-y-auto mb-6 custom-scrollbar space-y-8 px-4 py-8">
-          {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-4 duration-300`}>
-              <div className={`flex max-w-[85%] ${m.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                {/* Avatar Mockup */}
-                <div className={`mt-auto mb-2 ${m.sender === 'user' ? 'ml-3' : 'mr-3'}`}>
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-bold shadow-xl border border-white/10 ${
-                    m.sender === 'user' 
-                      ? 'bg-gradient-to-br from-cyan-500 to-blue-600' 
-                      : 'bg-gradient-to-br from-indigo-500 to-purple-600'
-                  }`}>
-                    {m.sender === 'user' ? 'P' : (m.character_name?.charAt(0) || 'AI')}
-                  </div>
-                </div>
-
-                <div className="flex flex-col">
-                  {m.sender === 'ai' && (
-                    <span className="text-[10px] font-bold text-cyan-400 mb-1 ml-1 uppercase tracking-wider">
-                      {m.character_name}
-                    </span>
-                  )}
-                  <div className={`p-4 rounded-2xl relative shadow-2xl ${
-                    m.sender === 'user' 
-                      ? 'bg-white text-slate-900 rounded-tr-none' 
-                      : 'bg-white/10 border border-white/10 text-gray-100 rounded-tl-none backdrop-blur-sm'
-                  }`}>
-                    {/* Speech Bubble Arrow */}
-                    <div className={`absolute top-0 w-3 h-3 ${
-                      m.sender === 'user' 
-                        ? 'right-[-12px] bg-white [clip-path:polygon(0_0,0_100%,100%_0)]' 
-                        : 'left-[-12px] bg-white/10 border-l border-t border-white/10 [clip-path:polygon(0_0,100%_100%,100%_0)]'
-                    }`}></div>
-
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</p>
-                    <div className="flex justify-between items-center mt-3 pt-2 border-t border-black/5 dark:border-white/5">
-                      <span className="text-[9px] opacity-40">
-                        {new Date(m.created_at || '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+        {/* Visual Novel Stage */}
+        <div className="w-full max-w-4xl flex-1 flex flex-col overflow-y-auto mb-6 custom-scrollbar space-y-4 px-4 py-4 relative">
+          
+          {messages.length > 0 && (
+            <div className="flex-1 flex flex-col items-center justify-end min-h-[400px] mb-4 relative z-20">
+              {/* Character Avatars Row */}
+              <div className="flex justify-center items-end space-x-12 h-64 w-full pb-4">
+                {characters.map((char, i) => {
+                  const lastAIMessage = messages.findLast(m => m.sender === 'ai' && m.character_name === char.name);
+                  const isTalking = messages[messages.length - 1]?.sender === 'ai' && messages[messages.length - 1]?.character_name === char.name;
+                  
+                  return (
+                    <div key={i} className={`flex flex-col items-center transition-all duration-500 ${isTalking ? 'scale-125 z-30' : 'scale-100 opacity-70 z-10'}`}>
+                      <div className={`w-32 h-40 rounded-3xl flex items-center justify-center text-5xl font-bold shadow-2xl relative border-2
+                        ${isTalking ? 'bg-gradient-to-b from-purple-500 to-indigo-600 border-cyan-400 animate-bounce-subtle' : 'bg-gradient-to-br from-slate-700 to-slate-800 border-white/10'}
+                      `}>
+                         {char.name.charAt(0)}
+                         <div className={`absolute -bottom-3 right-2 w-6 h-6 rounded-full border-4 border-slate-900 ${
+                            char.mood === 'open' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,1)]' :
+                            char.mood === 'resistant' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,1)]' :
+                            'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,1)]'
+                          }`}></div>
+                      </div>
+                      <span className={`mt-4 font-bold ${isTalking ? 'text-cyan-400 text-lg drop-shadow-md' : 'text-gray-400'}`}>{char.name}</span>
                     </div>
-                  </div>
+                  );
+                })}
+              </div>
+
+               {/* Active Speech Bubble */}
+              <div className="w-full mt-6 bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-8 relative z-20">
+                <div className="absolute top-0 left-1/2 -mt-3 w-6 h-6 bg-white/10 border-l border-t border-white/20 transform rotate-45 -translate-x-1/2 backdrop-blur-xl"></div>
+                <div className="flex flex-col">
+                  {messages[messages.length - 1]?.sender === 'ai' ? (
+                     <span className="text-sm font-bold text-cyan-400 mb-3 uppercase tracking-wider flex items-center">
+                       <Bot size={16} className="mr-2" /> {messages[messages.length - 1].character_name}
+                     </span>
+                  ) : (
+                     <span className="text-sm font-bold text-blue-400 mb-3 uppercase tracking-wider flex items-center">
+                       <UserIcon size={16} className="mr-2" /> คุณ
+                     </span>
+                  )}
+                  <p className="text-xl leading-relaxed whitespace-pre-wrap text-white font-serif">
+                    {messages[messages.length - 1]?.content}
+                  </p>
                 </div>
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Log Area */}
+          <div className="bg-black/40 rounded-3xl p-6 border border-white/5 mt-auto relative z-10 w-full max-w-4xl max-h-48 overflow-y-auto custom-scrollbar">
+            <h3 className="text-xs text-gray-500 uppercase font-bold mb-4 sticky top-0 bg-black/80 backdrop-blur-md py-2 z-10">บันทึกการสนทนา (Logs)</h3>
+            <div className="space-y-4 pr-2">
+              {messages.map((m, i) => (
+                 <div key={i} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'} ${i === messages.length -1 ? 'opacity-100' : 'opacity-60'}`}>
+                   <span className="text-[10px] text-gray-400 mb-1">{m.sender === 'user' ? 'คุณ' : m.character_name}</span>
+                   <div className={`px-4 py-2 rounded-2xl max-w-[80%] text-sm ${m.sender === 'user' ? 'bg-blue-600/30 text-blue-100 rounded-tr-sm' : 'bg-white/5 text-gray-300 rounded-tl-sm border border-white/5'}`}>
+                     {m.content}
+                   </div>
+                 </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
 
           {sending && (
-            <div className="flex justify-start animate-pulse">
-              <div className="flex flex-row">
-                <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 mr-3 mt-auto"></div>
-                <div className="p-4 bg-white/5 border border-white/10 rounded-2xl rounded-tl-none">
-                  <div className="flex space-x-1">
-                    <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-bounce"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+             <div className="flex justify-center mt-4">
+                <span className="text-cyan-400 animate-pulse text-sm font-bold tracking-widest">กำลังคิด...</span>
+             </div>
           )}
 
           {error && (
             <div className="flex justify-center mt-4">
-              <div className="bg-red-500/10 border border-red-500/20 px-6 py-3 rounded-2xl text-red-400 text-xs flex items-center backdrop-blur-md">
+              <div className="bg-red-500/10 border border-red-500/20 px-6 py-3 rounded-2xl text-red-400 text-xs flex items-center backdrop-blur-md z-30">
                 <Info size={14} className="mr-2" />
                 {error}
-                <button onClick={() => handleSend()} className="ml-4 font-bold underline">Retry</button>
+                <button onClick={() => handleSend()} className="ml-4 font-bold underline text-white">ย้ำอีกครั้ง</button>
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Bar */}
-        <div className="w-full max-w-4xl bg-white/5 border border-white/10 p-2 rounded-2xl flex items-center shadow-2xl backdrop-blur-xl z-10 mb-2">
+        <div className="w-full max-w-4xl bg-white/5 border border-white/10 p-2 rounded-3xl flex items-center shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-2xl z-30 mt-4">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             disabled={!isStarted || sending}
-            placeholder={isStarted ? "Express your argument..." : "Click Begin to start..."}
-            className="flex-1 bg-transparent border-none outline-none px-4 py-3 text-sm placeholder:text-gray-600"
+            placeholder={isStarted ? "แสดงข้อโต้แย้งของคุณ..." : "คลิกเริ่มเพื่อเริ่มต้น..."}
+            className="flex-1 bg-transparent border-none outline-none px-6 py-4 text-base placeholder:text-gray-500"
           />
           <button
             onClick={handleSend}
             disabled={sending || !input.trim() || !isStarted}
-            className={`p-3 rounded-xl transition-all shadow-lg text-white ${
+            className={`p-4 rounded-2xl transition-all shadow-lg text-white ${
               !input.trim() || !isStarted || sending 
                 ? 'bg-white/5 text-gray-600' 
-                : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-500/20 active:scale-95'
+                : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-500/30 hover:scale-105 active:scale-95'
             }`}
           >
             <Send size={20} />
           </button>
         </div>
-        <p className="text-[9px] text-gray-600 mb-2">Press Enter to send. Use professional language for better scores.</p>
+        <p className="text-[10px] text-gray-500 mt-3 tracking-wide">กด Enter เพื่อส่ง ใช้ภาษาที่เป็นทางการเพื่อคะแนนที่ดีขึ้น</p>
       </main>
 
       <style jsx global>{`
@@ -463,6 +476,13 @@ function NegotiateContent() {
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.2);
+        }
+        @keyframes bounce-subtle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        .animate-bounce-subtle {
+          animation: bounce-subtle 3s infinite ease-in-out;
         }
       `}</style>
     </div>
