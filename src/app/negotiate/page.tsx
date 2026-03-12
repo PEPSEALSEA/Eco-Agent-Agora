@@ -113,49 +113,30 @@ function NegotiateContent() {
 
     setMessages(prev => [...prev, userMsg]);
 
-    // 2. Prepare Gemini Prompt
-    const systemPrompt = `
-      You are a multi-character negotiation simulator.
-      You will play ALL of the following characters simultaneously in one response.
-
+    // 2. Prepare Gemini Prompt (System Instruction)
+    const systemInstruction = `
+      You are a multi-character negotiation simulator. Play ALL characters in one JSON response.
       Characters: ${JSON.stringify(scenario.characters)}
-
-      Rules:
-      - Each character responds based on their own agenda and personality.
-      - Adjust each character's tone based on the user's last message:
-        - If the user ignores a character's concern -> that character becomes more resistant.
-        - If the user addresses a character's concern fairly -> that character becomes more open.
-      - Format your response as JSON:
+      Rules: Respond based on agenda/personality. Adjust tone based on user's message.
+      Format:
       {
-        "characters": [
-          {
-            "name": "character name",
-            "mood": "open | neutral | resistant",
-            "message": "character's response here"
-          }
-        ],
-        "feedback": {
-          "score": 1-10,
-          "text": "brief feedback on what the user said",
-          "dimensions": {
-            "length": "too short | appropriate | too long",
-            "coverage": "how many stakeholders were addressed",
-            "logic": "whether the argument had clear reasoning"
-          }
-        }
+        "characters": [{"name": "...", "mood": "open|neutral|resistant", "message": "..."}],
+        "feedback": {"score": 1-10, "text": "...", "dimensions": {"length": "...", "coverage": "...", "logic": "..."}}
       }
     `;
 
+    // 3. Prepare and Prune History (Cost optimization: keep last 15 messages)
     const chatHistory = messages.map(m => ({
       role: m.sender === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }]
-    }));
+    })).slice(-15);
+    
     chatHistory.push({ role: 'user', parts: [{ text: userMessageContent }] });
 
     try {
-      const geminiData = await getGeminiResponse(systemPrompt, chatHistory);
+      const geminiData = await getGeminiResponse(systemInstruction, chatHistory);
 
-      // 3. Process AI Responses
+      // 4. Process AI Responses
       const aiMessages: any[] = [];
       for (const charResp of geminiData.characters) {
         const { data: aiMsg, error: aiMsgError } = await supabase
