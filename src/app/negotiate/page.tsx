@@ -27,7 +27,7 @@ function NegotiateContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId');
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [session, setSession] = useState<any>(null);
   const [scenario, setScenario] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -35,9 +35,15 @@ function NegotiateContent() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
     if (!sessionId) return;
 
     const fetchData = async () => {
@@ -79,9 +85,13 @@ function NegotiateContent() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || !user || sending || !sessionId) return;
+    if (!input.trim() || !user || sending || !sessionId) {
+      if (!user) setError('You must be logged in to send messages.');
+      return;
+    }
 
     setSending(true);
+    setError(null);
     const userMessageContent = input;
     setInput('');
 
@@ -96,6 +106,7 @@ function NegotiateContent() {
 
     if (userMsgError) {
       console.error(userMsgError);
+      setError('Failed to send message to database');
       setSending(false);
       return;
     }
@@ -196,8 +207,9 @@ function NegotiateContent() {
         p_xp: geminiData.feedback.score * 10 
       });
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || 'The AI is currently unavailable. Please try again.');
     } finally {
       setSending(false);
     }
@@ -302,6 +314,20 @@ function NegotiateContent() {
                   <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                   <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce"></div>
                 </div>
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="flex justify-center">
+              <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-400 text-xs flex items-center">
+                <Info size={14} className="mr-2" />
+                {error}
+                <button 
+                  onClick={() => handleSend()} 
+                  className="ml-4 underline hover:text-red-300 font-bold"
+                >
+                  Retry
+                </button>
               </div>
             </div>
           )}

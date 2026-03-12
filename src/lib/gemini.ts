@@ -19,9 +19,20 @@ export const getGeminiResponse = async (
   });
 
   const lastMessage = history[history.length - 1].parts[0].text;
-  
-  // Combine system prompt with the request to ensure it follows the format
-  const result = await chat.sendMessage(`System Prompt: ${systemPrompt}\n\nUser Message: ${lastMessage}`);
-  const response = await result.response;
-  return JSON.parse(response.text());
+
+  try {
+    const result = await chat.sendMessage(`System Prompt: ${systemPrompt}\n\nUser Message: ${lastMessage}`);
+    const response = await result.response;
+    const text = response.text();
+    
+    // Attempt to extract JSON from the response text
+    // Sometimes the model returns ```json ... ``` even with responseMimeType: "application/json"
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const jsonStr = jsonMatch ? jsonMatch[0] : text;
+    
+    return JSON.parse(jsonStr);
+  } catch (error) {
+    console.error("Gemini API error:", error);
+    throw error;
+  }
 };
