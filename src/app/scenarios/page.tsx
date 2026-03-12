@@ -89,6 +89,8 @@ export default function ScenariosPage() {
 
     if (error) {
       console.error(error);
+      alert('Failed to start session: ' + error.message + '\n\nPlease ensure you have run the database setup SQL and checked your RLS policies.');
+      setLoading(false);
       return;
     }
 

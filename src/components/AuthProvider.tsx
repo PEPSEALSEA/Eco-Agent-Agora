@@ -29,6 +29,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (error) throw error;
         setSession(session);
         setUser(session?.user || null);
+        
+        // SYNC: Ensure public.users record exists
+        if (session?.user) {
+          await supabase.from('users').upsert({
+            id: session.user.id,
+            email: session.user.email,
+          }, { onConflict: 'id' });
+        }
       } catch (err) {
         console.error('Error fetching session:', err);
       } finally {
@@ -39,10 +47,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initSession();
 
     // 2. Listen for auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user || null);
       setLoading(false);
+      
+      // SYNC: Ensure public.users record exists on state change
+      if (session?.user) {
+        await supabase.from('users').upsert({
+          id: session.user.id,
+          email: session.user.email,
+        }, { onConflict: 'id' });
+      }
     });
 
     return () => {
