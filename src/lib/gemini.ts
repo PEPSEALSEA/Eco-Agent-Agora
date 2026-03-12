@@ -8,12 +8,27 @@ export const getGeminiResponse = async (
   history: { role: string; parts: { text: string }[] }[]
 ) => {
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-1.5-flash-latest",
     systemInstruction,
     generationConfig: {
       responseMimeType: "application/json",
     },
   });
+
+  // If history is empty, we're doing an initial greeting
+  if (history.length === 0) {
+    try {
+      const result = await model.generateContent("Please start the negotiation with an opening statement.");
+      const response = await result.response;
+      const text = response.text();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? jsonMatch[0] : text;
+      return JSON.parse(jsonStr);
+    } catch (error) {
+      console.error("Gemini Greeting error:", error);
+      throw error;
+    }
+  }
 
   // Last message is the user prompt
   const userMessage = history[history.length - 1];
