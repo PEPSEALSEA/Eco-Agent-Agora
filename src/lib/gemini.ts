@@ -8,7 +8,7 @@ export const getGeminiResponse = async (
   history: { role: string; parts: { text: string }[] }[]
 ) => {
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash-latest",
+    model: "gemini-2.5-flash-lite",
     systemInstruction,
     generationConfig: {
       responseMimeType: "application/json",
