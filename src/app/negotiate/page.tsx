@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
-import { Send, User as UserIcon, Bot, ArrowLeft, MessageSquare, Info, Users } from 'lucide-react';
+import { Send, User as UserIcon, Bot, ArrowLeft, MessageSquare, Info, Users, ScrollText, X } from 'lucide-react';
 
 type Character = {
   name: string;
@@ -23,7 +23,7 @@ type Message = {
   created_at?: string;
 };
 
-function NegotiateContent() {
+function NegotiateContent(): React.ReactElement {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId');
   const router = useRouter();
@@ -37,7 +37,12 @@ function NegotiateContent() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isStarted, setIsStarted] = useState(false);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
+  const [typedText, setTypedText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [showLogModal, setShowLogModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -73,7 +78,14 @@ function NegotiateContent() {
         .order('created_at', { ascending: true });
 
       if (messageError) console.error(messageError);
-      else setMessages(messageData || []);
+      else {
+        const msgs = messageData || [];
+        setMessages(msgs);
+        if (msgs.length > 0) {
+          setCurrentMessageIndex(msgs.length - 1);
+          setIsStarted(true); // If there are messages, the session has already started
+        }
+      }
 
       setLoading(false);
     };
@@ -83,7 +95,44 @@ function NegotiateContent() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, showLogModal]);
+
+  // Handle Typewriter effect
+  useEffect(() => {
+    if (currentMessageIndex >= 0 && currentMessageIndex < messages.length) {
+      const fullText = messages[currentMessageIndex].content;
+      setTypedText('');
+      setIsTyping(true);
+      
+      let i = 0;
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+      const typeNextChar = () => {
+        if (i < fullText.length) {
+          setTypedText((prev) => prev + fullText.charAt(i));
+          i++;
+          typingTimeoutRef.current = setTimeout(typeNextChar, 10); // typing speed
+        } else {
+          setIsTyping(false);
+        }
+      };
+      
+      typeNextChar();
+    }
+  }, [currentMessageIndex, messages]);
+
+  const advanceMessage = () => {
+    if (isTyping) {
+      // Force complete typing
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (currentMessageIndex >= 0) {
+        setTypedText(messages[currentMessageIndex].content);
+      }
+      setIsTyping(false);
+    } else if (currentMessageIndex < messages.length - 1) {
+      setCurrentMessageIndex(prev => prev + 1);
+    }
+  };
 
   const handleStart = async () => {
     if (!scenario || isStarted) return;
@@ -118,7 +167,12 @@ function NegotiateContent() {
           .select().single();
         if (!aiMsgError) aiMessages.push(aiMsg);
       }
-      setMessages(aiMessages);
+
+      setMessages(prev => {
+        const updated = [...prev, ...aiMessages];
+        if (prev.length === 0) setCurrentMessageIndex(0);
+        return updated;
+      });
     } catch (err: any) {
       console.error(err);
       setError('การเริ่มต้น AI ล้มเหลว คุณยังสามารถพิมพ์เพื่อเริ่มได้');
@@ -154,7 +208,9 @@ function NegotiateContent() {
       return;
     }
 
-    setMessages(prev => [...prev, userMsg]);
+    const newMessagesList = [...messages, userMsg];
+    setMessages(newMessagesList);
+    setCurrentMessageIndex(newMessagesList.length - 1);
 
     // 2. Prepare Gemini Prompt (System Instruction)
     const systemInstruction = `
@@ -346,50 +402,61 @@ function NegotiateContent() {
             </h1>
             <p className="text-[10px] text-gray-400">ระดับการเจรจา: ปานกลาง</p>
           </div>
-          <button 
-            onClick={() => router.push(`/debrief?sessionId=${sessionId}`)}
-            className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-all hover:border-red-500/50 hover:text-red-400"
-          >
-            ยุติเซสชัน
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowLogModal(true)}
+              className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-all text-cyan-400 flex items-center"
+              title="ดูบันทึกการสนทนา"
+            >
+              <ScrollText size={18} className="mr-2"/> ประวัติ
+            </button>
+            <button 
+              onClick={() => router.push(`/debrief?sessionId=${sessionId}`)}
+              className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-all hover:border-red-500/50 hover:text-red-400"
+            >
+              ยุติเซสชัน
+            </button>
+          </div>
         </header>
 
         {/* Visual Novel Stage */}
-        <div className="w-full max-w-4xl flex-1 flex flex-col overflow-y-auto mb-6 custom-scrollbar space-y-4 px-4 py-4 relative">
-          
-          {messages.length > 0 && (
+        <div 
+          className="w-full max-w-4xl flex-1 flex flex-col overflow-y-hidden mb-6 custom-scrollbar space-y-4 px-4 py-4 relative cursor-pointer"
+          onClick={advanceMessage}
+        >
+          {messages.length > 0 && currentMessageIndex >= 0 && (
             <div className="flex-1 flex flex-col items-center justify-end min-h-[400px] mb-4 relative z-20">
               {/* Character Avatars Row */}
               <div className="flex justify-center items-end space-x-12 h-64 w-full pb-4">
                 {characters.map((char, i) => {
-                  const lastAIMessage = messages.findLast(m => m.sender === 'ai' && m.character_name === char.name);
-                  const isTalking = messages[messages.length - 1]?.sender === 'ai' && messages[messages.length - 1]?.character_name === char.name;
+                  const currentMsg = messages[currentMessageIndex];
+                  const isTalking = currentMsg?.sender === 'ai' && currentMsg?.character_name === char.name;
                   
                   return (
-                    <div key={i} className={`flex flex-col items-center transition-all duration-500 ${isTalking ? 'scale-125 z-30' : 'scale-100 opacity-70 z-10'}`}>
-                      <div className={`w-32 h-40 rounded-3xl flex items-center justify-center text-5xl font-bold shadow-2xl relative border-2
-                        ${isTalking ? 'bg-gradient-to-b from-purple-500 to-indigo-600 border-cyan-400 animate-bounce-subtle' : 'bg-gradient-to-br from-slate-700 to-slate-800 border-white/10'}
+                    <div key={i} className={`flex flex-col items-center transition-all duration-500 ${isTalking ? 'scale-125 z-30 transform translate-y-[-10px]' : 'scale-100 opacity-60 z-10'}`}>
+                      <div className={`w-32 h-40 rounded-3xl flex items-center justify-center text-5xl font-bold shadow-2xl relative border-2 transition-colors duration-500
+                        ${isTalking ? 'bg-gradient-to-b from-purple-500 to-indigo-600 border-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.3)] animate-bounce-subtle' : 'bg-gradient-to-br from-slate-700 to-slate-800 border-white/10 grayscale-[50%]'}
                       `}>
                          {char.name.charAt(0)}
-                         <div className={`absolute -bottom-3 right-2 w-6 h-6 rounded-full border-4 border-slate-900 ${
+                         <div className={`absolute -bottom-3 right-2 w-6 h-6 rounded-full border-4 border-slate-900 transition-all ${
                             char.mood === 'open' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,1)]' :
                             char.mood === 'resistant' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,1)]' :
                             'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,1)]'
                           }`}></div>
                       </div>
-                      <span className={`mt-4 font-bold ${isTalking ? 'text-cyan-400 text-lg drop-shadow-md' : 'text-gray-400'}`}>{char.name}</span>
+                      <span className={`mt-4 font-bold transition-all ${isTalking ? 'text-cyan-400 text-lg drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-gray-500'}`}>{char.name}</span>
                     </div>
                   );
                 })}
               </div>
 
                {/* Active Speech Bubble */}
-              <div className="w-full mt-6 bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-8 relative z-20">
-                <div className="absolute top-0 left-1/2 -mt-3 w-6 h-6 bg-white/10 border-l border-t border-white/20 transform rotate-45 -translate-x-1/2 backdrop-blur-xl"></div>
-                <div className="flex flex-col">
-                  {messages[messages.length - 1]?.sender === 'ai' ? (
+              <div className="w-full mt-6 bg-slate-900/90 backdrop-blur-xl border-2 border-white/20 p-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-8 relative z-20">
+                <div className="absolute top-0 left-1/2 -mt-3 w-6 h-6 bg-slate-900 border-l-2 border-t-2 border-white/20 transform rotate-45 -translate-x-1/2"></div>
+                <div className="flex flex-col min-h-[100px]">
+                  {messages[currentMessageIndex]?.sender === 'ai' ? (
                      <span className="text-sm font-bold text-cyan-400 mb-3 uppercase tracking-wider flex items-center">
-                       <Bot size={16} className="mr-2" /> {messages[messages.length - 1].character_name}
+                       <Bot size={16} className="mr-2" /> {messages[currentMessageIndex].character_name}
                      </span>
                   ) : (
                      <span className="text-sm font-bold text-blue-400 mb-3 uppercase tracking-wider flex items-center">
@@ -397,28 +464,21 @@ function NegotiateContent() {
                      </span>
                   )}
                   <p className="text-xl leading-relaxed whitespace-pre-wrap text-white font-serif">
-                    {messages[messages.length - 1]?.content}
+                    {typedText}
+                    {isTyping && <span className="inline-block w-2 h-5 bg-cyan-400 animate-pulse ml-1 align-middle"></span>}
                   </p>
+                  
+                  {/* Click to continue indicator */}
+                  {!isTyping && currentMessageIndex < messages.length - 1 && (
+                    <div className="absolute bottom-4 right-6 text-cyan-400 animate-bounce flex items-center text-xs font-bold">
+                      <span>คลิกเพื่อดำเนินการต่อ</span>
+                      <div className="ml-2 w-0 h-0 border-l-[6px] border-l-transparent border-t-[8px] border-t-cyan-400 border-r-[6px] border-r-transparent"></div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           )}
-
-          {/* Log Area */}
-          <div className="bg-black/40 rounded-3xl p-6 border border-white/5 mt-auto relative z-10 w-full max-w-4xl max-h-48 overflow-y-auto custom-scrollbar">
-            <h3 className="text-xs text-gray-500 uppercase font-bold mb-4 sticky top-0 bg-black/80 backdrop-blur-md py-2 z-10">บันทึกการสนทนา (Logs)</h3>
-            <div className="space-y-4 pr-2">
-              {messages.map((m, i) => (
-                 <div key={i} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'} ${i === messages.length -1 ? 'opacity-100' : 'opacity-60'}`}>
-                   <span className="text-[10px] text-gray-400 mb-1">{m.sender === 'user' ? 'คุณ' : m.character_name}</span>
-                   <div className={`px-4 py-2 rounded-2xl max-w-[80%] text-sm ${m.sender === 'user' ? 'bg-blue-600/30 text-blue-100 rounded-tr-sm' : 'bg-white/5 text-gray-300 rounded-tl-sm border border-white/5'}`}>
-                     {m.content}
-                   </div>
-                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
 
           {sending && (
              <div className="flex justify-center mt-4">
@@ -437,22 +497,26 @@ function NegotiateContent() {
           )}
         </div>
 
-        {/* Input Bar */}
-        <div className="w-full max-w-4xl bg-white/5 border border-white/10 p-2 rounded-3xl flex items-center shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-2xl z-30 mt-4">
+        {/* Input Bar - Only active when at the end of the message sequence */}
+        <div className={`w-full max-w-4xl border p-2 rounded-3xl flex items-center shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-2xl z-30 mt-4 transition-all duration-500 ${
+          currentMessageIndex < messages.length - 1 || isTyping 
+            ? 'opacity-30 pointer-events-none bg-black/50 border-white/5' 
+            : 'opacity-100 bg-white/5 border-white/10'
+        }`}>
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            disabled={!isStarted || sending}
-            placeholder={isStarted ? "แสดงข้อโต้แย้งของคุณ..." : "คลิกเริ่มเพื่อเริ่มต้น..."}
-            className="flex-1 bg-transparent border-none outline-none px-6 py-4 text-base placeholder:text-gray-500"
+            disabled={!isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping}
+            placeholder={isStarted ? (currentMessageIndex < messages.length - 1 ? "รอให้อีกฝ่ายพูดจบ..." : "แสดงข้อโต้แย้งของคุณ...") : "คลิกเริ่มเพื่อเริ่มต้น..."}
+            className="flex-1 bg-transparent border-none outline-none px-6 py-4 text-base placeholder:text-gray-500 text-white"
           />
           <button
             onClick={handleSend}
-            disabled={sending || !input.trim() || !isStarted}
+            disabled={sending || !input.trim() || !isStarted || currentMessageIndex < messages.length - 1 || isTyping}
             className={`p-4 rounded-2xl transition-all shadow-lg text-white ${
-              !input.trim() || !isStarted || sending 
+              !input.trim() || !isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping
                 ? 'bg-white/5 text-gray-600' 
                 : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-500/30 hover:scale-105 active:scale-95'
             }`}
@@ -462,6 +526,43 @@ function NegotiateContent() {
         </div>
         <p className="text-[10px] text-gray-500 mt-3 tracking-wide">กด Enter เพื่อส่ง ใช้ภาษาที่เป็นทางการเพื่อคะแนนที่ดีขึ้น</p>
       </main>
+
+      {/* Log Modal */}
+      {showLogModal && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-3xl h-[80vh] bg-slate-900 border border-white/20 rounded-3xl flex flex-col shadow-[0_0_50px_rgba(34,211,238,0.1)]">
+            <div className="flex justify-between items-center p-6 border-b border-white/10">
+              <h2 className="text-xl font-bold flex items-center text-cyan-400">
+                <ScrollText className="mr-3" /> บันทึกการสนทนาทั้งหมด
+              </h2>
+              <button 
+                onClick={() => setShowLogModal(false)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {messages.slice(0, currentMessageIndex + 1).map((m, i) => (
+                <div key={i} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                  <span className="text-[12px] text-gray-400 mb-1 font-bold flex items-center">
+                    {m.sender === 'user' ? 'คุณ' : m.character_name}
+                  </span>
+                  <div className={`px-5 py-3 rounded-2xl max-w-[85%] text-[15px] leading-relaxed shadow-lg ${
+                    m.sender === 'user' 
+                      ? 'bg-blue-600 text-blue-50 rounded-tr-sm' 
+                      : 'bg-slate-800 text-gray-200 rounded-tl-sm border border-white/10'
+                  }`}>
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
