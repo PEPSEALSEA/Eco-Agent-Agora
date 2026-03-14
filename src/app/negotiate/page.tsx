@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase';
 import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
 import { Send, User as UserIcon, Bot, ArrowLeft, MessageSquare, Info, Users, ScrollText, X } from 'lucide-react';
+import { CharacterAvatar } from '@/components/CharacterAvatar';
+import { DialogueBox } from '@/components/DialogueBox';
 
 type Character = {
   name: string;
@@ -38,11 +40,9 @@ function NegotiateContent(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [isStarted, setIsStarted] = useState(false);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
-  const [typedText, setTypedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -97,38 +97,16 @@ function NegotiateContent(): React.ReactElement {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, showLogModal]);
 
-  // Handle Typewriter effect
+  // Start sequence typing for new message
   useEffect(() => {
     if (currentMessageIndex >= 0 && currentMessageIndex < messages.length) {
-      const fullText = messages[currentMessageIndex].content;
-      setTypedText('');
       setIsTyping(true);
-      
-      let i = 0;
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
-      const typeNextChar = () => {
-        if (i < fullText.length) {
-          setTypedText((prev) => prev + fullText.charAt(i));
-          i++;
-          typingTimeoutRef.current = setTimeout(typeNextChar, 10); // typing speed
-        } else {
-          setIsTyping(false);
-        }
-      };
-      
-      typeNextChar();
     }
-  }, [currentMessageIndex, messages]);
+  }, [currentMessageIndex, messages.length]);
 
   const advanceMessage = () => {
     if (isTyping) {
-      // Force complete typing
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      if (currentMessageIndex >= 0) {
-        setTypedText(messages[currentMessageIndex].content);
-      }
-      setIsTyping(false);
+      setIsTyping(false); // Skip animation
     } else if (currentMessageIndex < messages.length - 1) {
       setCurrentMessageIndex(prev => prev + 1);
     }
@@ -433,50 +411,25 @@ function NegotiateContent(): React.ReactElement {
                   const isTalking = currentMsg?.sender === 'ai' && currentMsg?.character_name === char.name;
                   
                   return (
-                    <div key={i} className={`flex flex-col items-center transition-all duration-500 ${isTalking ? 'scale-125 z-30 transform translate-y-[-10px]' : 'scale-100 opacity-60 z-10'}`}>
-                      <div className={`w-32 h-40 rounded-3xl flex items-center justify-center text-5xl font-bold shadow-2xl relative border-2 transition-colors duration-500
-                        ${isTalking ? 'bg-gradient-to-b from-purple-500 to-indigo-600 border-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.3)] animate-bounce-subtle' : 'bg-gradient-to-br from-slate-700 to-slate-800 border-white/10 grayscale-[50%]'}
-                      `}>
-                         {char.name.charAt(0)}
-                         <div className={`absolute -bottom-3 right-2 w-6 h-6 rounded-full border-4 border-slate-900 transition-all ${
-                            char.mood === 'open' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,1)]' :
-                            char.mood === 'resistant' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,1)]' :
-                            'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,1)]'
-                          }`}></div>
-                      </div>
-                      <span className={`mt-4 font-bold transition-all ${isTalking ? 'text-cyan-400 text-lg drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'text-gray-500'}`}>{char.name}</span>
-                    </div>
+                    <CharacterAvatar 
+                      key={i} 
+                      name={char.name} 
+                      mood={char.mood || 'neutral'} 
+                      isTalking={isTalking} 
+                    />
                   );
                 })}
               </div>
 
                {/* Active Speech Bubble */}
-              <div className="w-full mt-6 bg-slate-900/90 backdrop-blur-xl border-2 border-white/20 p-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-8 relative z-20">
-                <div className="absolute top-0 left-1/2 -mt-3 w-6 h-6 bg-slate-900 border-l-2 border-t-2 border-white/20 transform rotate-45 -translate-x-1/2"></div>
-                <div className="flex flex-col min-h-[100px]">
-                  {messages[currentMessageIndex]?.sender === 'ai' ? (
-                     <span className="text-sm font-bold text-cyan-400 mb-3 uppercase tracking-wider flex items-center">
-                       <Bot size={16} className="mr-2" /> {messages[currentMessageIndex].character_name}
-                     </span>
-                  ) : (
-                     <span className="text-sm font-bold text-blue-400 mb-3 uppercase tracking-wider flex items-center">
-                       <UserIcon size={16} className="mr-2" /> คุณ
-                     </span>
-                  )}
-                  <p className="text-xl leading-relaxed whitespace-pre-wrap text-white font-serif">
-                    {typedText}
-                    {isTyping && <span className="inline-block w-2 h-5 bg-cyan-400 animate-pulse ml-1 align-middle"></span>}
-                  </p>
-                  
-                  {/* Click to continue indicator */}
-                  {!isTyping && currentMessageIndex < messages.length - 1 && (
-                    <div className="absolute bottom-4 right-6 text-cyan-400 animate-bounce flex items-center text-xs font-bold">
-                      <span>คลิกเพื่อดำเนินการต่อ</span>
-                      <div className="ml-2 w-0 h-0 border-l-[6px] border-l-transparent border-t-[8px] border-t-cyan-400 border-r-[6px] border-r-transparent"></div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <DialogueBox 
+                sender={messages[currentMessageIndex]?.sender || 'ai'}
+                characterName={messages[currentMessageIndex]?.character_name}
+                content={messages[currentMessageIndex]?.content || ''}
+                isTyping={isTyping}
+                onTypingComplete={() => setIsTyping(false)}
+                isLastMessage={currentMessageIndex === messages.length - 1}
+              />
             </div>
           )}
 
