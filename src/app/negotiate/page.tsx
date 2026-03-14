@@ -151,9 +151,10 @@ function NegotiateContent(): React.ReactElement {
         if (prev.length === 0) setCurrentMessageIndex(0);
         return updated;
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError('การเริ่มต้น AI ล้มเหลว คุณยังสามารถพิมพ์เพื่อเริ่มได้');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError('การเริ่มต้น AI ล้มเหลว คุณยังสามารถพิมพ์เพื่อเริ่มได้ ' + errorMessage);
     } finally {
       setSending(false);
     }
@@ -266,9 +267,10 @@ function NegotiateContent(): React.ReactElement {
         p_xp: geminiData.feedback.score * 10 
       });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || 'AI ไม่พร้อมใช้งานในขณะนี้ โปรดลองอีกครั้ง');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage || 'AI ไม่พร้อมใช้งานในขณะนี้ โปรดลองอีกครั้ง');
     } finally {
       setSending(false);
     }

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import { motion, useAnimationControls } from 'framer-motion';
 import { Bot, User as UserIcon } from 'lucide-react';
@@ -33,7 +35,9 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
     } else {
       controls.set('visible');
     }
-  }, [isTyping, controls, onTypingComplete]);
+    // Exclude onTypingComplete to avoid re-triggering animation on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTyping, controls]);
 
   return (
     <motion.div 
