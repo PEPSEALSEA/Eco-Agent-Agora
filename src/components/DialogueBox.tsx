@@ -1,13 +1,8 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { motion, useAnimationControls } from 'framer-motion';
-import { Bot, User as UserIcon } from 'lucide-react';
-
-const sentenceVariants = {
-  hidden: { opacity: 0, x: -20 },
-  visible: { opacity: 1, x: 0 }
-};
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Bot, User as UserIcon, Triangle } from 'lucide-react';
 
 type DialogueBoxProps = {
   sender: 'user' | 'ai';
@@ -18,71 +13,129 @@ type DialogueBoxProps = {
   isLastMessage: boolean;
 };
 
-// Simple utility to split text into sequence of paragraphs/sentences
 const splitIntoSentences = (text: string) => {
   return text.split('\n').filter(s => s.trim().length > 0);
 };
 
 export const DialogueBox = ({ sender, characterName, content, isTyping, onTypingComplete, isLastMessage }: DialogueBoxProps) => {
   const sentences = splitIntoSentences(content);
-  const controls = useAnimationControls();
-
+  const [paragraphIndex, setParagraphIndex] = useState(0);
+  const [displayedText, setDisplayedText] = useState('');
+  
   useEffect(() => {
-    if (isTyping) {
-      controls.start('visible').then(() => {
-        if (onTypingComplete) onTypingComplete();
-      });
+    setParagraphIndex(0);
+    setDisplayedText('');
+  }, [content]);
+
+  const currentSentence = sentences[paragraphIndex] || '';
+
+  // Typewriter effect
+  useEffect(() => {
+    let i = 0;
+    setDisplayedText('');
+    const interval = setInterval(() => {
+      setDisplayedText(currentSentence.slice(0, i + 1));
+      i++;
+      if (i >= currentSentence.length) {
+        clearInterval(interval);
+        if (paragraphIndex === sentences.length - 1 && onTypingComplete) {
+          onTypingComplete();
+        }
+      }
+    }, 15); // Fast typing speed
+    
+    return () => clearInterval(interval);
+  }, [paragraphIndex, currentSentence, sentences.length, onTypingComplete]);
+
+  const hasMoreParagraphs = paragraphIndex < sentences.length - 1;
+  const isFinishedTyping = displayedText.length === currentSentence.length;
+
+  const handleBoxClick = (e: React.MouseEvent) => {
+    if (hasMoreParagraphs) {
+      e.stopPropagation(); // Prevent page from navigating to next character message
+      if (!isFinishedTyping) {
+        // Fast forward typing
+        setDisplayedText(currentSentence);
+      } else {
+        // Next paragraph
+        setParagraphIndex(p => p + 1);
+      }
     } else {
-      controls.set('visible');
+      if (!isFinishedTyping) {
+        e.stopPropagation();
+        setDisplayedText(currentSentence);
+        if (onTypingComplete) onTypingComplete();
+      }
+      // If it is finished and no more paras, event bubbles up to page
     }
-    // Exclude onTypingComplete to avoid re-triggering animation on every render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTyping, controls]);
+  };
+
+  const isAiSpeaking = sender === 'ai';
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="w-full mt-6 bg-slate-900/90 backdrop-blur-xl border-2 border-white/20 p-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative z-20"
-    >
-      <div className="absolute top-0 left-1/2 -mt-3 w-6 h-6 bg-slate-900 border-l-2 border-t-2 border-white/20 transform rotate-45 -translate-x-1/2"></div>
-      <div className="flex flex-col min-h-[100px]">
-        {sender === 'ai' ? (
-            <span className="text-sm font-bold text-cyan-400 mb-3 uppercase tracking-wider flex items-center">
-              <Bot size={16} className="mr-2" /> {characterName}
-            </span>
-        ) : (
-            <span className="text-sm font-bold text-blue-400 mb-3 uppercase tracking-wider flex items-center">
-              <UserIcon size={16} className="mr-2" /> คุณ
-            </span>
-        )}
-        
-        {/* Animated Sequence Text */}
-        <motion.div
-           initial="hidden"
-           animate={controls}
-           transition={{ staggerChildren: 0.8 }}
+    <>
+      {/* Invisible overlay to catch clicks if there are more paragraphs to show */}
+      <div 
+        className="fixed inset-0 z-40" 
+        onClick={handleBoxClick}
+        style={{ display: (hasMoreParagraphs || !isFinishedTyping) ? 'block' : 'none' }}
+      ></div>
+
+      <div 
+        className="w-full max-w-4xl mx-auto z-50 text-left cursor-pointer relative transition-all duration-300 hover:-translate-y-1"
+        onClick={handleBoxClick}
+      >
+        {/* Floating Name Badge */}
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="flex items-center absolute -top-5 left-8 z-10"
         >
-          {sentences.map((text, i) => (
-            <motion.p 
-              key={i} 
-              variants={sentenceVariants}
-              className="text-xl leading-relaxed whitespace-pre-wrap text-white font-serif mb-4 last:mb-0"
-            >
-              {text}
-            </motion.p>
-          ))}
-        </motion.div>
-        
-        {/* Click to continue indicator */}
-        {!isTyping && !isLastMessage && (
-          <div className="absolute bottom-4 right-6 text-cyan-400 animate-bounce flex items-center text-xs font-bold">
-            <span>คลิกเพื่อดำเนินการต่อ</span>
-            <div className="ml-2 w-0 h-0 border-l-[6px] border-l-transparent border-t-[8px] border-t-cyan-400 border-r-[6px] border-r-transparent"></div>
+          <div className="bg-slate-100 text-slate-900 px-6 py-1.5 rounded-full font-black text-[18px] shadow-[0_0_20px_rgba(255,255,255,0.3)] flex items-center tracking-wide border-b-4 border-slate-300">
+            {isAiSpeaking ? (
+              <><Bot size={20} className="mr-2 text-indigo-600" /> {characterName}</>
+            ) : (
+              <><UserIcon size={20} className="mr-2 text-blue-600" /> คุณ</>
+            )}
           </div>
-        )}
+        </motion.div>
+
+        {/* Dialogue Box Base */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 150, damping: 20 }}
+          className={`w-full bg-slate-900/85 backdrop-blur-xl border-t-2 border-x-2 border-b-4 p-8 pt-10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,1)] min-h-[160px] flex flex-col justify-between ${
+            isAiSpeaking ? 'border-cyan-500/50 shadow-[0_0_40px_rgba(6,182,212,0.15)]' : 'border-blue-500/50 shadow-[0_0_40px_rgba(59,130,246,0.15)]'
+          }`}
+        >
+          {/* Main Text Container (60-75 chars wide for readability) */}
+          <div className="max-w-[70ch] mx-auto w-full">
+            <p className="text-[21px] leading-[1.7] text-gray-100 font-sans tracking-wide">
+              {displayedText}
+              {isFinishedTyping && (
+                <motion.span 
+                  animate={{ opacity: [1, 0, 1] }}
+                  transition={{ repeat: Infinity, duration: 0.8 }}
+                  className="inline-block ml-1 -mb-1 w-3 h-5 bg-cyan-400"
+                />
+              )}
+            </p>
+          </div>
+
+          {/* Next Indicator */}
+          {isFinishedTyping && (
+            <motion.div 
+              animate={{ y: [0, 5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="absolute bottom-4 right-8 text-cyan-400 flex items-center space-x-2 text-sm font-bold opacity-80"
+            >
+              <span>{hasMoreParagraphs ? 'อ่านต่อ' : (!isLastMessage ? 'ถัดไป' : '')}</span>
+              {(hasMoreParagraphs || !isLastMessage) && <Triangle fill="currentColor" stroke="none" size={12} className="rotate-180" />}
+            </motion.div>
+          )}
+        </motion.div>
       </div>
-    </motion.div>
+    </>
   );
 };

@@ -374,56 +374,106 @@ function NegotiateContent(): React.ReactElement {
       </aside>
 
       {/* Main Stage Area */}
-      <main className="flex-1 flex flex-col items-center justify-between p-6 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 to-black relative">
-        <header className="w-full max-w-4xl flex justify-between items-center mb-6 z-10">
+      <main 
+        className="flex-1 flex flex-col items-center relative overflow-hidden bg-gradient-to-b from-indigo-950/40 via-slate-900 to-black cursor-pointer"
+        onClick={advanceMessage}
+      >
+        {/* Header Layer */}
+        <header className="w-full max-w-6xl flex justify-between items-start p-8 z-30 absolute top-0 pointer-events-auto">
           <div>
-            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 drop-shadow-md">
               {scenario.title}
             </h1>
-            <p className="text-[10px] text-gray-400">ระดับการเจรจา: ปานกลาง</p>
+            <p className="text-sm text-gray-300 drop-shadow-md mt-1">ระดับการเจรจา: ปานกลาง</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 bg-black/40 p-2 rounded-2xl backdrop-blur-md border border-white/5">
             <button
-              onClick={() => setShowLogModal(true)}
-              className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-all text-cyan-400 flex items-center"
+              onClick={(e) => { e.stopPropagation(); setShowLogModal(true); }}
+              className="px-4 py-2 hover:bg-white/10 rounded-xl text-sm font-bold transition-all text-cyan-400 flex items-center"
               title="ดูบันทึกการสนทนา"
             >
-              <ScrollText size={18} className="mr-2"/> ประวัติ
+              <ScrollText size={16} className="mr-2"/> ประวัติ
             </button>
             <button 
-              onClick={() => router.push(`/debrief?sessionId=${sessionId}`)}
-              className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-all hover:border-red-500/50 hover:text-red-400"
+              onClick={(e) => { e.stopPropagation(); router.push(`/debrief?sessionId=${sessionId}`); }}
+              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-xl text-sm font-bold transition-all"
             >
               ยุติเซสชัน
             </button>
           </div>
         </header>
 
-        {/* Visual Novel Stage */}
-        <div 
-          className="w-full max-w-4xl flex-1 flex flex-col overflow-y-hidden mb-6 custom-scrollbar space-y-4 px-4 py-4 relative cursor-pointer"
-          onClick={advanceMessage}
-        >
-          {messages.length > 0 && currentMessageIndex >= 0 && (
-            <div className="flex-1 flex flex-col items-center justify-end min-h-[400px] mb-4 relative z-20">
-              {/* Character Avatars Row */}
-              <div className="flex justify-center items-end space-x-12 h-64 w-full pb-4">
-                {characters.map((char, i) => {
-                  const currentMsg = messages[currentMessageIndex];
-                  const isTalking = currentMsg?.sender === 'ai' && currentMsg?.character_name === char.name;
-                  
-                  return (
-                    <CharacterAvatar 
-                      key={i} 
-                      name={char.name} 
-                      mood={char.mood || 'neutral'} 
-                      isTalking={isTalking} 
-                    />
-                  );
-                })}
-              </div>
+        {/* Character Stage Layer */}
+        <div className="absolute bottom-0 left-0 w-full h-full flex justify-center items-end space-x-4 sm:space-x-12 pb-[22vh] z-10 pointer-events-none">
+          {characters.map((char, i) => {
+            const currentMsg = messages[currentMessageIndex];
+            const isTalking = currentMsg?.sender === 'ai' && currentMsg?.character_name === char.name;
+            
+            return (
+              <CharacterAvatar 
+                key={i} 
+                name={char.name} 
+                mood={char.mood || 'neutral'} 
+                isTalking={isTalking} 
+              />
+            );
+          })}
+        </div>
 
-               {/* Active Speech Bubble */}
+        {/* UI / Dialogue Layer */}
+        <div className="absolute bottom-8 left-0 w-full z-20 px-4 flex justify-center pointer-events-none">
+          <div className="w-full max-w-4xl pointer-events-auto flex flex-col items-center relative">
+            
+            {error && (
+              <div className="absolute -top-16 bg-red-500/10 border border-red-500/20 px-6 py-3 rounded-2xl text-red-400 text-sm flex items-center backdrop-blur-md shadow-lg">
+                <Info size={16} className="mr-2" />
+                {error}
+                <button onClick={(e) => { e.stopPropagation(); handleSend(); }} className="ml-4 font-bold underline text-white hover:text-red-200">ย้ำอีกครั้ง</button>
+              </div>
+            )}
+
+            {sending && (
+              <div className="absolute -top-12">
+                 <span className="text-cyan-400 animate-pulse text-sm font-bold tracking-widest bg-black/60 px-6 py-2 rounded-full border border-cyan-500/30 backdrop-blur-md shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                   ผู้เชี่ยวชาญกำลังคิด...
+                 </span>
+              </div>
+            )}
+
+            {/* Input Bar (Only visible when it's user's turn) */}
+            <div className={`w-full mb-6 border p-2 rounded-[2rem] flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl transition-all duration-700 ${
+              currentMessageIndex < messages.length - 1 || isTyping 
+                ? 'opacity-0 translate-y-10 focus-within:opacity-0 pointer-events-none absolute bottom-full' 
+                : 'opacity-100 translate-y-0 bg-slate-900/90 border-white/20 hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.15)] relative z-30'
+            }`}>
+              <div className="pl-6 text-cyan-400">
+                <MessageSquare size={20} />
+              </div>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                onClick={(e) => e.stopPropagation()}
+                disabled={!isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping}
+                placeholder="พิมพ์ข้อโต้แย้งของคุณที่นี่... (กด Enter เพื่อส่ง)"
+                className="flex-1 bg-transparent border-none outline-none px-4 py-4 text-[17px] placeholder:text-gray-500 text-white font-sans"
+              />
+              <button
+                onClick={(e) => { e.stopPropagation(); handleSend(); }}
+                disabled={sending || !input.trim() || !isStarted || currentMessageIndex < messages.length - 1 || isTyping}
+                className={`p-4 rounded-full transition-all text-white ${
+                  !input.trim() || !isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping
+                    ? 'bg-white/5 text-gray-600 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:scale-110 active:scale-95'
+                }`}
+              >
+                <Send size={20} className={input.trim() ? "translate-x-0.5 -translate-y-0.5" : ""} />
+              </button>
+            </div>
+
+            {/* Dialogue Box */}
+            {messages.length > 0 && currentMessageIndex >= 0 && (
               <DialogueBox 
                 sender={messages[currentMessageIndex]?.sender || 'ai'}
                 characterName={messages[currentMessageIndex]?.character_name}
@@ -432,54 +482,9 @@ function NegotiateContent(): React.ReactElement {
                 onTypingComplete={() => setIsTyping(false)}
                 isLastMessage={currentMessageIndex === messages.length - 1}
               />
-            </div>
-          )}
-
-          {sending && (
-             <div className="flex justify-center mt-4">
-                <span className="text-cyan-400 animate-pulse text-sm font-bold tracking-widest">กำลังคิด...</span>
-             </div>
-          )}
-
-          {error && (
-            <div className="flex justify-center mt-4">
-              <div className="bg-red-500/10 border border-red-500/20 px-6 py-3 rounded-2xl text-red-400 text-xs flex items-center backdrop-blur-md z-30">
-                <Info size={14} className="mr-2" />
-                {error}
-                <button onClick={() => handleSend()} className="ml-4 font-bold underline text-white">ย้ำอีกครั้ง</button>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-
-        {/* Input Bar - Only active when at the end of the message sequence */}
-        <div className={`w-full max-w-4xl border p-2 rounded-3xl flex items-center shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-2xl z-30 mt-4 transition-all duration-500 ${
-          currentMessageIndex < messages.length - 1 || isTyping 
-            ? 'opacity-30 pointer-events-none bg-black/50 border-white/5' 
-            : 'opacity-100 bg-white/5 border-white/10'
-        }`}>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            disabled={!isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping}
-            placeholder={isStarted ? (currentMessageIndex < messages.length - 1 ? "รอให้อีกฝ่ายพูดจบ..." : "แสดงข้อโต้แย้งของคุณ...") : "คลิกเริ่มเพื่อเริ่มต้น..."}
-            className="flex-1 bg-transparent border-none outline-none px-6 py-4 text-base placeholder:text-gray-500 text-white"
-          />
-          <button
-            onClick={handleSend}
-            disabled={sending || !input.trim() || !isStarted || currentMessageIndex < messages.length - 1 || isTyping}
-            className={`p-4 rounded-2xl transition-all shadow-lg text-white ${
-              !input.trim() || !isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping
-                ? 'bg-white/5 text-gray-600' 
-                : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-500/30 hover:scale-105 active:scale-95'
-            }`}
-          >
-            <Send size={20} />
-          </button>
-        </div>
-        <p className="text-[10px] text-gray-500 mt-3 tracking-wide">กด Enter เพื่อส่ง ใช้ภาษาที่เป็นทางการเพื่อคะแนนที่ดีขึ้น</p>
       </main>
 
       {/* Log Modal */}
