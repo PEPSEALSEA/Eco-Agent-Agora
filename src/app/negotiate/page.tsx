@@ -205,11 +205,20 @@ function NegotiateContent(): React.ReactElement {
     `;
 
     // 3. Prepare and Prune History (Cost optimization: keep last 15 messages)
-    const chatHistory = messages.map(m => ({
+    let chatHistory = messages.map(m => ({
       role: m.sender === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }]
     })).slice(-15);
     
+    // Gemini requirement: First message must be 'user'
+    // If history starts with 'model', prepend a synthetic user start message
+    if (chatHistory.length > 0 && chatHistory[0].role === 'model') {
+      chatHistory = [
+        { role: 'user', parts: [{ text: "Let's start the negotiation." }] },
+        ...chatHistory
+      ];
+    }
+
     chatHistory.push({ role: 'user', parts: [{ text: userMessageContent }] });
 
     try {
