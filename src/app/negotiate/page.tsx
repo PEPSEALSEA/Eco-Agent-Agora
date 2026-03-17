@@ -8,6 +8,9 @@ import { useAuth } from '@/components/AuthProvider';
 import { Send, User as UserIcon, Bot, ArrowLeft, MessageSquare, Info, Users, ScrollText, X } from 'lucide-react';
 import { CharacterAvatar } from '@/components/CharacterAvatar';
 import { DialogueBox } from '@/components/DialogueBox';
+import { StrategyBlocks, Strategy } from '@/components/StrategyBlocks';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Baby, Briefcase } from 'lucide-react';
 
 type Character = {
   name: string;
@@ -42,6 +45,7 @@ function NegotiateContent(): React.ReactElement {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
   const [isTyping, setIsTyping] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
+  const [isKidMode, setIsKidMode] = useState(true); // Default to kid mode for fun
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -118,14 +122,14 @@ function NegotiateContent(): React.ReactElement {
     setSending(true);
 
     const systemInstruction = `
-      You are a multi-character negotiation simulator. Play ALL characters in one JSON response.
+      You are a multi-character negotiation simulator ${isKidMode ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
       Current Scenario: ${scenario.title} - ${scenario.description}
       Characters: ${JSON.stringify(scenario.characters)}
       
       TASK: Provide an initial greeting and opening statement from the key characters to start the negotiation. 
       The player is a negotiator trying to achieve the following: ${scenario.target_group === 'professional' ? 'Resolve the conflict fairly while meeting business goals.' : 'Help friends resolve their conflict.'}
       
-      CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.
+      ${isKidMode ? 'CRITICAL KID MODE RULES: Keep responses VERY SHORT (max 10-15 words). Use friendly, simple Thai language. Focus on emotions and friendship.' : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
       
       Format:
       {
@@ -160,15 +164,16 @@ function NegotiateContent(): React.ReactElement {
     }
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || !user || sending || !sessionId) {
+  const handleSend = async (strategyOverride?: Strategy) => {
+    if ((!input.trim() && !strategyOverride) || !user || sending || !sessionId) {
       if (!user) setError('คุณต้องเข้าสู่ระบบเพื่อส่งข้อความ');
       return;
     }
 
     setSending(true);
     setError(null);
-    const userMessageContent = input;
+    const userMessageContent = strategyOverride ? strategyOverride.thaiLabel : input;
+    const strategyIntent = strategyOverride ? strategyOverride.label : 'freeform';
     setInput('');
 
     // 1. Save User Message
@@ -193,10 +198,12 @@ function NegotiateContent(): React.ReactElement {
 
     // 2. Prepare Gemini Prompt (System Instruction)
     const systemInstruction = `
-      You are a multi-character negotiation simulator. Play ALL characters in one JSON response.
+      You are a multi-character negotiation simulator ${isKidMode ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
       Characters: ${JSON.stringify(scenario.characters)}
       Rules: Respond based on agenda/personality. Adjust tone based on user's message.
-      CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.
+      ${isKidMode ? `USER STRATEGY CHOSEN: ${strategyIntent}. 
+      CRITICAL KID MODE RULES: RESPONSES MUST BE VERY SHORT (max 12 words). 
+      Use simple, expressive Thai. Use emojis sparingly. Be direct and emotional.` : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
       Format:
       {
         "characters": [{"name": "...", "mood": "open|neutral|resistant", "message": "ข้อความภาษาไทย..."}],
@@ -397,6 +404,12 @@ function NegotiateContent(): React.ReactElement {
           </div>
           <div className="flex items-center space-x-3 bg-black/40 p-2 rounded-2xl backdrop-blur-md border border-white/5">
             <button
+              onClick={(e) => { e.stopPropagation(); setIsKidMode(!isKidMode); }}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center ${isKidMode ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-slate-700/40 text-slate-300 border border-white/5'}`}
+            >
+              {isKidMode ? <><Baby size={16} className="mr-2" /> โหมดเด็ก</> : <><Briefcase size={16} className="mr-2" /> โหมดโปร</>}
+            </button>
+            <button
               onClick={(e) => { e.stopPropagation(); setShowLogModal(true); }}
               className="px-4 py-2 hover:bg-white/10 rounded-xl text-sm font-bold transition-all text-cyan-400 flex items-center"
               title="ดูบันทึกการสนทนา"
@@ -450,35 +463,49 @@ function NegotiateContent(): React.ReactElement {
             )}
 
             {/* Input Bar (Only visible when it's user's turn) */}
-            <div className={`w-full mb-6 border p-2 rounded-[2rem] flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl transition-all duration-700 ${
+            <div className={`w-full mb-6 transition-all duration-700 ${
               currentMessageIndex < messages.length - 1 || isTyping 
-                ? 'opacity-0 translate-y-10 focus-within:opacity-0 pointer-events-none absolute bottom-full' 
-                : 'opacity-100 translate-y-0 bg-slate-900/90 border-white/20 hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.15)] relative z-30'
+                ? 'opacity-0 translate-y-10 pointer-events-none absolute bottom-full' 
+                : 'opacity-100 translate-y-0 relative z-30'
             }`}>
-              <div className="pl-6 text-cyan-400">
-                <MessageSquare size={20} />
-              </div>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                onClick={(e) => e.stopPropagation()}
-                disabled={!isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping}
-                placeholder="พิมพ์ข้อโต้แย้งของคุณที่นี่... (กด Enter เพื่อส่ง)"
-                className="flex-1 bg-transparent border-none outline-none px-4 py-4 text-[17px] placeholder:text-gray-500 text-white font-sans"
-              />
-              <button
-                onClick={(e) => { e.stopPropagation(); handleSend(); }}
-                disabled={sending || !input.trim() || !isStarted || currentMessageIndex < messages.length - 1 || isTyping}
-                className={`p-4 rounded-full transition-all text-white ${
-                  !input.trim() || !isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping
-                    ? 'bg-white/5 text-gray-600 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:scale-110 active:scale-95'
-                }`}
-              >
-                <Send size={20} className={input.trim() ? "translate-x-0.5 -translate-y-0.5" : ""} />
-              </button>
+              {isKidMode ? (
+                <div className="w-full flex flex-col items-center">
+                  <div className="bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 mb-4 text-xs font-bold text-cyan-400 flex items-center">
+                    <Sparkles size={14} className="mr-2" /> เลือกท่าไม้ตายของคุณ!
+                  </div>
+                  <StrategyBlocks 
+                    onSelect={(s) => handleSend(s)} 
+                    disabled={sending || currentMessageIndex < messages.length - 1 || isTyping}
+                  />
+                </div>
+              ) : (
+                <div className="w-full border p-2 rounded-[2rem] flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl bg-slate-900/90 border-white/20 hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.15)]">
+                  <div className="pl-6 text-cyan-400">
+                    <MessageSquare size={20} />
+                  </div>
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                    onClick={(e) => e.stopPropagation()}
+                    disabled={!isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping}
+                    placeholder="พิมพ์ข้อโต้แย้งของคุณที่นี่... (กด Enter เพื่อส่ง)"
+                    className="flex-1 bg-transparent border-none outline-none px-4 py-4 text-[17px] placeholder:text-gray-500 text-white font-sans"
+                  />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleSend(); }}
+                    disabled={sending || !input.trim() || !isStarted || currentMessageIndex < messages.length - 1 || isTyping}
+                    className={`p-4 rounded-full transition-all text-white ${
+                      !input.trim() || !isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping
+                        ? 'bg-white/5 text-gray-600 cursor-not-allowed' 
+                        : 'bg-gradient-to-r from-cyan-400 to-blue-600 shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:scale-110 active:scale-95'
+                    }`}
+                  >
+                    <Send size={20} className={input.trim() ? "translate-x-0.5 -translate-y-0.5" : ""} />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Dialogue Box */}
