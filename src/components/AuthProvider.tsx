@@ -30,15 +30,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user || null);
         
-        // SYNC: Ensure public.users record exists
         if (session?.user) {
+          // Silent sync
           await supabase.from('users').upsert({
             id: session.user.id,
             email: session.user.email,
-          }, { onConflict: 'id' });
+          }, { onConflict: 'id' }).select('id').single();
         }
       } catch (err) {
-        console.error('Error fetching session:', err);
+        // Silent error for session init
       } finally {
         setLoading(false);
       }
@@ -52,12 +52,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user || null);
       setLoading(false);
       
-      // SYNC: Ensure public.users record exists on state change
       if (session?.user) {
-        await supabase.from('users').upsert({
-          id: session.user.id,
-          email: session.user.email,
-        }, { onConflict: 'id' });
+        try {
+          await supabase.from('users').upsert({
+            id: session.user.id,
+            email: session.user.email,
+          }, { onConflict: 'id' }).select('id').single();
+        } catch (e) {
+          // Ignore sync errors
+        }
       }
     });
 

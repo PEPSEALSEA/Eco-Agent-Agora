@@ -100,4 +100,31 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- Append RLS Policies
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.scenarios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.skill_progress ENABLE ROW LEVEL SECURITY;
+
+-- Users policies
+CREATE POLICY "Users can view their own data" ON public.users FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update their own data" ON public.users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can insert their own data" ON public.users FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Scenarios policies
+CREATE POLICY "Anyone can view scenarios" ON public.scenarios FOR SELECT TO authenticated USING (true);
+
+-- Sessions policies
+CREATE POLICY "Users can view their own sessions" ON public.sessions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own sessions" ON public.sessions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own sessions" ON public.sessions FOR UPDATE USING (auth.uid() = user_id);
+
+-- Messages policies
+CREATE POLICY "Users can view messages in their sessions" ON public.messages FOR SELECT 
+USING (EXISTS (SELECT 1 FROM public.sessions WHERE id = session_id AND user_id = auth.uid()));
+CREATE POLICY "Users can insert messages in their sessions" ON public.messages FOR INSERT 
+WITH CHECK (EXISTS (SELECT 1 FROM public.sessions WHERE id = session_id AND user_id = auth.uid()));
+
+-- Skill Progress policies
+CREATE POLICY "Users can view their own progress" ON public.skill_progress FOR SELECT USING (auth.uid() = user_id);
