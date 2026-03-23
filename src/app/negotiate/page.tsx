@@ -129,7 +129,7 @@ function NegotiateContent(): React.ReactElement {
       TASK: Provide an initial greeting and opening statement from the key characters to start the negotiation. 
       The player is a negotiator trying to achieve the following: ${scenario.target_group === 'professional' ? 'Resolve the conflict fairly while meeting business goals.' : 'Help friends resolve their conflict.'}
       
-      ${isKidMode ? 'CRITICAL KID MODE RULES: Keep responses VERY SHORT (max 10-15 words). Use friendly, simple Thai language. Focus on emotions and friendship.' : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
+      ${isKidMode ? 'CRITICAL KID MODE RULES: Keep responses EXTREMELY SHORT (max 1 short sentence, 5-8 words). Use heavy emojis. Use simple, expressive Thai language.' : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
       
       Format:
       {
@@ -202,8 +202,8 @@ function NegotiateContent(): React.ReactElement {
       Characters: ${JSON.stringify(scenario.characters)}
       Rules: Respond based on agenda/personality. Adjust tone based on user's message.
       ${isKidMode ? `USER STRATEGY CHOSEN: ${strategyIntent}. 
-      CRITICAL KID MODE RULES: RESPONSES MUST BE VERY SHORT (max 12 words). 
-      Use simple, expressive Thai. Use emojis sparingly. Be direct and emotional.` : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
+      CRITICAL KID MODE RULES: RESPONSES MUST BE EXTREMELY SHORT (max 1 short sentence, 5-8 words max). 
+      Use simple, expressive Thai. Use heavy emojis. Be direct and emotional.` : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
       Format:
       {
         "characters": [{"name": "...", "mood": "open|neutral|resistant", "message": "ข้อความภาษาไทย..."}],
@@ -476,6 +476,7 @@ function NegotiateContent(): React.ReactElement {
                   <StrategyBlocks 
                     onSelect={(s) => handleSend(s)} 
                     disabled={sending || currentMessageIndex < messages.length - 1 || isTyping}
+                    isKidMode={true}
                   />
                 </div>
               ) : (
@@ -517,6 +518,7 @@ function NegotiateContent(): React.ReactElement {
                 isTyping={isTyping}
                 onTypingComplete={() => setIsTyping(false)}
                 isLastMessage={currentMessageIndex === messages.length - 1}
+                isKidMode={isKidMode}
               />
             )}
           </div>
