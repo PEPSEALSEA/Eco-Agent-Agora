@@ -32,6 +32,14 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
 
   // Typewriter effect
   useEffect(() => {
+    if (isKidMode) {
+      setDisplayedText(currentSentence);
+      if (paragraphIndex === sentences.length - 1 && onTypingComplete) {
+        onTypingComplete();
+      }
+      return;
+    }
+
     let i = 0;
     setDisplayedText('');
     const interval = setInterval(() => {
@@ -43,7 +51,7 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
           onTypingComplete();
         }
       }
-    }, isKidMode ? 5 : 15); // Faster typing speed for kids
+    }, 15);
     
     return () => clearInterval(interval);
   }, [paragraphIndex, currentSentence, sentences.length, onTypingComplete, isKidMode]);
