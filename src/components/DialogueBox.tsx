@@ -118,22 +118,27 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
 
         {/* Dialogue Box Base */}
         <motion.div 
-          initial={{ opacity: 0, scale: isKidMode ? 0.8 : 0.95, y: isKidMode ? 40 : 20 }}
+          initial={{ opacity: 0, scale: isKidMode ? 0.5 : 0.95, y: isKidMode ? 100 : 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={isKidMode ? { type: "spring", stiffness: 400, damping: 20 } : { type: "spring", stiffness: 150, damping: 20 }}
+          transition={isKidMode ? { type: "spring", stiffness: 400, damping: 15 } : { type: "spring", stiffness: 150, damping: 20 }}
           className={
             isKidMode 
-              ? `relative w-full bg-white border-4 border-gray-900 p-8 pb-12 pt-10 rounded-3xl shadow-[0_15px_0_rgba(17,24,39,1)] min-h-[160px] flex flex-col justify-center text-center`
+              ? `relative w-full bg-white border-[8px] border-gray-900 p-8 pb-12 pt-10 rounded-[3rem] shadow-[0_20px_0_rgba(0,0,0,1)] min-h-[160px] flex flex-col justify-center text-center overflow-hidden`
               : `w-full bg-slate-900/85 backdrop-blur-xl border-t-2 border-x-2 border-b-4 p-8 pt-10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,1)] min-h-[160px] flex flex-col justify-between ${
                   isAiSpeaking ? 'border-cyan-500/50 shadow-[0_0_40px_rgba(6,182,212,0.15)]' : 'border-blue-500/50 shadow-[0_0_40px_rgba(59,130,246,0.15)]'
                 }`
           }
         >
+          {/* Kid Mode Header Stripe */}
+          {isKidMode && (
+            <div className={`absolute top-0 left-0 w-full h-4 ${isAiSpeaking ? 'bg-nintendo-blue' : 'bg-nintendo-red'}`} />
+          )}
+
           {/* Main Text Container */}
           <div className={`mx-auto w-full ${isKidMode ? 'max-w-[40ch]' : 'max-w-[70ch]'}`}>
             <p className={
               isKidMode 
-                ? "text-3xl leading-[1.6] text-gray-900 font-black tracking-tight drop-shadow-sm" 
+                ? "text-4xl leading-[1.4] text-gray-900 font-black tracking-tighter" 
                 : "text-[21px] leading-[1.7] text-gray-100 font-sans tracking-wide"
             }>
               {displayedText}
@@ -141,7 +146,7 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
                 <motion.span 
                   animate={{ opacity: [1, 0, 1] }}
                   transition={{ repeat: Infinity, duration: 0.8 }}
-                  className={`inline-block ml-1 -mb-1 w-3 ${isKidMode ? 'h-8 bg-pink-500 rounded-full' : 'h-5 bg-cyan-400'}`}
+                  className={`inline-block ml-1 -mb-1 w-4 ${isKidMode ? 'h-10 bg-nintendo-pink rounded-full' : 'h-5 bg-cyan-400'}`}
                 />
               )}
             </p>
@@ -152,14 +157,14 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
             <motion.div 
               animate={{ y: [0, 5, 0] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
-              className={`absolute flex items-center font-bold ${
+              className={`absolute flex items-center font-black uppercase tracking-tighter ${
                 isKidMode 
-                  ? 'bottom-4 right-8 text-pink-500 text-lg space-x-2 opacity-100' 
+                  ? 'bottom-4 right-10 text-nintendo-pink text-2xl space-x-2 opacity-100' 
                   : 'bottom-4 right-8 text-cyan-400 text-sm space-x-2 opacity-80'
               }`}
             >
-              <span>{hasMoreParagraphs ? 'อ่านต่อ' : (!isLastMessage ? 'แตะจอ!' : '')}</span>
-              {(hasMoreParagraphs || !isLastMessage) && <Triangle fill="currentColor" stroke="none" size={isKidMode ? 16 : 12} className="rotate-180" />}
+              <span>{hasMoreParagraphs ? 'อ่านต่อ' : (!isLastMessage ? 'ถัดไป!' : '')}</span>
+              {(hasMoreParagraphs || !isLastMessage) && <Triangle fill="currentColor" stroke="none" size={isKidMode ? 24 : 12} className="rotate-180" />}
             </motion.div>
           )}
         </motion.div>

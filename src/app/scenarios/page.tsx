@@ -74,27 +74,46 @@ export default function ScenariosPage() {
   };
 
   const startSession = async (scenarioId: string) => {
+    if (loading || authLoading) return;
+    
+    setLoading(true);
+    
     if (!user) {
       router.push('/login');
       return;
     }
 
-    const { data, error } = await supabase
-      .from('sessions')
-      .insert([
-        { user_id: user.id, scenario_id: scenarioId, status: 'ongoing' }
-      ])
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .insert([
+          { user_id: user.id, scenario_id: scenarioId, status: 'ongoing' }
+        ])
+        .select()
+        .single();
 
-    if (error) {
-      console.error(error);
-      alert('Failed to start session: ' + error.message + '\n\nPlease ensure you have run the database setup SQL and checked your RLS policies.');
+      if (error) {
+        console.error('Session start error:', error);
+        
+        if (error.code === '23503') {
+           // Foreign key violation means public.users record is missing
+           alert('Your profile is still being set up. Please wait a few seconds and try again!');
+        } else if (error.code === '42501') {
+           // RLS error
+           alert('Database permission error. Please make sure you have run the updated SQL in your Supabase dashboard!');
+        } else {
+           alert('Error starting session: ' + error.message);
+        }
+        setLoading(false);
+        return;
+      }
+
+      router.push(`/negotiate?sessionId=${data.id}`);
+    } catch (err: any) {
+      console.error('Catch error:', err);
+      alert('An unexpected error occurred: ' + err.message);
       setLoading(false);
-      return;
     }
-
-    router.push(`/negotiate?sessionId=${data.id}`);
   };
 
   if (loading) {
@@ -106,23 +125,23 @@ export default function ScenariosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
+    <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8">
       <div className="max-w-6xl mx-auto">
-        <header className="flex justify-between items-center mb-12">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Choose Your Scenario</h1>
-            <p className="text-gray-400">Select a situation to practice your negotiation skills.</p>
+        <header className="flex justify-between items-center mb-16">
+          <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[3rem] shadow-[0_12px_0_rgba(0,0,0,1)] -rotate-1">
+            <h1 className="text-6xl font-black text-gray-900 mb-2 uppercase tracking-tighter">Choose Your Mission!</h1>
+            <p className="text-gray-500 font-bold text-xl uppercase tracking-tighter">Select a situation to practice your negotiation skills.</p>
           </div>
           <Link 
             href="/profile"
-            className="flex items-center space-x-3 bg-white/5 border border-white/10 px-4 py-2 rounded-xl hover:bg-white/10 transition-all cursor-pointer group"
+            className="flex items-center space-x-4 bg-white border-4 border-gray-900 px-6 py-3 rounded-[2rem] hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-xs font-bold ring-2 ring-transparent group-hover:ring-cyan-500/50 transition-all">
-              <User size={14} />
+            <div className="w-12 h-12 rounded-2xl bg-nintendo-yellow border-4 border-gray-900 flex items-center justify-center text-gray-900">
+              <User size={24} strokeWidth={3} />
             </div>
             <div className="text-left">
-              <p className="text-[10px] text-gray-400 leading-none mb-1">Your Profile</p>
-              <p className="text-sm text-cyan-400 font-medium leading-none">{user?.email?.split('@')[0]}</p>
+              <p className="text-xs text-gray-400 font-black uppercase leading-none mb-1">Trainer</p>
+              <p className="text-xl text-gray-900 font-black uppercase tracking-tighter leading-none">{user?.email?.split('@')[0]}</p>
             </div>
           </Link>
         </header>
@@ -131,40 +150,46 @@ export default function ScenariosPage() {
           {scenarios.map((scenario) => (
             <div 
               key={scenario.id}
-              className="group bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 hover:border-cyan-500/50 transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
+              className="group bg-white border-[6px] border-gray-900 rounded-[3rem] overflow-hidden transition-all duration-300 shadow-[0_15px_0_rgba(0,0,0,1)] hover:translate-y-2 hover:shadow-[0_8px_0_rgba(0,0,0,1)] active:scale-95 cursor-pointer flex flex-col"
               onClick={() => startSession(scenario.id)}
             >
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 bg-cyan-500/20 rounded-xl text-cyan-400 group-hover:bg-cyan-500/30 transition-colors">
-                    {scenario.target_group === 'professional' ? <Briefcase size={24} /> : <GraduationCap size={24} />}
+              <div className="p-8 flex-1 flex flex-col">
+                <div className="flex justify-between items-start mb-6">
+                  <div className={`p-4 rounded-2xl border-4 border-gray-900 text-white shadow-[0_6px_0_rgba(0,0,0,0.1)] ${scenario.target_group === 'professional' ? 'bg-nintendo-blue' : 'bg-nintendo-green'}`}>
+                    {scenario.target_group === 'professional' ? <Briefcase size={32} /> : <GraduationCap size={32} />}
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    scenario.target_group === 'professional' ? 'bg-purple-500/20 text-purple-300' : 'bg-green-500/20 text-green-300'
+                  <span className={`px-4 py-2 border-4 border-gray-900 rounded-full text-sm font-black uppercase tracking-tighter ${
+                    scenario.target_group === 'professional' ? 'bg-nintendo-pink text-white' : 'bg-nintendo-yellow text-gray-900'
                   }`}>
                     {scenario.target_group?.toUpperCase() || 'GENERAL'}
                   </span>
                 </div>
-                <h3 className="text-2xl font-bold mb-2">{scenario.title}</h3>
-                <p className="text-gray-400 mb-6 text-sm line-clamp-3">{scenario.description}</p>
+                <h3 className="text-3xl font-black text-gray-900 mb-3 uppercase tracking-tighter leading-none">{scenario.title}</h3>
+                <p className="text-gray-500 font-bold mb-8 text-lg line-clamp-3 leading-tight">{scenario.description}</p>
                 
-                <div className="flex -space-x-2 mb-6">
+                <div className="flex -space-x-4 mb-8">
                   {scenario.characters?.map((char: any, i: number) => (
                     <div 
                       key={i} 
-                      className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 border-2 border-slate-950 flex items-center justify-center text-[10px] font-bold"
+                      className="w-12 h-12 rounded-2xl bg-white border-4 border-gray-900 flex items-center justify-center text-lg font-black text-gray-900 shadow-lg rotate-3 odd:-rotate-3"
                       title={char.name}
                     >
                       {char.name.charAt(0)}
                     </div>
                   ))}
-                  <div className="pl-4 text-xs text-gray-500 flex items-center">
-                    {scenario.characters?.length || 0} Characters
-                  </div>
                 </div>
 
-                <div className="flex items-center text-cyan-400 font-semibold group-hover:gap-2 transition-all">
-                  Start Negotiation <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                <div className="mt-auto flex items-center text-2xl font-black text-nintendo-red uppercase tracking-tighter group-hover:gap-4 transition-all">
+                  {loading ? (
+                    <span className="flex items-center text-gray-400">
+                      <div className="animate-spin rounded-full h-6 w-6 border-4 border-gray-400 border-t-transparent mr-3"></div>
+                      LOADING...
+                    </span>
+                  ) : (
+                    <>
+                      START MISSION <span className="opacity-0 group-hover:opacity-100 transition-all">→</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

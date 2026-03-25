@@ -9,6 +9,7 @@ import { Send, User as UserIcon, Bot, ArrowLeft, MessageSquare, Info, Users, Scr
 import { CharacterAvatar } from '@/components/CharacterAvatar';
 import { DialogueBox } from '@/components/DialogueBox';
 import { StrategyBlocks, Strategy } from '@/components/StrategyBlocks';
+import { ReignsSystem } from '@/components/ReignsSystem';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Baby, Briefcase } from 'lucide-react';
 
@@ -305,21 +306,33 @@ function NegotiateContent(): React.ReactElement {
       {/* Start Overlay */}
       {!isStarted && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md transition-all duration-700">
-          <div className="max-w-xl p-12 bg-white/5 border border-white/20 rounded-3xl text-center animate-in fade-in zoom-in duration-500">
-            <div className="w-16 h-16 bg-cyan-500/20 rounded-2xl flex items-center justify-center text-cyan-400 mx-auto mb-6">
+          <div className={isKidMode 
+            ? "max-w-xl p-12 bg-white border-[10px] border-gray-900 rounded-[4rem] text-center shadow-[0_30px_0_rgba(0,0,0,1)] animate-in fade-in zoom-in duration-500"
+            : "max-w-xl p-12 bg-white/5 border border-white/20 rounded-3xl text-center animate-in fade-in zoom-in duration-500"
+          }>
+            <div className={isKidMode 
+              ? "w-20 h-20 bg-nintendo-red rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-[0_8px_0_rgba(0,0,0,0.2)]"
+              : "w-16 h-16 bg-cyan-500/20 rounded-2xl flex items-center justify-center text-cyan-400 mx-auto mb-6"
+            }>
               <MessageSquare size={32} />
             </div>
-            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-4">
+            <h1 className={isKidMode 
+              ? "text-5xl font-black text-gray-900 mb-4 uppercase tracking-tighter"
+              : "text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-4"
+            }>
               {scenario.title}
             </h1>
-            <p className="text-gray-300 mb-8 leading-relaxed">
+            <p className={isKidMode ? "text-gray-600 font-bold mb-8 leading-tight text-xl" : "text-gray-300 mb-8 leading-relaxed"}>
               {scenario.description}
             </p>
-            <div className="bg-cyan-500/10 border border-cyan-500/20 p-4 rounded-xl mb-8 text-left">
-              <h3 className="text-xs font-bold text-cyan-400 uppercase mb-2 flex items-center">
-                <Info size={14} className="mr-2" /> ภารกิจของคุณ
+            <div className={isKidMode
+              ? "bg-gray-100 border-4 border-gray-900 p-6 rounded-3xl mb-8 text-left shadow-inner"
+              : "bg-cyan-500/10 border border-cyan-500/20 p-4 rounded-xl mb-8 text-left"
+            }>
+              <h3 className={isKidMode ? "text-lg font-black text-gray-900 uppercase mb-2 flex items-center" : "text-xs font-bold text-cyan-400 uppercase mb-2 flex items-center"}>
+                <Info size={14} className="mr-2" /> {isKidMode ? 'เป้าหมาย!' : 'ภารกิจของคุณ'}
               </h3>
-              <p className="text-sm text-gray-200">
+              <p className={isKidMode ? "text-gray-700 font-bold" : "text-sm text-gray-200"}>
                 {scenario.target_group === 'professional' 
                   ? "จัดการข้อพิพาททางธุรกิจนี้และค้นหาทางออกที่ตอบสนองผู้มีส่วนได้ส่วนเสียในขณะที่ปกป้องผลประโยชน์ของคุณ"
                   : "ช่วยเพื่อนของคุณแก้ไขความขัดแย้งและทำให้ทุกอย่างกลับมาเป็นปกติ"}
@@ -327,9 +340,12 @@ function NegotiateContent(): React.ReactElement {
             </div>
             <button
               onClick={handleStart}
-              className="px-12 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-xl shadow-cyan-500/20 text-lg hover:scale-105 active:scale-95"
+              className={isKidMode 
+                ? "px-16 py-6 bg-nintendo-red hover:bg-red-500 text-white font-black rounded-3xl transition-all shadow-[0_12px_0_rgba(179,0,14,1)] text-3xl uppercase tracking-tighter hover:translate-y-1 hover:shadow-[0_8px_0_rgba(179,0,14,1)] active:translate-y-3 active:shadow-none"
+                : "px-12 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-xl shadow-cyan-500/20 text-lg hover:scale-105 active:scale-95"
+              }
             >
-              เริ่มการเจรจา
+              {isKidMode ? 'ลุยเลย!' : 'เริ่มการเจรจา'}
             </button>
           </div>
         </div>
@@ -391,7 +407,11 @@ function NegotiateContent(): React.ReactElement {
 
       {/* Main Stage Area */}
       <main 
-        className="flex-1 flex flex-col items-center relative overflow-hidden bg-gradient-to-b from-indigo-950/40 via-slate-900 to-black cursor-pointer"
+        className={`flex-1 flex flex-col items-center relative overflow-hidden cursor-pointer transition-colors duration-1000 ${
+          isKidMode 
+            ? 'bg-nintendo-yellow/20 bg-[radial-gradient(#f8cc00_1.5px,transparent_1.5px)] [background-size:40px_40px]' 
+            : 'bg-gradient-to-b from-indigo-950/40 via-slate-900 to-black'
+        }`}
         onClick={advanceMessage}
       >
         {/* Header Layer */}
@@ -470,13 +490,12 @@ function NegotiateContent(): React.ReactElement {
             }`}>
               {isKidMode ? (
                 <div className="w-full flex flex-col items-center">
-                  <div className="bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 mb-4 text-xs font-bold text-cyan-400 flex items-center">
-                    <Sparkles size={14} className="mr-2" /> เลือกท่าไม้ตายของคุณ!
+                  <div className="bg-white border-4 border-gray-900 px-6 py-2 rounded-full mb-4 text-sm font-black text-gray-900 flex items-center shadow-[0_6px_0_rgba(0,0,0,1)] uppercase tracking-tighter">
+                    <Sparkles size={16} className="mr-2 text-nintendo-yellow" /> ปัดเพื่อตัดสินใจ!
                   </div>
-                  <StrategyBlocks 
+                  <ReignsSystem 
                     onSelect={(s) => handleSend(s)} 
                     disabled={sending || currentMessageIndex < messages.length - 1 || isTyping}
-                    isKidMode={true}
                   />
                 </div>
               ) : (
