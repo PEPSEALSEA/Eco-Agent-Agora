@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, User as UserIcon, Triangle } from 'lucide-react';
 
@@ -22,6 +22,8 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
   const sentences = splitIntoSentences(content);
   const [paragraphIndex, setParagraphIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
+  const onTypingCompleteRef = useRef(onTypingComplete);
+  onTypingCompleteRef.current = onTypingComplete;
   
   useEffect(() => {
     setParagraphIndex(0);
@@ -30,12 +32,11 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
 
   const currentSentence = sentences[paragraphIndex] || '';
 
-  // Typewriter effect
   useEffect(() => {
     if (isKidMode) {
       setDisplayedText(currentSentence);
-      if (paragraphIndex === sentences.length - 1 && onTypingComplete) {
-        onTypingComplete();
+      if (paragraphIndex === sentences.length - 1) {
+        onTypingCompleteRef.current?.();
       }
       return;
     }
@@ -47,14 +48,14 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
       i++;
       if (i >= currentSentence.length) {
         clearInterval(interval);
-        if (paragraphIndex === sentences.length - 1 && onTypingComplete) {
-          onTypingComplete();
+        if (paragraphIndex === sentences.length - 1) {
+          onTypingCompleteRef.current?.();
         }
       }
     }, 15);
     
     return () => clearInterval(interval);
-  }, [paragraphIndex, currentSentence, sentences.length, onTypingComplete, isKidMode]);
+  }, [paragraphIndex, currentSentence, sentences.length, isKidMode]);
 
   const hasMoreParagraphs = paragraphIndex < sentences.length - 1;
   const isFinishedTyping = displayedText.length === currentSentence.length;
@@ -73,7 +74,7 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
       if (!isFinishedTyping) {
         e.stopPropagation();
         setDisplayedText(currentSentence);
-        if (onTypingComplete) onTypingComplete();
+        onTypingCompleteRef.current?.();
       }
       // If it is finished and no more paras, event bubbles up to page
     }
