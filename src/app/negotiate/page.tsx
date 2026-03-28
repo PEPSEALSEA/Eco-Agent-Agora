@@ -46,9 +46,20 @@ function NegotiateContent(): React.ReactElement {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(-1);
   const [isTyping, setIsTyping] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
-  const [mode, setMode] = useState<'kid' | 'adult' | 'pro'>('kid'); // 'kid' | 'adult' | 'pro'
+  const [mode, setMode] = useState<'kid' | 'adult' | 'pro'>('kid');
   const [currentDynamicDecisions, setCurrentDynamicDecisions] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const kidGameplayActive =
+    scenario?.target_group === 'kids' && mode === 'kid';
+  const useFreeTextInput =
+    scenario?.target_group === 'professional' || mode === 'pro';
+
+  useEffect(() => {
+    if (!scenario?.id) return;
+    if (scenario.target_group === 'professional') setMode('pro');
+    else setMode('kid');
+  }, [scenario?.id]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -124,14 +135,14 @@ function NegotiateContent(): React.ReactElement {
     setSending(true);
 
     const systemInstruction = `
-      You are a multi-character negotiation simulator ${mode === 'kid' ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
+      You are a multi-character negotiation simulator ${kidGameplayActive ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
       Current Scenario: ${scenario.title} - ${scenario.description}
       Characters: ${JSON.stringify(scenario.characters)}
       
       TASK: Provide an initial greeting and opening statement from the key characters to start the negotiation. 
       The player is a negotiator trying to achieve the following: ${scenario.target_group === 'professional' ? 'Resolve the conflict fairly while meeting business goals.' : 'Help friends resolve their conflict.'}
       
-      ${mode === 'kid' ? 'CRITICAL KID MODE RULES: Keep responses EXTREMELY SHORT (max 1 short sentence, 5-8 words). Use heavy emojis. Use simple, expressive Thai language. ALSO, generate two dynamic negotiation choices for the player to swipe (left and right).' : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
+      ${kidGameplayActive ? 'CRITICAL KID MODE RULES: Keep responses EXTREMELY SHORT (max 1 short sentence, 5-8 words). Use heavy emojis. Use simple, expressive Thai language. ALSO, generate two dynamic negotiation choices for the player to swipe (left and right).' : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
       
       Format:
       {
@@ -208,10 +219,10 @@ function NegotiateContent(): React.ReactElement {
 
     // 2. Prepare Gemini Prompt (System Instruction)
     const systemInstruction = `
-      You are a multi-character negotiation simulator ${mode === 'kid' ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
+      You are a multi-character negotiation simulator ${kidGameplayActive ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
       Characters: ${JSON.stringify(scenario.characters)}
       Rules: Respond based on agenda/personality. Adjust tone based on user's message.
-      ${mode === 'kid' ? `USER STRATEGY CHOSEN: ${strategyIntent}. 
+      ${kidGameplayActive ? `USER STRATEGY CHOSEN: ${strategyIntent}. 
       CRITICAL KID MODE RULES: RESPONSES MUST BE EXTREMELY SHORT (max 1 short sentence, 5-8 words max). 
       Use simple, expressive Thai. Use heavy emojis. Be direct and emotional.
       ALSO, generate the next two dynamic negotiation choices for the player (left and right) based on the current situation.` : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
@@ -324,33 +335,33 @@ function NegotiateContent(): React.ReactElement {
       {/* Start Overlay */}
       {!isStarted && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md transition-all duration-700">
-          <div className={mode === 'kid'
+          <div className={kidGameplayActive
             ? "max-w-xl p-12 bg-white border-[10px] border-gray-900 rounded-[4rem] text-center shadow-[0_30px_0_rgba(0,0,0,1)] animate-in fade-in zoom-in duration-500"
             : "max-w-xl p-12 bg-white/5 border border-white/20 rounded-3xl text-center animate-in fade-in zoom-in duration-500"
           }>
-            <div className={mode === 'kid'
+            <div className={kidGameplayActive
               ? "w-20 h-20 bg-nintendo-red rounded-3xl flex items-center justify-center text-white mx-auto mb-6 shadow-[0_8px_0_rgba(0,0,0,0.2)]"
               : "w-16 h-16 bg-cyan-500/20 rounded-2xl flex items-center justify-center text-cyan-400 mx-auto mb-6"
             }>
               <MessageSquare size={32} />
             </div>
-            <h1 className={mode === 'kid'
+            <h1 className={kidGameplayActive
               ? "text-5xl font-black text-gray-900 mb-4 uppercase tracking-tighter"
               : "text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-4"
             }>
               {scenario.title}
             </h1>
-            <p className={mode === 'kid' ? "text-gray-600 font-bold mb-8 leading-tight text-xl" : "text-gray-300 mb-8 leading-relaxed"}>
+            <p className={kidGameplayActive ? "text-gray-600 font-bold mb-8 leading-tight text-xl" : "text-gray-300 mb-8 leading-relaxed"}>
               {scenario.description}
             </p>
-            <div className={mode === 'kid'
+            <div className={kidGameplayActive
               ? "bg-gray-100 border-4 border-gray-900 p-6 rounded-3xl mb-8 text-left shadow-inner"
               : "bg-cyan-500/10 border border-cyan-500/20 p-4 rounded-xl mb-8 text-left"
             }>
-              <h3 className={mode === 'kid' ? "text-lg font-black text-gray-900 uppercase mb-2 flex items-center" : "text-xs font-bold text-cyan-400 uppercase mb-2 flex items-center"}>
-                <Info size={14} className="mr-2" /> {mode === 'kid' ? 'เป้าหมาย!' : 'ภารกิจของคุณ'}
+              <h3 className={kidGameplayActive ? "text-lg font-black text-gray-900 uppercase mb-2 flex items-center" : "text-xs font-bold text-cyan-400 uppercase mb-2 flex items-center"}>
+                <Info size={14} className="mr-2" /> {kidGameplayActive ? 'เป้าหมาย!' : 'ภารกิจของคุณ'}
               </h3>
-              <p className={mode === 'kid' ? "text-gray-700 font-bold" : "text-sm text-gray-200"}>
+              <p className={kidGameplayActive ? "text-gray-700 font-bold" : "text-sm text-gray-200"}>
                 {scenario.target_group === 'professional' 
                   ? "จัดการข้อพิพาททางธุรกิจนี้และค้นหาทางออกที่ตอบสนองผู้มีส่วนได้ส่วนเสียในขณะที่ปกป้องผลประโยชน์ของคุณ"
                   : "ช่วยเพื่อนของคุณแก้ไขความขัดแย้งและทำให้ทุกอย่างกลับมาเป็นปกติ"}
@@ -358,12 +369,12 @@ function NegotiateContent(): React.ReactElement {
             </div>
             <button
               onClick={handleStart}
-              className={mode === 'kid'
+              className={kidGameplayActive
                 ? "px-16 py-6 bg-nintendo-red hover:bg-red-500 text-white font-black rounded-3xl transition-all shadow-[0_12px_0_rgba(179,0,14,1)] text-3xl uppercase tracking-tighter hover:translate-y-1 hover:shadow-[0_8px_0_rgba(179,0,14,1)] active:translate-y-3 active:shadow-none"
                 : "px-12 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-xl shadow-cyan-500/20 text-lg hover:scale-105 active:scale-95"
               }
             >
-              {mode === 'kid' ? 'ลุยเลย!' : 'เริ่มการเจรจา'}
+              {kidGameplayActive ? 'ลุยเลย!' : 'เริ่มการเจรจา'}
             </button>
           </div>
         </div>
@@ -426,7 +437,7 @@ function NegotiateContent(): React.ReactElement {
       {/* Main Stage Area */}
       <main 
         className={`flex-1 flex flex-col items-center relative overflow-hidden cursor-pointer transition-colors duration-1000 ${
-          mode === 'kid'
+          kidGameplayActive
             ? 'bg-nintendo-yellow/20 bg-[radial-gradient(#f8cc00_1.5px,transparent_1.5px)] [background-size:40px_40px]' 
             : 'bg-gradient-to-b from-indigo-950/40 via-slate-900 to-black'
         }`}
@@ -445,13 +456,17 @@ function NegotiateContent(): React.ReactElement {
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                if (scenario.target_group === 'professional') return;
                 setMode(prev => prev === 'kid' ? 'adult' : prev === 'adult' ? 'pro' : 'kid');
               }}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center ${
+                scenario.target_group === 'professional' ? 'opacity-60 cursor-default' : ''
+              } ${
                 mode === 'kid' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
                 mode === 'adult' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
                 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
               }`}
+              title={scenario.target_group === 'professional' ? 'สถานการณ์นี้ใช้การพิมพ์อิสระ (โหมดผู้เชี่ยวชาญ)' : undefined}
             >
               {mode === 'kid' ? <><Baby size={16} className="mr-2" /> โหมดเด็ก</> :
                mode === 'adult' ? <><Briefcase size={16} className="mr-2" /> โหมดผู้ใหญ่</> :
@@ -516,7 +531,7 @@ function NegotiateContent(): React.ReactElement {
                 ? 'opacity-0 translate-y-10 pointer-events-none absolute bottom-full' 
                 : 'opacity-100 translate-y-0 relative z-30'
             }`}>
-              {mode === 'kid' ? (
+              {kidGameplayActive ? (
                 <div className="w-full flex flex-col items-center">
                   <div className="bg-white border-4 border-gray-900 px-6 py-2 rounded-full mb-4 text-sm font-black text-gray-900 flex items-center shadow-[0_6px_0_rgba(0,0,0,1)] uppercase tracking-tighter">
                     <Sparkles size={16} className="mr-2 text-nintendo-yellow" /> ปัดเพื่อตัดสินใจ!
@@ -527,14 +542,13 @@ function NegotiateContent(): React.ReactElement {
                     disabled={sending || currentMessageIndex < messages.length - 1 || isTyping}
                   />
                 </div>
-              ) : mode === 'adult' ? (
+              ) : mode === 'adult' && !useFreeTextInput ? (
                 <StrategyBlocks
                   onSelect={(s) => handleSend(s)}
                   disabled={sending || currentMessageIndex < messages.length - 1 || isTyping}
                   isKidMode={false}
                 />
               ) : (
-                /* Pro Mode: Free text input */
                 <div className="w-full border p-2 rounded-[2rem] flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl bg-slate-900/90 border-white/20 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(52,211,153,0.15)]">
                   <div className="pl-6 text-emerald-400">
                     <GraduationCap size={20} />
@@ -573,7 +587,7 @@ function NegotiateContent(): React.ReactElement {
                 isTyping={isTyping}
                 onTypingComplete={() => setIsTyping(false)}
                 isLastMessage={currentMessageIndex === messages.length - 1}
-                isKidMode={mode === 'kid'}
+                isKidMode={kidGameplayActive}
               />
             )}
           </div>
