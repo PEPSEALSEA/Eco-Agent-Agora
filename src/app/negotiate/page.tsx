@@ -76,12 +76,6 @@ function NegotiateContent(): React.ReactElement {
       setScenario(sessionData.scenarios);
       setCharacters(sessionData.scenarios.characters.map((c: any) => ({ ...c, mood: 'neutral' })));
 
-      // Auto-set mode based on scenario title
-      const title: string = sessionData.scenarios.title || '';
-      if (title.includes('เกษตรกร') || title.toLowerCase().includes('farmer') || title.toLowerCase().includes('price deal')) {
-        setMode('pro');
-      }
-
       // Fetch messages
       const { data: messageData, error: messageError } = await supabase
         .from('messages')
