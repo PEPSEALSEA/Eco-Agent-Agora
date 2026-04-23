@@ -49,6 +49,7 @@ function NegotiateContent(): React.ReactElement {
   const [showLogModal, setShowLogModal] = useState(false);
   const [mode, setMode] = useState<'kid' | 'adult' | 'pro'>('kid');
   const [currentDynamicDecisions, setCurrentDynamicDecisions] = useState<any>(null);
+  const [phase, setPhase] = useState<'rapport' | 'discovery' | 'bargaining' | 'closing'>('rapport');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const kidGameplayActive =
@@ -141,6 +142,9 @@ function NegotiateContent(): React.ReactElement {
       Current Scenario: ${scenario.title} - ${scenario.description}
       Characters: ${JSON.stringify(scenario.characters)}
       
+      CURRENT PHASE: ${phase}
+      PHASE GOAL: ${phase === 'rapport' ? 'Build trust and introduce characters.' : phase === 'discovery' ? 'Explore needs and interests.' : phase === 'bargaining' ? 'Negotiate terms and make trade-offs.' : 'Seal the deal or finalize the agreement.'}
+
       TASK: Provide an initial greeting and opening statement from the key characters to start the negotiation. 
       The player is a negotiator trying to achieve the following: ${scenario.target_group === 'professional' ? 'Resolve the conflict fairly while meeting business goals.' : 'Help friends resolve their conflict.'}
       
@@ -153,7 +157,8 @@ function NegotiateContent(): React.ReactElement {
         "next_decisions": {
           "left": {"id": "empathy_1", "label": "Empathy", "thaiLabel": "เข้าใจความรู้สึก", "description": "...", "type": "empathy"},
           "right": {"id": "logic_1", "label": "Offer Solution", "thaiLabel": "เสนอทางออก", "description": "...", "type": "logic"}
-        }
+        },
+        "suggested_phase": "rapport|discovery|bargaining|closing"
       }
     `;
 
@@ -182,6 +187,9 @@ function NegotiateContent(): React.ReactElement {
 
       if (geminiData.next_decisions) {
         setCurrentDynamicDecisions(geminiData.next_decisions);
+      }
+      if (geminiData.suggested_phase) {
+        setPhase(geminiData.suggested_phase);
       }
     } catch (err: unknown) {
       console.error(err);
@@ -230,11 +238,16 @@ function NegotiateContent(): React.ReactElement {
     const systemInstruction = `
       You are a multi-character negotiation simulator ${kidGameplayActive ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
       Characters: ${JSON.stringify(scenario.characters)}
+      
+      CURRENT PHASE: ${phase}
+      PHASE GOAL: ${phase === 'rapport' ? 'Establish rapport and trust. Do not rush into offers.' : phase === 'discovery' ? 'Ask questions and find out what stakeholders value most.' : phase === 'bargaining' ? 'Exchange value. If you give something up, ask for something in return.' : 'Finalize details and confirm commitment.'}
+      
       Rules: Respond based on agenda/personality. Adjust tone based on user's message.
       ${kidGameplayActive ? `USER STRATEGY CHOSEN: ${strategyIntent}. 
       CRITICAL KID MODE RULES: RESPONSES MUST BE EXTREMELY SHORT (max 1 short sentence, 5-8 words max). 
       Use simple, expressive Thai. Use heavy emojis. Be direct and emotional.
       ALSO, generate the next two dynamic negotiation choices for the player (left and right) based on the current situation.` : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
+      
       Format:
       {
         "characters": [{"name": "...", "mood": "open|neutral|resistant", "message": "ข้อความภาษาไทย..."}],
@@ -242,7 +255,8 @@ function NegotiateContent(): React.ReactElement {
         "next_decisions": {
           "left": {"id": "...", "label": "...", "thaiLabel": "...", "description": "...", "type": "empathy|logic|boundary|trade|ask|apology"},
           "right": {"id": "...", "label": "...", "thaiLabel": "...", "description": "...", "type": "..."}
-        }
+        },
+        "suggested_phase": "rapport|discovery|bargaining|closing"
       }
     `;
 
@@ -250,7 +264,7 @@ function NegotiateContent(): React.ReactElement {
     let chatHistory = messages.map(m => ({
       role: m.sender === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }]
-    })).slice(-15);
+    })).slice(-25); // Increased history to 25 messages
     
     // Gemini requirement: First message must be 'user'
     // If history starts with 'model', prepend a synthetic user start message
@@ -294,6 +308,9 @@ function NegotiateContent(): React.ReactElement {
 
       if (geminiData.next_decisions) {
         setCurrentDynamicDecisions(geminiData.next_decisions);
+      }
+      if (geminiData.suggested_phase) {
+        setPhase(geminiData.suggested_phase);
       }
 
       // 4. Save Feedback
@@ -458,7 +475,13 @@ function NegotiateContent(): React.ReactElement {
             <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 drop-shadow-md">
               {scenario.title}
             </h1>
-            <p className="text-sm text-gray-300 drop-shadow-md mt-1">ระดับการเจรจา: ปานกลาง</p>
+            <p className="text-sm text-gray-300 drop-shadow-md mt-1">
+              เฟสปัจจุบัน: {
+                phase === 'rapport' ? 'สานสัมพันธ์' : 
+                phase === 'discovery' ? 'สำรวจความต้องการ' : 
+                phase === 'bargaining' ? 'ต่อรอง' : 'สรุปข้อตกลง'
+              }
+            </p>
           </div>
           <div className="flex items-center space-x-3 bg-black/40 p-2 rounded-2xl backdrop-blur-md border border-white/5">
             {/* Mode Cycle: kid → adult → pro → kid */}

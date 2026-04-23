@@ -12,6 +12,8 @@ type Skill = {
   xp: number;
 };
 
+const ADMIN_EMAILS = ['sealseapep@gmail.com'];
+
 type Session = {
   id: string;
   started_at: string;
@@ -108,12 +110,22 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-          <button 
-            onClick={handleLogout}
-            className="flex items-center text-gray-400 hover:text-red-400 transition-colors bg-white/5 px-4 py-2 rounded-lg border border-white/10"
-          >
-            <LogOut size={18} className="mr-2" /> ออกจากระบบ
-          </button>
+          <div className="flex space-x-3">
+            {user && ADMIN_EMAILS.includes(user.email) && (
+              <button 
+                onClick={() => router.push('/admin/scenarios')}
+                className="flex items-center text-gray-400 hover:text-cyan-400 transition-colors bg-white/5 px-4 py-2 rounded-lg border border-white/10"
+              >
+                <Edit2 size={18} className="mr-2" /> จัดการสถานการณ์
+              </button>
+            )}
+            <button 
+              onClick={handleLogout}
+              className="flex items-center text-gray-400 hover:text-red-400 transition-colors bg-white/5 px-4 py-2 rounded-lg border border-white/10"
+            >
+              <LogOut size={18} className="mr-2" /> ออกจากระบบ
+            </button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
