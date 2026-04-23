@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { User, Flame, Award, Calendar, ChevronRight, LogOut, ChevronUp } from 'lucide-react';
+import { User, Flame, Award, Calendar, ChevronRight, LogOut } from 'lucide-react';
+import { gasFetch } from '@/lib/gas';
 
 type Skill = {
   skill_name: string;
@@ -16,11 +16,11 @@ type Session = {
   id: string;
   started_at: string;
   outcome_score: number;
-  scenarios: { title: string };
+  scenario_title: string;
 };
 
 export default function ProfilePage() {
-  const { user, session } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -28,38 +28,46 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
 
     const fetchData = async () => {
-      // Fetch user specific data
-      const { data: userProfile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      const { data: skillData } = await supabase
-        .from('skill_progress')
-        .select('*')
-        .eq('user_id', user.id);
+      try {
+        const allData = await gasFetch('read_all');
+        if (allData.error) throw new Error(allData.error);
 
-      const { data: sessionData } = await supabase
-        .from('sessions')
-        .select('*, scenarios(title)')
-        .eq('user_id', user.id)
-        .order('started_at', { ascending: false });
+        // Fetch user specific data
+        const profile = allData.users.find((u: any) => u.email === user.email);
+        const skillData = allData.skill_progress.filter((s: any) => s.user_id === user.id);
+        
+        const sessionHistory = allData.sessions
+          .filter((s: any) => s.user_id === user.id)
+          .map((s: any) => {
+            const scenario = allData.scenarios.find((sc: any) => sc.id === s.scenario_id);
+            return {
+              ...s,
+              scenario_title: scenario ? scenario.title : 'Unknown Scenario'
+            };
+          })
+          .sort((a: any, b: any) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
 
-      setUserData(userProfile);
-      setSkills(skillData || []);
-      setHistory(sessionData || []);
-      setLoading(false);
+        setUserData(profile);
+        setSkills(skillData || []);
+        setHistory(sessionHistory || []);
+      } catch (err) {
+        console.error('Fetch profile data error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
-  }, [user]);
+  }, [user, router]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    logout();
     router.push('/login');
   };
 
@@ -78,11 +86,15 @@ export default function ProfilePage() {
       <div className="max-w-6xl mx-auto">
         <header className="flex justify-between items-start mb-12">
           <div className="flex items-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center mr-6 shadow-xl shadow-cyan-500/10">
-              <User size={40} />
+            <div className="w-20 h-20 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center mr-6 shadow-xl shadow-cyan-500/10 overflow-hidden">
+              {user?.picture ? (
+                <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <User size={40} />
+              )}
             </div>
             <div>
-              <h1 className="text-3xl font-bold">{user?.email?.split('@')[0]}</h1>
+              <h1 className="text-3xl font-bold">{user?.name || user?.email?.split('@')[0]}</h1>
               <p className="text-gray-400 text-sm">{user?.email}</p>
               <div className="flex mt-2 space-x-4">
                  <div className="flex items-center text-orange-400 bg-orange-400/10 px-3 py-1 rounded-full border border-orange-400/20">
@@ -105,7 +117,6 @@ export default function ProfilePage() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Skill Tree */}
           <section className="lg:col-span-2">
             <h2 className="text-xl font-bold mb-6 flex items-center">
                <Award size={20} className="mr-2 text-cyan-400" /> Skill Mastery
@@ -137,7 +148,6 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          {/* Activity History */}
           <section>
             <h2 className="text-xl font-bold mb-6 flex items-center">
                <Calendar size={20} className="mr-2 text-purple-400" /> Recent Sessions
@@ -150,7 +160,7 @@ export default function ProfilePage() {
                   className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between hover:border-cyan-500/50 cursor-pointer transition-all"
                 >
                   <div>
-                    <h4 className="text-sm font-bold">{session.scenarios.title}</h4>
+                    <h4 className="text-sm font-bold">{session.scenario_title}</h4>
                     <p className="text-[10px] text-gray-400">{new Date(session.started_at).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">

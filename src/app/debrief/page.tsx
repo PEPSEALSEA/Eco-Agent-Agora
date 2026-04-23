@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { gasFetch } from '@/lib/gas';
 import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
 import { ArrowLeft, RefreshCcw, TrendingUp, Zap, HelpCircle } from 'lucide-react';
@@ -23,27 +23,23 @@ function DebriefContent() {
     if (!sessionId) return;
     
     const fetchData = async () => {
-      const { data: sessionData } = await supabase
-        .from('sessions')
-        .select('*, scenarios(*)')
-        .eq('id', sessionId)
-        .single();
-      
-      const { data: messageData } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+      try {
+        const allData = await gasFetch('read_all');
+        if (allData.error) throw new Error(allData.error);
 
-      const { data: feedbackData } = await supabase
-        .from('feedback_logs')
-        .select('*')
-        .eq('session_id', sessionId);
+        const sessionData = allData.sessions.find((s: any) => s.id === sessionId);
+        const messageData = allData.messages.filter((m: any) => m.session_id === sessionId)
+          .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        const feedbackData = allData.feedback_logs.filter((f: any) => f.session_id === sessionId);
 
-      setSession(sessionData);
-      setMessages(messageData || []);
-      setFeedback(feedbackData || []);
-      setLoading(false);
+        setSession(sessionData);
+        setMessages(messageData || []);
+        setFeedback(feedbackData || []);
+      } catch (err) {
+        console.error('Fetch debrief data error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
@@ -112,7 +108,14 @@ function DebriefContent() {
           <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-white/10">
             {messages.filter(m => m.sender === 'user').map((m, i) => {
               const f = feedback.find(fb => fb.message_id === m.id);
-              const dims = f ? JSON.parse(f.dimension) : null;
+              let dims = null;
+              if (f && f.dimension) {
+                try {
+                  dims = typeof f.dimension === 'string' ? JSON.parse(f.dimension) : f.dimension;
+                } catch (e) {
+                  console.error('Dimension parse error', e);
+                }
+              }
               
               return (
                 <div key={i} className="relative pl-12">

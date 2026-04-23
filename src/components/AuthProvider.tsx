@@ -1,76 +1,58 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Session, User } from '@supabase/supabase-js';
+
+type User = {
+  id: string;
+  email: string;
+  name?: string;
+  picture?: string;
+};
 
 type AuthContextType = {
-  session: Session | null;
   user: User | null;
   loading: boolean;
+  login: (userData: User) => void;
+  logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
-  session: null,
   user: null,
   loading: true,
+  login: () => {},
+  logout: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Initial session fetch
-    const initSession = async () => {
+    // Load user from localStorage on init
+    const savedUser = localStorage.getItem('eco-agent-user');
+    if (savedUser) {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        setSession(session);
-        setUser(session?.user || null);
-        
-        if (session?.user) {
-          // Silent sync
-          await supabase.from('users').upsert({
-            id: session.user.id,
-            email: session.user.email,
-          }, { onConflict: 'id' }).select('id').single();
-        }
-      } catch (err) {
-        // Silent error for session init
-      } finally {
-        setLoading(false);
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error('Failed to parse saved user');
+        localStorage.removeItem('eco-agent-user');
       }
-    };
-
-    initSession();
-
-    // 2. Listen for auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user || null);
-      setLoading(false);
-      
-      if (session?.user) {
-        try {
-          await supabase.from('users').upsert({
-            id: session.user.id,
-            email: session.user.email,
-          }, { onConflict: 'id' }).select('id').single();
-        } catch (e) {
-          // Ignore sync errors
-        }
-      }
-    });
-
-    return () => {
-      listener?.subscription.unsubscribe();
-    };
+    }
+    setLoading(false);
   }, []);
 
+  const login = (userData: User) => {
+    setUser(userData);
+    localStorage.setItem('eco-agent-user', JSON.stringify(userData));
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('eco-agent-user');
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, loading }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

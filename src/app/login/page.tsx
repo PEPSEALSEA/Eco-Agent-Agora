@@ -1,69 +1,54 @@
 'use client';
 
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
+import { useGoogleLogin } from '@react-oauth/google';
+import { gasPost } from '@/lib/gas';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { login } = useAuth();
   const router = useRouter();
 
-  const getRedirectUrl = (path: string) => {
-    const origin = window.location.origin;
-    // Handle GitHub Pages subpath
-    const base = origin.includes('github.io') ? '/Eco-Agent-Agora' : '';
-    return `${origin}${base}${path}`;
-  };
-
-  const handleAuth = async (isSignUp: boolean) => {
+  const handleGoogleSuccess = async (tokenResponse: any) => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = isSignUp
-        ? await supabase.auth.signUp({ 
-            email, 
-            password,
-            options: {
-              emailRedirectTo: getRedirectUrl('/scenarios'),
-            }
-          })
-        : await supabase.auth.signInWithPassword({ email, password });
+      // Fetch user profile from Google
+      const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+      });
+      const googleUser = await res.json();
 
-      if (error) throw error;
+      const userData = {
+        id: googleUser.sub,
+        email: googleUser.email,
+        name: googleUser.name,
+        picture: googleUser.picture,
+        created_at: new Date().toISOString(),
+      };
+
+      // Save to GAS
+      await gasPost('upsert', 'users', userData, { queryField: 'email', queryValue: userData.email });
+
+      // Save to Auth Context
+      login(userData);
       
-      if (data.user) {
-        if (isSignUp && !data.session) {
-          setError('Please check your email to confirm your registration.');
-        } else {
-          router.push('/scenarios');
-        }
-      }
+      router.push('/scenarios');
     } catch (err: any) {
-      setError(err.message);
+      console.error('Login error:', err);
+      setError('Failed to sign in with Google. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: getRedirectUrl('/scenarios'),
-        },
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
+  const googleLogin = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => setError('Google Login Failed'),
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-black p-4">
@@ -74,39 +59,14 @@ export default function LoginPage() {
         <p className="text-gray-300 text-center mb-8">Master the Art of Negotiation</p>
         
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all"
-              placeholder="you@example.com"
-            />
+          <div className="text-center py-4">
+            <p className="text-gray-400 text-sm mb-6">Welcome! Please sign in to continue.</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all"
-              placeholder="••••••••"
-            />
-          </div>
-          
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          
-          <button
-            onClick={() => handleAuth(false)}
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50"
-          >
-            {loading ? 'Processing...' : 'Login'}
-          </button>
 
+          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+          
           <button
-            onClick={handleGoogleLogin}
+            onClick={() => googleLogin()}
             disabled={loading}
             className="w-full bg-white text-gray-900 font-bold py-3 rounded-lg transition-all flex items-center justify-center space-x-2 hover:bg-gray-100 disabled:opacity-50"
           >
@@ -128,29 +88,15 @@ export default function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z"
               />
             </svg>
-            <span>Sign in with Google</span>
+            <span>{loading ? 'Signing in...' : 'Sign in with Google'}</span>
           </button>
           
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-transparent text-gray-400">or</span>
-            </div>
+          <div className="mt-8 pt-8 border-t border-white/10 text-center">
+            <p className="text-xs text-gray-500">
+              By signing in, you agree to our Terms of Service and Privacy Policy.
+              Your data is stored in your private Google Sheet.
+            </p>
           </div>
-          
-          <button
-            onClick={() => handleAuth(true)}
-            disabled={loading}
-            className="w-full bg-white/5 hover:bg-white/10 border border-white/20 text-white font-bold py-3 rounded-lg transition-all"
-          >
-            Create Account
-          </button>
-
-          <p className="text-[10px] text-gray-500 text-center mt-4">
-            Note: Your password is saved securely in Supabase's encrypted authentication table.
-          </p>
         </div>
       </div>
     </div>

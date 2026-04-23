@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { Users, Briefcase, GraduationCap, User } from 'lucide-react';
+import { gasFetch, gasPost, uuid } from '@/lib/gas';
 import Link from 'next/link';
 
 type Scenario = {
@@ -22,17 +22,21 @@ export default function ScenariosPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Only redirect if auth is NO LONGER loading AND there is no user
     if (!authLoading && !user) {
       router.push('/login');
       return;
     }
 
     const fetchScenarios = async () => {
-      const { data, error } = await supabase.from('scenarios').select('*');
-      if (error) console.error(error);
-      else setScenarios(data || []);
-      setLoading(false);
+      try {
+        const data = await gasFetch('read', 'scenarios');
+        if (data.error) throw new Error(data.error);
+        setScenarios(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Fetch scenarios error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     if (user) {
@@ -44,6 +48,7 @@ export default function ScenariosPage() {
     setLoading(true);
     const sampleScenarios = [
       {
+        id: uuid(),
         title: "The Project Deadline",
         description: "A team member is behind on their deliverables, risking the whole project. Negotiate a way forward without ruining morale.",
         target_group: "professional",
@@ -53,6 +58,7 @@ export default function ScenariosPage() {
         ]
       },
       {
+        id: uuid(),
         title: "Salary Negotiation",
         description: "You're asking for a 20% raise after a successful year. The company is having a 'lean year'.",
         target_group: "professional",
@@ -62,56 +68,43 @@ export default function ScenariosPage() {
       }
     ];
 
-    const { error } = await supabase.from('scenarios').insert(sampleScenarios);
-    if (error) {
-      console.error(error);
-      alert('Failed to seed: ' + error.message);
-    } else {
-      const { data } = await supabase.from('scenarios').select('*');
-      setScenarios(data || []);
+    try {
+      for (const s of sampleScenarios) {
+        await gasPost('create', 'scenarios', s);
+      }
+      const data = await gasFetch('read', 'scenarios');
+      setScenarios(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Seed error:', err);
+      alert('Failed to seed scenarios');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const startSession = async (scenarioId: string) => {
-    if (loading || authLoading) return;
+    if (loading || authLoading || !user) return;
     
     setLoading(true);
+    const sessionId = uuid();
     
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
     try {
-      const { data, error } = await supabase
-        .from('sessions')
-        .insert([
-          { user_id: user.id, scenario_id: scenarioId, status: 'ongoing' }
-        ])
-        .select()
-        .single();
+      const sessionData = {
+        id: sessionId,
+        user_id: user.id,
+        scenario_id: scenarioId,
+        status: 'ongoing',
+        started_at: new Date().toISOString()
+      };
 
-      if (error) {
-        console.error('Session start error:', error);
-        
-        if (error.code === '23503') {
-           // Foreign key violation means public.users record is missing
-           alert('Your profile is still being set up. Please wait a few seconds and try again!');
-        } else if (error.code === '42501') {
-           // RLS error
-           alert('Database permission error. Please make sure you have run the updated SQL in your Supabase dashboard!');
-        } else {
-           alert('Error starting session: ' + error.message);
-        }
-        setLoading(false);
-        return;
-      }
+      const result = await gasPost('create', 'sessions', sessionData);
+      
+      if (result.error) throw new Error(result.error);
 
-      router.push(`/negotiate?sessionId=${data.id}`);
+      router.push(`/negotiate?sessionId=${sessionId}`);
     } catch (err: any) {
-      console.error('Catch error:', err);
-      alert('An unexpected error occurred: ' + err.message);
+      console.error('Session start error:', err);
+      alert('Error starting session: ' + err.message);
       setLoading(false);
     }
   };
@@ -141,7 +134,7 @@ export default function ScenariosPage() {
             </div>
             <div className="text-left">
               <p className="text-xs text-gray-400 font-black uppercase leading-none mb-1">Trainer</p>
-              <p className="text-xl text-gray-900 font-black uppercase tracking-tighter leading-none">{user?.email?.split('@')[0]}</p>
+              <p className="text-xl text-gray-900 font-black uppercase tracking-tighter leading-none">{user?.name || user?.email?.split('@')[0]}</p>
             </div>
           </Link>
         </header>
@@ -174,7 +167,7 @@ export default function ScenariosPage() {
                       className="w-12 h-12 rounded-2xl bg-white border-4 border-gray-900 flex items-center justify-center text-lg font-black text-gray-900 shadow-lg rotate-3 odd:-rotate-3"
                       title={char.name}
                     >
-                      {char.name.charAt(0)}
+                      {char.name?.charAt(0) || '?'}
                     </div>
                   ))}
                 </div>
@@ -196,12 +189,12 @@ export default function ScenariosPage() {
           ))}
 
           {scenarios.length === 0 && !loading && (
-            <div className="col-span-full py-20 text-center bg-white/5 border border-dashed border-white/10 rounded-3xl">
-              <h3 className="text-2xl font-bold mb-2">No Scenarios Prepared</h3>
-              <p className="text-gray-400 mb-8">It looks like the training grounds are empty.</p>
+            <div className="col-span-full py-20 text-center bg-white border-4 border-dashed border-gray-900 rounded-[3rem]">
+              <h3 className="text-3xl font-black mb-2 uppercase">No Scenarios Prepared</h3>
+              <p className="text-gray-500 font-bold mb-8 uppercase">It looks like the training grounds are empty.</p>
               <button 
                 onClick={seedScenarios}
-                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-lg shadow-cyan-500/20"
+                className="bg-nintendo-red hover:bg-red-600 text-white font-black px-8 py-3 rounded-2xl border-4 border-gray-900 shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 transition-all uppercase tracking-tighter"
               >
                 Seed Sample Scenarios
               </button>
