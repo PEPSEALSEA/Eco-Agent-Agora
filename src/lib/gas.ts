@@ -1,5 +1,5 @@
 const GAS_URL = process.env.NEXT_PUBLIC_GAS_URL;
-const SECRET_KEY = process.env.GAS_SECRET_KEY;
+const SECRET_KEY = process.env.NEXT_PUBLIC_GAS_SECRET_KEY;
 
 export function uuid() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
