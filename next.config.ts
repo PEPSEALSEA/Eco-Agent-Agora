@@ -6,20 +6,10 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  // Add headers for local development
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin-allow-popups',
-          },
-        ],
-      },
-    ];
-  },
+  /* 
+  Note: Custom headers are not supported with 'output: export'.
+  If you need COOP headers for OAuth, they must be configured on your hosting provider (e.g., Vercel, Cloudflare, Nginx).
+  */
 };
 
 export default nextConfig;
