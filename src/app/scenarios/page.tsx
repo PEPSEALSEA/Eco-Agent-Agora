@@ -49,21 +49,21 @@ export default function ScenariosPage() {
     const sampleScenarios = [
       {
         id: uuid(),
-        title: "The Project Deadline",
-        description: "A team member is behind on their deliverables, risking the whole project. Negotiate a way forward without ruining morale.",
+        title: "เส้นตายโครงการ",
+        description: "สมาชิกในทีมทำงานล่าช้ากว่ากำหนด ซึ่งเสี่ยงต่อความล้มเหลวของทั้งโครงการ จงเจรจาเพื่อหาทางออกโดยไม่ทำให้ขวัญกำลังใจเสีย",
         target_group: "professional",
         characters: [
-          { name: "Alex (The Developer)", role: "Overworked senior dev", agenda: "Needs more time or fewer tasks", personality: "Defensive but competent" },
-          { name: "Sarah (Product Manager)", role: "Stressed PM", agenda: "Wants the project done on time", personality: "Direct and results-oriented" }
+          { name: "อเล็กซ์ (นักพัฒนา)", role: "นักพัฒนาอาวุโสที่ทำงานหนักเกินไป", agenda: "ต้องการเวลาเพิ่มหรือลดภาระงาน", personality: "ระแวดระวังแต่มีความสามารถ" },
+          { name: "ซาร่า (ผู้จัดการผลิตภัณฑ์)", role: "ผู้จัดการที่กำลังเครียด", agenda: "ต้องการให้โครงการเสร็จตรงเวลา", personality: "ตรงไปตรงมาและเน้นผลลัพธ์" }
         ]
       },
       {
         id: uuid(),
-        title: "Salary Negotiation",
-        description: "You're asking for a 20% raise after a successful year. The company is having a 'lean year'.",
+        title: "การต่อรองเงินเดือน",
+        description: "คุณกำลังขอขึ้นเงินเดือน 20% หลังจากปีที่ประสบความสำเร็จ แต่บริษัทกำลังอยู่ในช่วง 'ปีที่ต้องประหยัด'",
         target_group: "professional",
         characters: [
-          { name: "Mr. Henderson", role: "Department Head", agenda: "Minimize costs while keeping talent", personality: "Friendly but says 'no' a lot" }
+          { name: "คุณเฮนเดอร์สัน", role: "หัวหน้าแผนก", agenda: "พยายามลดค่าใช้จ่ายในขณะที่ยังรักษาบุคลากรเก่งๆ ไว้", personality: "เป็นกันเองแต่มักจะตอบว่า 'ไม่'" }
         ]
       }
     ];
@@ -122,8 +122,8 @@ export default function ScenariosPage() {
       <div className="max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-16">
           <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[3rem] shadow-[0_12px_0_rgba(0,0,0,1)] -rotate-1">
-            <h1 className="text-6xl font-black text-gray-900 mb-2 uppercase tracking-tighter">Choose Your Mission!</h1>
-            <p className="text-gray-500 font-bold text-xl uppercase tracking-tighter">Select a situation to practice your negotiation skills.</p>
+            <h1 className="text-6xl font-black text-gray-900 mb-2 uppercase tracking-tighter">เลือกภารกิจของคุณ!</h1>
+            <p className="text-gray-500 font-bold text-xl uppercase tracking-tighter">เลือกสถานการณ์เพื่อฝึกฝนทักษะการเจรจาต่อรองของคุณ</p>
           </div>
           <Link 
             href="/profile"
@@ -133,7 +133,7 @@ export default function ScenariosPage() {
               <User size={24} strokeWidth={3} />
             </div>
             <div className="text-left">
-              <p className="text-xs text-gray-400 font-black uppercase leading-none mb-1">Trainer</p>
+              <p className="text-xs text-gray-400 font-black uppercase leading-none mb-1">ผู้ฝึกสอน</p>
               <p className="text-xl text-gray-900 font-black uppercase tracking-tighter leading-none">{user?.name || user?.email?.split('@')[0]}</p>
             </div>
           </Link>
@@ -176,11 +176,11 @@ export default function ScenariosPage() {
                   {loading ? (
                     <span className="flex items-center text-gray-400">
                       <div className="animate-spin rounded-full h-6 w-6 border-4 border-gray-400 border-t-transparent mr-3"></div>
-                      LOADING...
+                      กำลังโหลด...
                     </span>
                   ) : (
                     <>
-                      START MISSION <span className="opacity-0 group-hover:opacity-100 transition-all">→</span>
+                      เริ่มภารกิจ <span className="opacity-0 group-hover:opacity-100 transition-all">→</span>
                     </>
                   )}
                 </div>
@@ -190,13 +190,13 @@ export default function ScenariosPage() {
 
           {scenarios.length === 0 && !loading && (
             <div className="col-span-full py-20 text-center bg-white border-4 border-dashed border-gray-900 rounded-[3rem]">
-              <h3 className="text-3xl font-black mb-2 uppercase">No Scenarios Prepared</h3>
-              <p className="text-gray-500 font-bold mb-8 uppercase">It looks like the training grounds are empty.</p>
+              <h3 className="text-3xl font-black mb-2 uppercase">ยังไม่มีสถานการณ์เตรียมไว้</h3>
+              <p className="text-gray-500 font-bold mb-8 uppercase">ดูเหมือนว่าสนามฝึกซ้อมจะว่างเปล่า</p>
               <button 
                 onClick={seedScenarios}
                 className="bg-nintendo-red hover:bg-red-600 text-white font-black px-8 py-3 rounded-2xl border-4 border-gray-900 shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 transition-all uppercase tracking-tighter"
               >
-                Seed Sample Scenarios
+                สร้างสถานการณ์ตัวอย่าง
               </button>
             </div>
           )}

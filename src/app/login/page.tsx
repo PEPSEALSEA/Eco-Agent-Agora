@@ -39,7 +39,7 @@ export default function LoginPage() {
       router.push('/scenarios');
     } catch (err: any) {
       console.error('Login error:', err);
-      setError('Failed to sign in with Google. Please try again.');
+      setError('การลงชื่อเข้าใช้ด้วย Google ล้มเหลว โปรดลองอีกครั้ง');
     } finally {
       setLoading(false);
     }
@@ -47,7 +47,7 @@ export default function LoginPage() {
 
   const googleLogin = useGoogleLogin({
     onSuccess: handleGoogleSuccess,
-    onError: () => setError('Google Login Failed'),
+    onError: () => setError('การลงชื่อเข้าใช้ Google ล้มเหลว'),
   });
 
   return (
@@ -56,11 +56,11 @@ export default function LoginPage() {
         <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-2 text-center">
           Eco-Agent Agora
         </h1>
-        <p className="text-gray-300 text-center mb-8">Master the Art of Negotiation</p>
+        <p className="text-gray-300 text-center mb-8">เชี่ยวชาญศิลปะการเจรจาต่อรอง</p>
         
         <div className="space-y-4">
           <div className="text-center py-4">
-            <p className="text-gray-400 text-sm mb-6">Welcome! Please sign in to continue.</p>
+            <p className="text-gray-400 text-sm mb-6">ยินดีต้อนรับ! โปรดลงชื่อเข้าใช้เพื่อดำเนินการต่อ</p>
           </div>
 
           {error && <p className="text-red-400 text-sm text-center">{error}</p>}
@@ -88,13 +88,13 @@ export default function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z"
               />
             </svg>
-            <span>{loading ? 'Signing in...' : 'Sign in with Google'}</span>
+            <span>{loading ? 'กำลังลงชื่อเข้าใช้...' : 'ลงชื่อเข้าใช้ด้วย Google'}</span>
           </button>
           
           <div className="mt-8 pt-8 border-t border-white/10 text-center">
             <p className="text-xs text-gray-500">
-              By signing in, you agree to our Terms of Service and Privacy Policy.
-              Your data is stored in your private Google Sheet.
+              การลงชื่อเข้าใช้แสดงว่าคุณยอมรับข้อตกลงการให้บริการและนโยบายความเป็นส่วนตัวของเรา
+              ข้อมูลของคุณจะถูกเก็บไว้ใน Google Sheet ส่วนตัวของคุณ
             </p>
           </div>
         </div>
