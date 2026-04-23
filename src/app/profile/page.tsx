@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { User, Flame, Award, Calendar, ChevronRight, LogOut, Edit2 } from 'lucide-react';
+import { User, Flame, Award, Calendar, ChevronRight, LogOut, Edit2, Globe } from 'lucide-react';
 import { gasFetch } from '@/lib/gas';
 
 type Skill = {
