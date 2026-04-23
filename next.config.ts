@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  trailingSlash: true,
   /* 
   Note: Custom headers are not supported with 'output: export'.
   If you need COOP headers for OAuth, they must be configured on your hosting provider (e.g., Vercel, Cloudflare, Nginx).
