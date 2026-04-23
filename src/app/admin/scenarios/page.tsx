@@ -131,14 +131,22 @@ export default function AdminScenariosPage() {
             <ArrowLeft size={18} className="mr-2" /> กลับไปหน้าภารกิจ
           </button>
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">
-            จัดการสถานการณ์ (Scenario Editor)
+            จัดการสถานการณ์
           </h1>
-          <button 
-            onClick={handleCreate}
-            className="flex items-center px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold transition-all shadow-lg shadow-cyan-500/20"
-          >
-            <Plus size={18} className="mr-2" /> เพิ่มสถานการณ์
-          </button>
+          <div className="flex space-x-3">
+            <button 
+              onClick={() => router.push('/admin/settings')}
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-bold border border-white/10 transition-all"
+            >
+              ตั้งค่าระบบ
+            </button>
+            <button 
+              onClick={handleCreate}
+              className="flex items-center px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold transition-all shadow-lg shadow-cyan-500/20"
+            >
+              <Plus size={18} className="mr-2" /> เพิ่มสถานการณ์
+            </button>
+          </div>
         </header>
 
         {editingId && editForm && (
