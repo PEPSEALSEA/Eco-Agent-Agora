@@ -22,7 +22,13 @@ export async function gasFetch(action: string, table?: string, id?: string) {
 
   try {
     const response = await fetch(url.toString());
-    return await response.json();
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('Failed to parse GAS response:', text);
+      return { error: 'Invalid JSON response', details: text };
+    }
   } catch (err) {
     console.error('GAS Fetch Error:', err);
     return { error: err };
@@ -38,11 +44,10 @@ export async function gasPost(action: 'create' | 'update' | 'upsert', table: str
   try {
     const response = await fetch(GAS_URL, {
       method: 'POST',
-      mode: 'no-cors', // GAS often requires no-cors for simple POST, but it won't return JSON. 
-      // Better: GAS usually handles CORS if you return JSON correctly. 
-      // Using 'cors' is preferred if the GAS script is set up for it.
+      mode: 'cors', // Use 'cors' to allow reading the response
       headers: {
-        'Content-Type': 'application/json',
+        // Use 'text/plain' to avoid preflight OPTIONS request
+        'Content-Type': 'text/plain;charset=utf-8',
       },
       body: JSON.stringify({
         action,
@@ -53,9 +58,15 @@ export async function gasPost(action: 'create' | 'update' | 'upsert', table: str
       }),
     });
     
-    // Note: GAS redirection can sometimes cause issues with fetch in some environments.
-    // Usually, ContentService returns a 200 with the JSON body.
-    return await response.json();
+    // GAS returns a 302 redirect which fetch follows. 
+    // The final response should be the JSON from jsonResponse().
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('Failed to parse GAS response:', text);
+      return { error: 'Invalid JSON response', details: text };
+    }
   } catch (err) {
     console.error('GAS Post Error:', err);
     return { error: err };

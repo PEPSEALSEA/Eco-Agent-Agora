@@ -6,6 +6,20 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  // Add headers for local development
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
