@@ -23,6 +23,7 @@ type Character = {
 
 type Message = {
   id?: string;
+  session_id?: string;
   sender: 'user' | 'ai';
   character_name?: string;
   content: string;
@@ -161,9 +162,9 @@ function NegotiateContent(): React.ReactElement {
       const aiMessages: any[] = [];
       
       for (const charResp of geminiData.characters) {
-        const aiMsgData = {
+        const aiMsgData: Message = {
           id: uuid(),
-          session_id: sessionId,
+          session_id: sessionId!,
           sender: 'ai',
           character_name: charResp.name,
           content: charResp.message,
@@ -204,9 +205,9 @@ function NegotiateContent(): React.ReactElement {
     setInput('');
 
     // 1. Save User Message
-    const userMsg = {
+    const userMsg: Message = {
       id: uuid(),
-      session_id: sessionId,
+      session_id: sessionId!,
       sender: 'user',
       content: userMessageContent,
       created_at: new Date().toISOString()
@@ -268,9 +269,9 @@ function NegotiateContent(): React.ReactElement {
       // 4. Process AI Responses
       const aiMessages: any[] = [];
       for (const charResp of geminiData.characters) {
-        const aiMsgData = {
+        const aiMsgData: Message = {
           id: uuid(),
-          session_id: sessionId,
+          session_id: sessionId!,
           sender: 'ai',
           character_name: charResp.name,
           content: charResp.message,
