@@ -21,7 +21,7 @@ const mali = Mali({
 });
 
 export const metadata: Metadata = {
-  title: "Eco-Agent Agora",
+  title: "Wongjra Ja",
   description: "Negotiation skill training simulator using AI characters.",
 };
 
