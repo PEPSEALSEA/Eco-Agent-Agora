@@ -85,6 +85,61 @@ export async function gasPost(action: 'create' | 'update' | 'upsert', table: str
 }
 
 /**
+ * Optimized: Fetch with Stale-While-Revalidate (SWR) pattern
+ * Returns cached data immediately if available, then fetches fresh data.
+ * @param callback Optional callback for when fresh data is received
+ */
+export async function gasFetchWithSWR(action: string, table: string, options: { id?: string, forceRefresh?: boolean } = {}, onUpdate?: (data: any) => void) {
+  const cacheKey = `gas-swr-${table}-${options.id || 'all'}`;
+  const { url: GAS_URL, key: SECRET_KEY } = getGasConfig();
+  
+  // 1. Get cached data
+  const cached = typeof window !== 'undefined' ? localStorage.getItem(cacheKey) : null;
+  let cachedData = null;
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      cachedData = parsed.data;
+      
+      // If not forcing refresh and cache is very fresh (e.g. < 30s), just return it
+      if (!options.forceRefresh && (Date.now() - parsed.timestamp < 30000)) {
+        return { data: cachedData, source: 'cache_fresh' };
+      }
+    } catch (e) {
+      console.error('Cache parse error');
+    }
+  }
+
+  // 2. Fetch fresh data (non-blocking if we have cache)
+  const fetchFresh = async () => {
+    try {
+      const freshData = await gasFetch(action, table, options.id);
+      if (!freshData.error) {
+        localStorage.setItem(cacheKey, JSON.stringify({
+          data: freshData,
+          timestamp: Date.now()
+        }));
+        if (onUpdate) onUpdate(freshData);
+        return freshData;
+      }
+    } catch (err) {
+      console.error('SWR Background Fetch Error:', err);
+    }
+    return null;
+  };
+
+  if (cachedData && !options.forceRefresh) {
+    // Fire and forget fetch
+    fetchFresh();
+    return { data: cachedData, source: 'cache_stale' };
+  } else {
+    // Wait for fresh data
+    const data = await fetchFresh();
+    return { data, source: 'network' };
+  }
+}
+
+/**
  * Optimized: Fetch all data in one go
  */
 export async function gasFetchAll() {

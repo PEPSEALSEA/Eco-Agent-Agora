@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -9,8 +9,15 @@ import { gasPost } from '@/lib/gas';
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/scenarios');
+    }
+  }, [user, authLoading, router]);
 
   const handleGoogleSuccess = async (tokenResponse: any) => {
     setLoading(true);

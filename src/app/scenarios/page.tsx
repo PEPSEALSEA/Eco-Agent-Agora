@@ -4,8 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { Users, Briefcase, GraduationCap, User } from 'lucide-react';
-import { gasFetch, gasPost, uuid } from '@/lib/gas';
+import { gasFetch, gasPost, uuid, gasFetchWithSWR } from '@/lib/gas';
 import Link from 'next/link';
+import SyncStatus from '@/components/SyncStatus';
 
 type Scenario = {
   id: string;
@@ -18,6 +19,7 @@ type Scenario = {
 export default function ScenariosPage() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'updated'>('idle');
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -28,12 +30,26 @@ export default function ScenariosPage() {
     }
 
     const fetchScenarios = async () => {
+      setSyncStatus('syncing');
       try {
-        const data = await gasFetch('read', 'scenarios');
-        if (data.error) throw new Error(data.error);
-        setScenarios(Array.isArray(data) ? data : []);
+        const result = await gasFetchWithSWR('read', 'scenarios', {}, (freshData) => {
+          setScenarios(Array.isArray(freshData) ? freshData : []);
+          setSyncStatus('updated');
+        });
+
+        if (result.data) {
+          setScenarios(Array.isArray(result.data) ? result.data : []);
+          if (result.source === 'cache_fresh') {
+            setSyncStatus('idle');
+          } else if (result.source === 'cache_stale') {
+            setSyncStatus('syncing');
+          } else {
+            setSyncStatus('updated');
+          }
+        }
       } catch (err) {
         console.error('Fetch scenarios error:', err);
+        setSyncStatus('idle');
       } finally {
         setLoading(false);
       }
@@ -129,6 +145,7 @@ export default function ScenariosPage() {
 
   return (
     <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8">
+      <SyncStatus status={syncStatus} />
       <div className="max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-16">
           <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[3rem] shadow-[0_12px_0_rgba(0,0,0,1)] -rotate-1">
