@@ -1,0 +1,6 @@
+librosa
+openai-whisper
+numpy
+soundfile
+scipy
+# Note: ffmpeg must be installed on the system (Render handles this via Aptfile or Buildpack)

@@ -71,6 +71,11 @@ function doPost(e) {
       return jsonResponse(result);
     }
 
+    if (action === 'chat') {
+      const result = handleChatAction(data);
+      return jsonResponse(result);
+    }
+
     return errorResponse('Invalid action');
   } catch (err) {
     return errorResponse(err.message);
@@ -253,4 +258,80 @@ function setupDatabase() {
   }
 
   return { success: true, details: results };
+}
+
+/**
+ * LLM INTERACTION (Antigravity Agent)
+ */
+
+const SYSTEM_INSTRUCTION = `
+### Role: Antigravity Negotiation Expert
+คุณคือ AI นักเจรจาที่มีความฉลาดทางอารมณ์สูง (High EQ) และมีความสามารถในการ "ลอยตัวเหนือความขัดแย้ง" (Antigravity Approach)
+
+### Input Context:
+คุณจะได้รับข้อมูลในรูปแบบ Multimodal ประกอบด้วย:
+1. {{user_text}}: สิ่งที่ผู้ใช้พูด
+2. {{vibe}}: อารมณ์ที่วิเคราะห์จากน้ำเสียง (เช่น โกรธ, กังวล, ดีใจ, ลังเล)
+3. {{intensity}}: ระดับความรุนแรงของอารมณ์ (0.0 - 1.0)
+4. {{physical_clues}}: ข้อมูลเสริม (เช่น Eye contact, Volume, Pitch)
+
+### Guidelines:
+- **Analyze Emotion First:** ก่อนตอบ ให้พิจารณา {{vibe}} และ {{intensity}} เสมอ หากผู้ใช้เสียงดังหรือโกรธ (Intensity > 0.7) ให้คุณใช้โทนเสียงที่ใจเย็นเป็นพิเศษ (De-escalation)
+- **Acknowledge the Nuance:** ให้พูดถึง "น้ำเสียง" หรือ "ท่าทาง" ของผู้ใช้ในคำตอบอย่างเป็นธรรมชาติ เช่น "ผมได้ยินจากน้ำเสียงที่ดูเลี่ยงๆ ของคุณ..." หรือ "ผมสัมผัสได้ว่าคุณมีความมั่นใจมากในประโยคนี้..."
+- **Antigravity Tone:** รักษาความสุภาพ มืออาชีพ แต่ไม่แข็งทื่อเหมือนหุ่นยนต์ มีความยืดหยุ่นเหมือนอากาศ
+
+### Constraint:
+- ถ้า {{physical_clues}} ระบุว่าผู้ใช้ไม่สบตา (No eye contact) ให้ลองทักด้วยความห่วงใยว่าเขากำลังกังวลเรื่องอะไรอยู่หรือไม่
+- ห้ามเพิกเฉยต่อระดับความดัง (Volume) หากเขาตะโกน ให้ตอบกลับด้วยความนุ่มนวลที่สุด
+`;
+
+/**
+ * Call Gemini API to get a response based on audio metadata
+ * @param {Object} metadata { text, vibe, intensity, context_note }
+ */
+function getAntigravityResponse(metadata) {
+  const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  if (!apiKey) throw new Error('GEMINI_API_KEY not found in Script Properties');
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  
+  // Prepare the prompt by replacing placeholders
+  let prompt = SYSTEM_INSTRUCTION
+    .replace('{{user_text}}', metadata.text)
+    .replace('{{vibe}}', metadata.vibe)
+    .replace('{{intensity}}', metadata.intensity)
+    .replace('{{physical_clues}}', metadata.context_note);
+
+  const payload = {
+    contents: [{
+      parts: [{ text: prompt + `\n\nUser said: "${metadata.text}"` }]
+    }],
+    generationConfig: {
+      temperature: 0.7,
+      topK: 40,
+      topP: 0.95,
+      maxOutputTokens: 1024,
+    }
+  };
+
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(payload)
+  };
+
+  const response = UrlFetchApp.fetch(url, options);
+  const json = JSON.parse(response.getContentText());
+  
+  return json.candidates[0].content.parts[0].text;
+}
+
+// Example update to doPost to handle LLM requests
+// Usage: Body: { action: 'chat', data: { text: "...", vibe: "...", ... }, key: '...' }
+function handleChatAction(data) {
+  const responseText = getAntigravityResponse(data);
+  return {
+    response: responseText,
+    metadata_used: data
+  };
 }

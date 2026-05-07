@@ -12,6 +12,7 @@ import { StrategyBlocks, Strategy } from '@/components/StrategyBlocks';
 import { ReignsSystem } from '@/components/ReignsSystem';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Baby, Briefcase, GraduationCap } from 'lucide-react';
+import { CartoonLoading } from '@/components/CartoonLoading';
 
 type Character = {
   name: string;
@@ -40,6 +41,7 @@ function NegotiateContent(): React.ReactElement {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('กำลังเตรียมข้อมูล...');
   const [sending, setSending] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +74,7 @@ function NegotiateContent(): React.ReactElement {
     if (!sessionId) return;
 
     const fetchData = async () => {
+      setLoadingMessage('กำลังดึงข้อมูลเซสชัน...');
       try {
         // Fetch session
         const allData = await gasFetch('read_all');
@@ -135,6 +138,8 @@ function NegotiateContent(): React.ReactElement {
   const handleStart = async () => {
     if (!scenario || isStarted) return;
     setIsStarted(true);
+    setLoading(true);
+    setLoadingMessage('AI กำลังเตรียมตัวเจรจา...');
     setSending(true);
 
     const systemInstruction = `
@@ -197,6 +202,7 @@ function NegotiateContent(): React.ReactElement {
       setError('การเริ่มต้น AI ล้มเหลว คุณยังสามารถพิมพ์เพื่อเริ่มได้ ' + errorMessage);
     } finally {
       setSending(false);
+      setLoading(false);
     }
   };
 
@@ -348,7 +354,7 @@ function NegotiateContent(): React.ReactElement {
     }
   };
 
-  if (loading || !sessionId) {
+  if (!sessionId) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-cyan-500"></div>
@@ -358,6 +364,7 @@ function NegotiateContent(): React.ReactElement {
 
   return (
     <div className="flex h-screen bg-slate-950 text-white overflow-hidden relative">
+      <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       {/* Start Overlay */}
       {!isStarted && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md transition-all duration-700">

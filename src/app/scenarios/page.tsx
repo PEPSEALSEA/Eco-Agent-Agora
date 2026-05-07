@@ -7,6 +7,7 @@ import { Users, Briefcase, GraduationCap, User } from 'lucide-react';
 import { gasFetch, gasPost, uuid, gasFetchWithSWR } from '@/lib/gas';
 import Link from 'next/link';
 import SyncStatus from '@/components/SyncStatus';
+import { CartoonLoading } from '@/components/CartoonLoading';
 
 type Scenario = {
   id: string;
@@ -19,6 +20,7 @@ type Scenario = {
 export default function ScenariosPage() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('กำลังเตรียมข้อมูล...');
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'updated'>('idle');
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -31,6 +33,7 @@ export default function ScenariosPage() {
 
     const fetchScenarios = async () => {
       setSyncStatus('syncing');
+      setLoadingMessage('กำลังดึงข้อมูลภารกิจ...');
       try {
         const result = await gasFetchWithSWR('read', 'scenarios', {}, (freshData) => {
           setScenarios(Array.isArray(freshData) ? freshData : []);
@@ -62,6 +65,7 @@ export default function ScenariosPage() {
 
   const seedScenarios = async () => {
     setLoading(true);
+    setLoadingMessage('กำลังสร้างสถานการณ์ใหม่...');
     const sampleScenarios = [
       {
         id: uuid(),
@@ -112,6 +116,7 @@ export default function ScenariosPage() {
     if (loading || authLoading || !user) return;
     
     setLoading(true);
+    setLoadingMessage('กำลังเตรียมห้องเจรจา...');
     const sessionId = uuid();
     
     try {
@@ -135,16 +140,9 @@ export default function ScenariosPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8">
+      <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       <SyncStatus status={syncStatus} />
       <div className="max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-16">

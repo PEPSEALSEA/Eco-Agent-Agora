@@ -5,9 +5,11 @@ import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { useGoogleLogin } from '@react-oauth/google';
 import { gasPost } from '@/lib/gas';
+import { CartoonLoading } from '@/components/CartoonLoading';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('กำลังเชื่อมต่อ...');
   const [error, setError] = useState<string | null>(null);
   const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -21,9 +23,11 @@ export default function LoginPage() {
 
   const handleGoogleSuccess = async (tokenResponse: any) => {
     setLoading(true);
+    setLoadingMessage('กำลังเข้าสู่ระบบด้วย Google...');
     setError(null);
     try {
       // Fetch user profile from Google
+      setLoadingMessage('กำลังดึงข้อมูลโปรไฟล์...');
       const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
       });
@@ -38,11 +42,13 @@ export default function LoginPage() {
       };
 
       // Save to GAS
+      setLoadingMessage('กำลังบันทึกข้อมูลผู้ใช้...');
       await gasPost('upsert', 'users', userData, { queryField: 'email', queryValue: userData.email });
 
       // Save to Auth Context
       login(userData);
       
+      setLoadingMessage('เตรียมพร้อมสู่สนามเจรจา!');
       router.push('/scenarios');
     } catch (err: any) {
       console.error('Login error:', err);
@@ -59,6 +65,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-4">
+      <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       <div className="w-full max-w-md bg-white border-[6px] border-gray-900 p-10 rounded-[3rem] shadow-[0_15px_0_rgba(0,0,0,1)] -rotate-1">
         <h1 className="text-6xl font-black text-gray-900 mb-4 text-center uppercase tracking-tighter leading-none">
           Wongjra Ja
@@ -101,7 +108,7 @@ export default function LoginPage() {
                 />
               </svg>
             </div>
-            <span>{loading ? 'กำลังโหลด...' : 'ลงชื่อเข้าใช้ด้วย Google'}</span>
+            <span>{loading ? 'โปรดรอ...' : 'ลงชื่อเข้าใช้ด้วย Google'}</span>
           </button>
           
           <div className="mt-10 pt-8 border-t-4 border-dashed border-gray-100 text-center">
