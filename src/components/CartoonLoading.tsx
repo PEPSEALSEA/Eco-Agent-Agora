@@ -34,24 +34,15 @@ export const CartoonLoading = ({ isOpen, message, progress }: CartoonLoadingProp
             
             {/* Mascot Container - Bouncing Mascot */}
             <motion.div
-              animate={{ 
-                y: [0, -30, 0],
-                scale: [1, 1.1, 0.95, 1],
-                rotate: [0, 8, -8, 0]
-              }}
-              transition={{ 
-                repeat: Infinity, 
-                duration: 1.2,
-                ease: "easeInOut" 
-              }}
               className="relative w-44 h-44 mb-8 mt-4 drop-shadow-[0_15px_15px_rgba(0,0,0,0.2)]"
             >
               <Image 
-                src={getAssetPath("/characters/teacher.png")} 
+                src={getAssetPath("/characters/loading.gif")} 
                 alt="Loading Mascot" 
                 fill 
                 className="object-contain"
                 priority
+                unoptimized={true}
               />
             </motion.div>
 
