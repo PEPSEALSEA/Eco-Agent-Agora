@@ -144,14 +144,14 @@ function NegotiateContent(): React.ReactElement {
 
     const systemInstruction = `
       You are a multi-character negotiation simulator ${kidGameplayActive ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
-      Current Scenario: ${scenario.title} - ${scenario.description}
-      Characters: ${JSON.stringify(scenario.characters)}
+      Current Scenario: ${scenario?.title} - ${scenario?.description}
+      Characters: ${JSON.stringify(scenario?.characters || [])}
       
       CURRENT PHASE: ${phase}
       PHASE GOAL: ${phase === 'rapport' ? 'Build trust and introduce characters.' : phase === 'discovery' ? 'Explore needs and interests.' : phase === 'bargaining' ? 'Negotiate terms and make trade-offs.' : 'Seal the deal or finalize the agreement.'}
 
       TASK: Provide an initial greeting and opening statement from the key characters to start the negotiation. 
-      The player is a negotiator trying to achieve the following: ${scenario.target_group === 'professional' ? 'Resolve the conflict fairly while meeting business goals.' : 'Help friends resolve their conflict.'}
+      The player is a negotiator trying to achieve the following: ${scenario?.target_group === 'professional' ? 'Resolve the conflict fairly while meeting business goals.' : 'Help friends resolve their conflict.'}
       
       ${kidGameplayActive ? 'CRITICAL KID MODE RULES: Keep responses EXTREMELY SHORT (max 1 short sentence, 5-8 words). Use heavy emojis. Use simple, expressive Thai language. ALSO, generate two dynamic negotiation choices for the player to swipe (left and right).' : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
       
@@ -499,13 +499,13 @@ function NegotiateContent(): React.ReactElement {
                 setMode(prev => prev === 'kid' ? 'adult' : prev === 'adult' ? 'pro' : 'kid');
               }}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center ${
-                scenario.target_group === 'professional' ? 'opacity-60 cursor-default' : ''
+                scenario?.target_group === 'professional' ? 'opacity-60 cursor-default' : ''
               } ${
                 mode === 'kid' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
                 mode === 'adult' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
                 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
               }`}
-              title={scenario.target_group === 'professional' ? 'สถานการณ์นี้ใช้การพิมพ์อิสระ (โหมดผู้เชี่ยวชาญ)' : undefined}
+              title={scenario?.target_group === 'professional' ? 'สถานการณ์นี้ใช้การพิมพ์อิสระ (โหมดผู้เชี่ยวชาญ)' : undefined}
             >
               {mode === 'kid' ? <><Baby size={16} className="mr-2" /> โหมดเด็ก</> :
                mode === 'adult' ? <><Briefcase size={16} className="mr-2" /> โหมดผู้ใหญ่</> :
