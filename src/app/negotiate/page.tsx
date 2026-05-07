@@ -61,9 +61,9 @@ function NegotiateContent(): React.ReactElement {
 
   useEffect(() => {
     if (!scenario?.id) return;
-    if (scenario.target_group === 'professional') setMode('pro');
+    if (scenario?.target_group === 'professional') setMode('pro');
     else setMode('kid');
-  }, [scenario?.id]);
+  }, [scenario?.id, scenario?.target_group]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -243,7 +243,7 @@ function NegotiateContent(): React.ReactElement {
     // 2. Prepare Gemini Prompt (System Instruction)
     const systemInstruction = `
       You are a multi-character negotiation simulator ${kidGameplayActive ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
-      Characters: ${JSON.stringify(scenario.characters)}
+      Characters: ${JSON.stringify(scenario?.characters || [])}
       
       CURRENT PHASE: ${phase}
       PHASE GOAL: ${phase === 'rapport' ? 'Establish rapport and trust. Do not rush into offers.' : phase === 'discovery' ? 'Ask questions and find out what stakeholders value most.' : phase === 'bargaining' ? 'Exchange value. If you give something up, ask for something in return.' : 'Finalize details and confirm commitment.'}
@@ -428,7 +428,7 @@ function NegotiateContent(): React.ReactElement {
           </h2>
           <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
             <p className="text-xs text-gray-300 leading-relaxed">
-              {scenario.target_group === 'professional' 
+              {scenario?.target_group === 'professional' 
                 ? "บรรลุข้อตกลงราคาที่ยุติธรรมโดยไม่สูญเสียความไว้วางใจ" 
                 : "ทำให้ทุกคนกลับมาทำงานในโครงการก่อนกำหนดเวลา"}
             </p>
@@ -495,7 +495,7 @@ function NegotiateContent(): React.ReactElement {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (scenario.target_group === 'professional') return;
+                if (scenario?.target_group === 'professional') return;
                 setMode(prev => prev === 'kid' ? 'adult' : prev === 'adult' ? 'pro' : 'kid');
               }}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center ${
