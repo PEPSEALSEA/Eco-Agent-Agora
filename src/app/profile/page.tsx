@@ -129,6 +129,7 @@ export default function ProfilePage() {
           <div className="flex flex-wrap gap-4 w-full md:w-auto">
             <Link 
               href="/scenarios"
+              prefetch={false}
               className="flex-1 md:flex-none flex items-center justify-center bg-white border-4 border-gray-900 px-6 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group"
             >
               <ArrowLeft size={20} className="mr-2" />

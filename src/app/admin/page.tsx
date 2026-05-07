@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
+import { CartoonLoading } from '@/components/CartoonLoading';
 
 const ADMIN_EMAILS = ['sealseapep@gmail.com'];
 
@@ -26,11 +27,8 @@ export default function AdminLandingPage() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
-      <div className="animate-pulse flex flex-col items-center">
-        <div className="h-12 w-12 border-t-2 border-b-2 border-cyan-500 rounded-full animate-spin mb-4"></div>
-        <p className="text-sm font-bold uppercase tracking-widest text-cyan-400">Verifying Admin Access...</p>
-      </div>
+    <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] flex items-center justify-center">
+      <CartoonLoading isOpen={loading || !!user} message="กำลังตรวจสอบสิทธิ์ผู้ดูแล..." />
     </div>
   );
 }

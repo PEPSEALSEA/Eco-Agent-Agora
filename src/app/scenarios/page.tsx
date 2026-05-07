@@ -152,6 +152,7 @@ export default function ScenariosPage() {
           </div>
           <Link 
             href="/profile"
+            prefetch={false}
             className="flex items-center space-x-4 bg-white border-4 border-gray-900 px-6 py-3 rounded-[2rem] hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group"
           >
             <div className="w-12 h-12 rounded-2xl bg-nintendo-yellow border-4 border-gray-900 flex items-center justify-center text-gray-900">
@@ -199,13 +200,13 @@ export default function ScenariosPage() {
 
                 <div className="mt-auto flex items-center text-2xl font-black text-nintendo-red uppercase tracking-tighter group-hover:gap-4 transition-all">
                   {loading ? (
-                    <span className="flex items-center text-gray-400">
-                      <div className="animate-spin rounded-full h-6 w-6 border-4 border-gray-400 border-t-transparent mr-3"></div>
-                      กำลังโหลด...
+                    <span className="flex items-center text-gray-300 animate-pulse">
+                      <div className="w-4 h-4 bg-gray-300 rounded-full mr-2"></div>
+                      รอสักครู่...
                     </span>
                   ) : (
                     <>
-                      เริ่มภารกิจ <span className="opacity-0 group-hover:opacity-100 transition-all">→</span>
+                      เริ่มภารกิจ <span className="opacity-0 group-hover:opacity-100 transition-all ml-2">→</span>
                     </>
                   )}
                 </div>
