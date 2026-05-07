@@ -20,7 +20,7 @@ type Scenario = {
 export default function ScenariosPage() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState('กำลังเตรียมข้อมูล...');
+  const [loadingMessage, setLoadingMessage] = useState('กำลังเสกข้อมูลให้คุณ...');
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'updated'>('idle');
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function ScenariosPage() {
 
     const fetchScenarios = async () => {
       setSyncStatus('syncing');
-      setLoadingMessage('กำลังดึงข้อมูลภารกิจ...');
+      setLoadingMessage('กำลังตามหาภารกิจลับ...');
       try {
         const result = await gasFetchWithSWR('read', 'scenarios', {}, (freshData) => {
           setScenarios(Array.isArray(freshData) ? freshData : []);
@@ -65,7 +65,7 @@ export default function ScenariosPage() {
 
   const seedScenarios = async () => {
     setLoading(true);
-    setLoadingMessage('กำลังสร้างสถานการณ์ใหม่...');
+    setLoadingMessage('กำลังสร้างโลกใหม่...');
     const sampleScenarios = [
       {
         id: uuid(),
@@ -116,7 +116,7 @@ export default function ScenariosPage() {
     if (loading || authLoading || !user) return;
     
     setLoading(true);
-    setLoadingMessage('กำลังเตรียมห้องเจรจา...');
+    setLoadingMessage('กำลังจัดโต๊ะเจรจา...');
     const sessionId = uuid();
     
     try {

@@ -9,7 +9,7 @@ import { CartoonLoading } from '@/components/CartoonLoading';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('กำลังเชื่อมต่อ...');
+  const [loadingMessage, setLoadingMessage] = useState('กำลังเชื่อมต่อกับดวงดาว...');
   const [error, setError] = useState<string | null>(null);
   const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -23,11 +23,11 @@ export default function LoginPage() {
 
   const handleGoogleSuccess = async (tokenResponse: any) => {
     setLoading(true);
-    setLoadingMessage('กำลังเข้าสู่ระบบด้วย Google...');
+    setLoadingMessage('กำลังขออนุญาต Google...');
     setError(null);
     try {
       // Fetch user profile from Google
-      setLoadingMessage('กำลังดึงข้อมูลโปรไฟล์...');
+      setLoadingMessage('กำลังเปิดดูสมุดประจำตัว...');
       const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
       });
