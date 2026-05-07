@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAssetPath } from '@/lib/gas';
 
 type CharacterAvatarProps = {
   name: string;
@@ -53,7 +54,7 @@ export const CharacterAvatar = ({ name, mood, isTalking, imageUrl }: CharacterAv
           <div className="w-full h-full relative flex items-center justify-center overflow-hidden rounded-[3.8rem]">
             {imageUrl ? (
               <motion.img 
-                src={imageUrl} 
+                src={getAssetPath(imageUrl)} 
                 alt={name}
                 className={`w-full h-full object-contain object-bottom transition-all duration-500 ${isTalking ? 'scale-110' : 'scale-100'}`}
                 initial={{ opacity: 0, scale: 0.8 }}

@@ -13,6 +13,15 @@ const getGasConfig = () => {
   };
 };
 
+export function getAssetPath(path: string) {
+  // Matches basePath in next.config.ts
+  const basePath = '/Eco-Agent-Agora';
+  if (!path) return '';
+  if (path.startsWith('http') || path.startsWith('data:') || path.startsWith(basePath)) return path;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${basePath}${cleanPath}`;
+}
+
 export function uuid() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);

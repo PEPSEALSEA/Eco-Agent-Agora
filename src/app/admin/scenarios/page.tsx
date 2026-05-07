@@ -4,7 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
-import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCap } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCap, Settings } from 'lucide-react';
+import { CartoonLoading } from '@/components/CartoonLoading';
+import Link from 'next/link';
 
 const ADMIN_EMAILS = ['sealseapep@gmail.com'];
 
@@ -120,144 +122,181 @@ export default function AdminScenariosPage() {
   };
 
   if (loading && scenarios.length === 0) {
-    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">กำลังโหลด...</div>;
+    return <CartoonLoading isOpen={true} message="กำลังเตรียมสมุดจัดการสถานการณ์..." />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="max-w-6xl mx-auto">
-        <header className="flex justify-between items-center mb-12">
-          <button onClick={() => router.push('/scenarios')} className="flex items-center text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft size={18} className="mr-2" /> กลับไปหน้าภารกิจ
-          </button>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">
-            จัดการสถานการณ์
-          </h1>
-          <div className="flex space-x-3">
+    <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8 relative overflow-x-hidden">
+      <CartoonLoading isOpen={loading} message="กำลังอัปเดตข้อมูล..." />
+      
+      {/* Visual focus layer to separate content from background points */}
+      <div className="fixed inset-0 backdrop-blur-[5px] bg-white/50 pointer-events-none z-0" />
+
+      <div className="max-w-6xl mx-auto relative z-10">
+        <header className="flex flex-col md:flex-row justify-between items-center mb-16 gap-6">
+          <Link 
+            href="/scenarios" 
+            prefetch={false}
+            className="flex items-center bg-white border-4 border-gray-900 px-6 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2"
+          >
+            <ArrowLeft size={20} className="mr-2" /> 
+            <span className="font-black uppercase tracking-tighter">กลับหน้าภารกิจ</span>
+          </Link>
+
+          <div className="bg-white border-[6px] border-gray-900 px-10 py-6 rounded-[3rem] shadow-[0_12px_0_rgba(0,0,0,1)] rotate-1">
+            <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tighter">
+              จัดการสถานการณ์
+            </h1>
+          </div>
+
+          <div className="flex space-x-4">
             <button 
               onClick={() => router.push('/admin/settings')}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-bold border border-white/10 transition-all"
+              className="p-4 bg-white border-4 border-gray-900 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 text-gray-900"
+              title="ตั้งค่าระบบ"
             >
-              ตั้งค่าระบบ
+              <Settings size={24} />
             </button>
             <button 
               onClick={handleCreate}
-              className="flex items-center px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold transition-all shadow-lg shadow-cyan-500/20"
+              className="flex items-center px-8 py-4 bg-nintendo-red text-white border-4 border-gray-900 rounded-2xl font-black hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 uppercase tracking-tighter"
             >
-              <Plus size={18} className="mr-2" /> เพิ่มสถานการณ์
+              <Plus size={20} className="mr-2" /> เพิ่มสถานการณ์
             </button>
           </div>
         </header>
 
         {editingId && editForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-            <div className="bg-slate-900 border border-white/20 rounded-[2.5rem] w-full max-w-4xl p-8 shadow-2xl my-8">
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold text-cyan-400">
-                  {editingId === 'new' ? 'สร้างสถานการณ์ใหม่' : 'แก้ไขสถานการณ์'}
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-y-auto">
+            <div className="bg-white border-[8px] border-gray-900 rounded-[3.5rem] w-full max-w-4xl p-10 shadow-[0_30px_0_rgba(0,0,0,1)] my-8 relative">
+              {/* Top Stripe Decorative */}
+              <div className="absolute top-0 left-0 w-full h-6 bg-nintendo-blue rounded-t-[2.8rem]" />
+              
+              <div className="flex justify-between items-center mb-10 mt-2">
+                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
+                  {editingId === 'new' ? '✨ สร้างสถานการณ์ใหม่' : '✏️ แก้ไขสถานการณ์'}
                 </h2>
-                <button onClick={() => setEditingId(null)} className="text-gray-400 hover:text-white">
+                <button 
+                  onClick={() => setEditingId(null)} 
+                  className="w-12 h-12 flex items-center justify-center bg-gray-100 border-4 border-gray-900 rounded-2xl text-gray-900 hover:bg-nintendo-pink hover:text-white transition-colors"
+                >
                   <X size={24} />
                 </button>
               </div>
 
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <label className="block text-sm font-bold text-gray-400 mb-2">หัวข้อสถานการณ์</label>
+                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 ml-2">หัวข้อสถานการณ์</label>
                     <input 
                       value={editForm.title}
                       onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-cyan-500 outline-none transition-all"
+                      className="w-full bg-gray-50 border-4 border-gray-900 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white outline-none transition-all shadow-[inset_0_4px_0_rgba(0,0,0,0.05)]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-gray-400 mb-2">กลุ่มเป้าหมาย</label>
+                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 ml-2">กลุ่มเป้าหมาย</label>
                     <select 
                       value={editForm.target_group}
                       onChange={(e) => setEditForm({ ...editForm, target_group: e.target.value as any })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-cyan-500 outline-none transition-all"
+                      className="w-full bg-gray-50 border-4 border-gray-900 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white outline-none transition-all shadow-[inset_0_4px_0_rgba(0,0,0,0.05)] appearance-none"
                     >
-                      <option value="professional" className="bg-slate-900">Professional (โหมดผู้ใหญ่)</option>
-                      <option value="kids" className="bg-slate-900">Kids (โหมดเด็ก)</option>
+                      <option value="professional">👔 Professional (โหมดผู้ใหญ่)</option>
+                      <option value="kids">🧒 Kids (โหมดเด็ก)</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-400 mb-2">คำอธิบาย (Description)</label>
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 ml-2">คำอธิบาย (Description)</label>
                   <textarea 
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                     rows={3}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-cyan-500 outline-none transition-all"
+                    className="w-full bg-gray-50 border-4 border-gray-900 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white outline-none transition-all shadow-[inset_0_4px_0_rgba(0,0,0,0.05)]"
                   />
                 </div>
 
-                <div className="pt-4 border-t border-white/10">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-bold flex items-center">
-                      <Users size={18} className="mr-2 text-purple-400" /> ตัวละครในสถานการณ์
+                <div className="pt-6 border-t-4 border-dashed border-gray-100">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter flex items-center">
+                      <div className="w-10 h-10 bg-nintendo-yellow border-4 border-gray-900 rounded-xl flex items-center justify-center mr-3">
+                        <Users size={20} />
+                      </div>
+                      ตัวละครในสถานการณ์
                     </h3>
                     <button 
                       onClick={handleAddCharacter}
-                      className="text-sm font-bold text-cyan-400 hover:text-cyan-300 flex items-center"
+                      className="bg-nintendo-green text-white border-4 border-gray-900 px-6 py-2 rounded-xl font-black uppercase tracking-tighter text-sm hover:translate-y-1 transition-all shadow-[0_5px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 flex items-center"
                     >
-                      <Plus size={16} className="mr-1" /> เพิ่มตัวละคร
+                      <Plus size={16} className="mr-2" /> เพิ่มตัวละคร
                     </button>
                   </div>
 
-                  <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-6 max-h-[35vh] overflow-y-auto pr-4 custom-scrollbar">
                     {editForm.characters.map((char, index) => (
-                      <div key={index} className="bg-white/5 border border-white/10 p-6 rounded-2xl relative group">
+                      <div key={index} className="bg-gray-50 border-4 border-gray-900 p-8 rounded-[2rem] relative group shadow-[0_8px_0_rgba(0,0,0,0.05)]">
                         <button 
                           onClick={() => handleRemoveCharacter(index)}
-                          className="absolute top-4 right-4 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                          className="absolute -top-4 -right-4 w-10 h-10 bg-white border-4 border-gray-900 rounded-xl text-gray-400 hover:text-nintendo-pink hover:border-nintendo-pink flex items-center justify-center transition-all shadow-lg z-10"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={18} />
                         </button>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <input 
-                            placeholder="ชื่อตัวละคร"
-                            value={char.name}
-                            onChange={(e) => handleCharChange(index, 'name', e.target.value)}
-                            className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-cyan-500"
-                          />
-                          <input 
-                            placeholder="บทบาท (Role)"
-                            value={char.role}
-                            onChange={(e) => handleCharChange(index, 'role', e.target.value)}
-                            className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-cyan-500"
-                          />
-                          <textarea 
-                            placeholder="เป้าหมาย (Agenda)"
-                            value={char.agenda}
-                            onChange={(e) => handleCharChange(index, 'agenda', e.target.value)}
-                            className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-cyan-500 md:col-span-2"
-                          />
-                          <input 
-                            placeholder="นิสัย (Personality)"
-                            value={char.personality}
-                            onChange={(e) => handleCharChange(index, 'personality', e.target.value)}
-                            className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-cyan-500 md:col-span-2"
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-black uppercase text-gray-400 px-2">ชื่อตัวละคร</label>
+                             <input 
+                              placeholder="ชื่อตัวละคร"
+                              value={char.name}
+                              onChange={(e) => handleCharChange(index, 'name', e.target.value)}
+                              className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none focus:border-nintendo-blue"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-black uppercase text-gray-400 px-2">บทบาท (Role)</label>
+                             <input 
+                              placeholder="บทบาท (Role)"
+                              value={char.role}
+                              onChange={(e) => handleCharChange(index, 'role', e.target.value)}
+                              className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none focus:border-nintendo-blue"
+                            />
+                          </div>
+                          <div className="md:col-span-2 space-y-2">
+                             <label className="text-[10px] font-black uppercase text-gray-400 px-2">เป้าหมาย (Agenda)</label>
+                             <textarea 
+                              placeholder="เป้าหมาย (Agenda)"
+                              value={char.agenda}
+                              onChange={(e) => handleCharChange(index, 'agenda', e.target.value)}
+                              rows={2}
+                              className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none focus:border-nintendo-blue"
+                            />
+                          </div>
+                          <div className="md:col-span-2 space-y-2">
+                             <label className="text-[10px] font-black uppercase text-gray-400 px-2">นิสัย (Personality)</label>
+                             <input 
+                              placeholder="นิสัย (Personality)"
+                              value={char.personality}
+                              onChange={(e) => handleCharChange(index, 'personality', e.target.value)}
+                              className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none focus:border-nintendo-blue"
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-8 flex space-x-4">
+                <div className="pt-10 flex space-x-6">
                   <button 
                     onClick={handleSave}
                     disabled={loading}
-                    className="flex-1 bg-cyan-600 hover:bg-cyan-500 py-4 rounded-2xl font-bold flex items-center justify-center transition-all disabled:opacity-50"
+                    className="flex-1 bg-nintendo-blue text-white py-5 rounded-[2rem] font-black text-2xl uppercase tracking-tighter border-4 border-gray-900 shadow-[0_10px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all flex items-center justify-center disabled:opacity-50"
                   >
-                    <Save size={18} className="mr-2" /> บันทึกการเปลี่ยนแปลง
+                    <Save size={24} className="mr-3" /> บันทึกข้อมูล
                   </button>
                   <button 
                     onClick={() => setEditingId(null)}
-                    className="px-8 py-4 bg-white/5 hover:bg-white/10 rounded-2xl font-bold transition-all"
+                    className="px-10 py-5 bg-white border-4 border-gray-900 rounded-[2rem] font-black text-xl uppercase tracking-tighter text-gray-900 hover:bg-gray-50 transition-all"
                   >
                     ยกเลิก
                   </button>
@@ -267,52 +306,63 @@ export default function AdminScenariosPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-8">
           {scenarios.map((scenario) => (
             <div 
               key={scenario.id}
-              className="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-white/[0.07] transition-all group"
+              className="bg-white border-[6px] border-gray-900 rounded-[3rem] p-10 flex flex-col md:flex-row justify-between items-start md:items-center hover:translate-y-1 transition-all shadow-[0_12px_0_rgba(0,0,0,1)] hover:shadow-[0_8px_0_rgba(0,0,0,1)] group"
             >
               <div className="flex-1 mr-8">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className={`p-2 rounded-lg ${scenario.target_group === 'professional' ? 'bg-nintendo-blue' : 'bg-nintendo-green'}`}>
-                    {scenario.target_group === 'professional' ? <Briefcase size={18} /> : <GraduationCap size={18} />}
+                <div className="flex flex-wrap items-center gap-4 mb-4">
+                  <div className={`w-12 h-12 rounded-2xl border-4 border-gray-900 flex items-center justify-center text-white shadow-[0_4px_0_rgba(0,0,0,0.2)] ${scenario.target_group === 'professional' ? 'bg-nintendo-blue' : 'bg-nintendo-green'}`}>
+                    {scenario.target_group === 'professional' ? <Briefcase size={24} /> : <GraduationCap size={24} />}
                   </div>
-                  <h3 className="text-xl font-bold">{scenario.title}</h3>
-                  <span className="text-[10px] font-black bg-white/10 px-2 py-0.5 rounded-full uppercase tracking-widest text-gray-400">
+                  <h3 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">{scenario.title}</h3>
+                  <span className={`text-[10px] font-black px-3 py-1 rounded-full border-2 border-gray-900 uppercase tracking-widest ${scenario.target_group === 'professional' ? 'bg-nintendo-blue/10 text-nintendo-blue' : 'bg-nintendo-green/10 text-nintendo-green'}`}>
                     {scenario.target_group}
                   </span>
                 </div>
-                <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed">{scenario.description}</p>
-                <div className="flex mt-4 space-x-2">
+                <p className="text-gray-500 font-bold text-lg leading-snug line-clamp-2 italic mb-6">"{scenario.description}"</p>
+                <div className="flex flex-wrap gap-2">
                   {scenario.characters?.map((c: any, i: number) => (
-                    <span key={i} className="text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-1 rounded-md border border-cyan-500/20">
-                      {c.name}
+                    <span key={i} className="text-xs font-black bg-gray-100 text-gray-400 border-2 border-gray-200 px-3 py-1 rounded-xl uppercase tracking-tighter">
+                      👤 {c.name}
                     </span>
                   ))}
                 </div>
               </div>
               
-              <div className="flex space-x-3 mt-6 md:mt-0 opacity-0 group-hover:opacity-100 transition-all">
+              <div className="flex space-x-4 mt-8 md:mt-0">
                 <button 
                   onClick={() => handleEdit(scenario)}
-                  className="p-3 bg-white/5 hover:bg-cyan-500/20 text-cyan-400 rounded-xl border border-white/10 hover:border-cyan-500/50 transition-all"
+                  className="w-16 h-16 bg-nintendo-yellow text-gray-900 border-4 border-gray-900 rounded-2xl shadow-[0_6px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all flex items-center justify-center"
+                  title="แก้ไข"
                 >
-                  <Edit2 size={18} />
+                  <Edit2 size={28} />
                 </button>
                 <button 
                   onClick={() => handleDelete(scenario.id)}
-                  className="p-3 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-xl border border-white/10 hover:border-red-500/50 transition-all"
+                  className="w-16 h-16 bg-white text-gray-400 hover:text-nintendo-pink hover:border-nintendo-pink border-4 border-gray-900 rounded-2xl shadow-[0_6px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all flex items-center justify-center"
+                  title="ลบ"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={28} />
                 </button>
               </div>
             </div>
           ))}
 
           {scenarios.length === 0 && !loading && (
-            <div className="py-20 text-center border-4 border-dashed border-white/10 rounded-[3rem]">
-              <p className="text-gray-500 font-bold uppercase tracking-widest">ยังไม่มีสถานการณ์ใดๆ</p>
+            <div className="py-24 text-center border-[8px] border-dashed border-gray-200 rounded-[4rem]">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">
+                <Briefcase size={48} />
+              </div>
+              <p className="text-gray-400 font-black text-2xl uppercase tracking-widest italic">ยังไม่มีสถานการณ์ในสมุดเล่มนี้</p>
+              <button 
+                onClick={handleCreate}
+                className="mt-8 text-nintendo-blue font-black underline underline-offset-8 decoration-4 hover:text-nintendo-red transition-colors"
+              >
+                สร้างสถานการณ์แรกของคุณที่นี่!
+              </button>
             </div>
           )}
         </div>

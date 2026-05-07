@@ -5,7 +5,9 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { gasFetch } from '@/lib/gas';
 import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
-import { ArrowLeft, RefreshCcw, TrendingUp, Zap, HelpCircle } from 'lucide-react';
+import { ArrowLeft, RefreshCcw, TrendingUp, Zap, HelpCircle, Trophy, Target, MessageSquare } from 'lucide-react';
+import { CartoonLoading } from '@/components/CartoonLoading';
+import Link from 'next/link';
 
 function DebriefContent() {
   const searchParams = useSearchParams();
@@ -77,36 +79,71 @@ function DebriefContent() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="max-w-4xl mx-auto">
-        <header className="flex justify-between items-center mb-12">
-          <button onClick={() => router.push('/scenarios')} className="flex items-center text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft size={18} className="mr-2" /> กลับไปหน้าภารกิจ
-          </button>
-          <h1 className="text-3xl font-bold">สรุปผลการเจรจา</h1>
-          <button onClick={() => router.push(`/negotiate?sessionId=${sessionId}`)} className="flex items-center text-cyan-400 hover:text-cyan-300">
-            <RefreshCcw size={18} className="mr-2" /> เล่นใหม่
+    <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8 relative overflow-x-hidden">
+      <CartoonLoading isOpen={loading} message="กำลังรวบรวมบทเรียนของคุณ..." />
+      
+      {/* Visual focus layer to separate content from background points */}
+      <div className="fixed inset-0 backdrop-blur-[5px] bg-white/50 pointer-events-none z-0" />
+
+      <div className="max-w-4xl mx-auto relative z-10">
+        <header className="flex flex-col md:flex-row justify-between items-center mb-16 gap-6">
+          <Link 
+            href="/scenarios" 
+            prefetch={false}
+            className="flex items-center bg-white border-4 border-gray-900 px-6 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group"
+          >
+            <ArrowLeft size={20} className="mr-2" /> 
+            <span className="font-black uppercase tracking-tighter">กลับหน้าภารกิจ</span>
+          </Link>
+          
+          <div className="bg-white border-[6px] border-gray-900 px-10 py-6 rounded-[3rem] shadow-[0_12px_0_rgba(0,0,0,1)] -rotate-1">
+            <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tighter">สรุปผลการเจรจา</h1>
+          </div>
+
+          <button 
+            onClick={() => router.push(`/negotiate?sessionId=${sessionId}`)} 
+            className="flex items-center bg-nintendo-yellow text-gray-900 border-4 border-gray-900 px-6 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2"
+          >
+            <RefreshCcw size={20} className="mr-2" /> 
+            <span className="font-black uppercase tracking-tighter">เล่นใหม่</span>
           </button>
         </header>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
-            <p className="text-gray-400 text-sm mb-1 uppercase">คะแนนผลลัพธ์</p>
-            <p className="text-4xl font-bold text-cyan-400">{averageScore.toFixed(1)}/10</p>
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)] text-center">
+            <div className="w-12 h-12 bg-nintendo-blue rounded-2xl border-4 border-gray-900 flex items-center justify-center text-white mx-auto mb-4">
+              <Trophy size={24} />
+            </div>
+            <p className="text-gray-400 font-black text-xs uppercase tracking-widest mb-1">คะแนนผลลัพธ์</p>
+            <p className="text-5xl font-black text-nintendo-blue tracking-tighter">{averageScore.toFixed(1)}/10</p>
           </div>
-          <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
-            <p className="text-gray-400 text-sm mb-1 uppercase">ข้อความที่ส่ง</p>
-            <p className="text-4xl font-bold flex items-center"><TrendingUp size={24} className="mr-2 text-green-400" /> {messages.filter(m => m.sender === 'user').length}</p>
+          
+          <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)] text-center">
+            <div className="w-12 h-12 bg-nintendo-green rounded-2xl border-4 border-gray-900 flex items-center justify-center text-white mx-auto mb-4">
+              <MessageSquare size={24} />
+            </div>
+            <p className="text-gray-400 font-black text-xs uppercase tracking-widest mb-1">ข้อความที่ส่ง</p>
+            <p className="text-5xl font-black text-nintendo-green tracking-tighter">{messages.filter(m => m.sender === 'user').length}</p>
           </div>
-          <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
-            <p className="text-gray-400 text-sm mb-1 uppercase">แต้มทักษะที่ได้รับ</p>
-            <p className="text-4xl font-bold flex items-center"><Zap size={24} className="mr-2 text-yellow-400" /> {feedback.reduce((acc, f) => acc + f.score * 10, 0)}</p>
+
+          <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)] text-center">
+            <div className="w-12 h-12 bg-nintendo-pink rounded-2xl border-4 border-gray-900 flex items-center justify-center text-white mx-auto mb-4">
+              <Zap size={24} />
+            </div>
+            <p className="text-gray-400 font-black text-xs uppercase tracking-widest mb-1">แต้มทักษะ</p>
+            <p className="text-5xl font-black text-nintendo-pink tracking-tighter">+{feedback.reduce((acc, f) => acc + f.score * 10, 0)}</p>
           </div>
         </section>
 
-        <section className="mb-12">
-          <h2 className="text-xl font-bold mb-6">ลำดับเหตุการณ์การเจรจา</h2>
-          <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-white/10">
+        <section className="mb-16">
+          <h2 className="text-4xl font-black text-gray-900 mb-10 flex items-center uppercase tracking-tighter">
+            <div className="p-3 bg-nintendo-blue rounded-2xl border-4 border-gray-900 mr-4 text-white">
+              <Target size={32} />
+            </div>
+            ลำดับเหตุการณ์การเจรจา
+          </h2>
+          
+          <div className="space-y-12 relative before:absolute before:inset-0 before:ml-8 before:h-full before:w-[6px] before:bg-gray-200 before:rounded-full">
             {messages.filter(m => m.sender === 'user').map((m, i) => {
               const f = feedback.find(fb => fb.message_id === m.id);
               let dims = null;
@@ -119,43 +156,52 @@ function DebriefContent() {
               }
               
               return (
-                <div key={i} className="relative pl-12">
-                  <div className="absolute left-0 w-10 h-10 bg-cyan-500 rounded-full border-4 border-slate-950 flex items-center justify-center font-bold text-xs ring-4 ring-cyan-500/20">
+                <div key={i} className="relative pl-20">
+                  <div className="absolute left-0 w-16 h-16 bg-white border-[6px] border-gray-900 rounded-2xl flex items-center justify-center font-black text-2xl text-gray-900 shadow-[0_6px_0_rgba(0,0,0,1)] z-10">
                     {i + 1}
                   </div>
-                  <div className="bg-white/5 border border-white/10 p-6 rounded-2xl hover:border-white/20 transition-all">
-                    <div className="flex justify-between items-start mb-4">
-                      <p className="text-sm font-medium flex-1">"{m.content}"</p>
+                  
+                  <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[0_5px_0_rgba(0,0,0,1)] transition-all">
+                    <div className="flex justify-between items-start mb-6 gap-4">
+                      <p className="text-xl font-bold text-gray-900 italic leading-snug">"{m.content}"</p>
                       <button 
                         onClick={() => handleWhatIf(m.id, m.content)}
-                        className="ml-4 p-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors border border-purple-500/20"
+                        className="flex-shrink-0 p-3 bg-nintendo-blue text-white rounded-2xl border-4 border-gray-900 shadow-[0_6px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all"
                         title="What If?"
                       >
-                        <HelpCircle size={18} />
+                        <HelpCircle size={24} />
                       </button>
                     </div>
                     
                     {f && (
-                      <div className="mt-4 pt-4 border-t border-white/5">
-                        <p className="text-xs text-gray-400 mb-2">{f.feedback_text}</p>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-2 py-0.5 bg-white/5 rounded-full text-[10px] text-gray-400">ความยาว: {dims?.length}</span>
-                          <span className="px-2 py-0.5 bg-white/5 rounded-full text-[10px] text-gray-400">ความครอบคลุม: {dims?.coverage}</span>
-                          <span className="px-2 py-0.5 bg-white/5 rounded-full text-[10px] text-gray-400">ตรรกะ: {dims?.logic}</span>
+                      <div className="mt-6 pt-6 border-t-4 border-dashed border-gray-100">
+                        <div className="bg-gray-50 border-4 border-gray-900 p-6 rounded-2xl mb-4 relative">
+                           <div className="absolute -top-3 left-6 px-3 bg-white border-4 border-gray-900 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-400">คำแนะนำจากโค้ช</div>
+                           <p className="text-gray-600 font-bold leading-relaxed">{f.feedback_text}</p>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-3 mt-4">
+                          <span className="px-4 py-2 bg-nintendo-blue/10 border-2 border-nintendo-blue/30 rounded-full text-xs font-black text-nintendo-blue uppercase tracking-tighter">ความยาว: {dims?.length || 'N/A'}</span>
+                          <span className="px-4 py-2 bg-nintendo-green/10 border-2 border-nintendo-green/30 rounded-full text-xs font-black text-nintendo-green uppercase tracking-tighter">ความครอบคลุม: {dims?.coverage || 'N/A'}</span>
+                          <span className="px-4 py-2 bg-nintendo-pink/10 border-2 border-nintendo-pink/30 rounded-full text-xs font-black text-nintendo-pink uppercase tracking-tighter">ตรรกะ: {dims?.logic || 'N/A'}</span>
                         </div>
                       </div>
                     )}
 
                     {whatIfLoading === m.id && (
-                      <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl animate-pulse">
-                        <p className="text-xs text-purple-300">กำลังจำลองผลลัพธ์ที่เป็นไปได้อื่นๆ...</p>
+                      <div className="mt-6 p-6 bg-nintendo-yellow/20 border-4 border-nintendo-yellow rounded-2xl animate-pulse flex items-center">
+                        <RefreshCcw size={20} className="mr-3 animate-spin text-nintendo-yellow" />
+                        <p className="text-sm font-black text-gray-900 uppercase tracking-tighter">กำลังจำลองผลลัพธ์ใหม่...</p>
                       </div>
                     )}
                     
                     {whatIfResponse && whatIfLoading === null && (
-                      <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl slide-in-bottom">
-                         <p className="text-[10px] font-bold text-purple-400 mb-1 uppercase tracking-wider">บทวิเคราะห์จากผู้เชี่ยวชาญ</p>
-                         <p className="text-xs text-gray-300 leading-relaxed">{whatIfResponse}</p>
+                      <div className="mt-6 p-6 bg-nintendo-yellow border-4 border-gray-900 rounded-2xl shadow-[0_6px_0_rgba(0,0,0,0.1)] slide-in-bottom">
+                         <div className="flex items-center mb-3">
+                           <Zap size={18} className="mr-2 text-gray-900" />
+                           <p className="text-xs font-black text-gray-900 uppercase tracking-widest">บทวิเคราะห์แบบ What-If</p>
+                         </div>
+                         <p className="text-gray-800 font-bold leading-relaxed">{whatIfResponse}</p>
                       </div>
                     )}
                   </div>
@@ -165,12 +211,13 @@ function DebriefContent() {
           </div>
         </section>
 
-        <footer className="text-center pb-12">
+        <footer className="text-center pb-20">
           <button 
             onClick={() => router.push('/profile')}
-            className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-xl shadow-cyan-500/20"
+            className="bg-nintendo-red text-white font-black px-12 py-5 rounded-[2.5rem] border-[6px] border-gray-900 shadow-[0_12px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all uppercase tracking-tighter text-2xl flex items-center justify-center mx-auto space-x-3"
           >
-            ไปยังโปรไฟล์ของฉัน
+            <span>ไปยังโปรไฟล์ของคุณ!</span>
+            <ArrowLeft size={32} className="rotate-180" />
           </button>
         </footer>
       </div>

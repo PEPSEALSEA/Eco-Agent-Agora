@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { getAssetPath } from '@/lib/gas';
 
 interface CartoonLoadingProps {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export const CartoonLoading = ({ isOpen, message, progress }: CartoonLoadingProp
               className="relative w-44 h-44 mb-8 mt-4 drop-shadow-[0_15px_15px_rgba(0,0,0,0.2)]"
             >
               <Image 
-                src="/characters/teacher.png" 
+                src={getAssetPath("/characters/teacher.png")} 
                 alt="Loading Mascot" 
                 fill 
                 className="object-contain"

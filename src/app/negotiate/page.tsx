@@ -366,7 +366,7 @@ function NegotiateContent(): React.ReactElement {
     <div className="flex h-screen bg-slate-950 text-white overflow-hidden relative">
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       {/* Start Overlay */}
-      {!isStarted && (
+      {!isStarted && scenario && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md transition-all duration-700">
           <div className={kidGameplayActive
             ? "max-w-xl p-12 bg-white border-[10px] border-gray-900 rounded-[4rem] text-center shadow-[0_30px_0_rgba(0,0,0,1)] animate-in fade-in zoom-in duration-500"
@@ -382,10 +382,10 @@ function NegotiateContent(): React.ReactElement {
               ? "text-5xl font-black text-gray-900 mb-4 uppercase tracking-tighter"
               : "text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-4"
             }>
-              {scenario.title}
+              {scenario?.title}
             </h1>
             <p className={kidGameplayActive ? "text-gray-600 font-bold mb-8 leading-tight text-xl" : "text-gray-300 mb-8 leading-relaxed"}>
-              {scenario.description}
+              {scenario?.description}
             </p>
             <div className={kidGameplayActive
               ? "bg-gray-100 border-4 border-gray-900 p-6 rounded-3xl mb-8 text-left shadow-inner"
@@ -395,7 +395,7 @@ function NegotiateContent(): React.ReactElement {
                 <Info size={14} className="mr-2" /> {kidGameplayActive ? 'เป้าหมาย!' : 'ภารกิจของคุณ'}
               </h3>
               <p className={kidGameplayActive ? "text-gray-700 font-bold" : "text-sm text-gray-200"}>
-                {scenario.target_group === 'professional' 
+                {scenario?.target_group === 'professional' 
                   ? "จัดการข้อพิพาททางธุรกิจนี้และค้นหาทางออกที่ตอบสนองผู้มีส่วนได้ส่วนเสียในขณะที่ปกป้องผลประโยชน์ของคุณ"
                   : "ช่วยเพื่อนของคุณแก้ไขความขัดแย้งและทำให้ทุกอย่างกลับมาเป็นปกติ"}
               </p>
@@ -480,7 +480,7 @@ function NegotiateContent(): React.ReactElement {
         <header className="w-full max-w-6xl flex justify-between items-start p-8 z-30 absolute top-0 pointer-events-auto">
           <div>
             <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 drop-shadow-md">
-              {scenario.title}
+              {scenario?.title || 'กำลังเตรียมข้อมูล...'}
             </h1>
             <p className="text-sm text-gray-300 drop-shadow-md mt-1">
               เฟสปัจจุบัน: {
