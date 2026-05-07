@@ -86,10 +86,13 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8">
+    <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8 relative overflow-x-hidden">
       <CartoonLoading isOpen={loading} message={loadingMessage} />
       
-      <div className="max-w-6xl mx-auto">
+      {/* Visual focus layer to separate content from background points */}
+      <div className="fixed inset-0 backdrop-blur-[5px] bg-white/50 pointer-events-none z-0" />
+
+      <div className="max-w-6xl mx-auto relative z-10">
         <header className="flex flex-col md:flex-row justify-between items-start mb-16 gap-8">
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="relative group">

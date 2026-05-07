@@ -141,10 +141,14 @@ export default function ScenariosPage() {
   };
 
   return (
-    <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8">
+    <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8 relative overflow-x-hidden">
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       <SyncStatus status={syncStatus} />
-      <div className="max-w-6xl mx-auto">
+
+      {/* Visual focus layer to separate content from background points */}
+      <div className="fixed inset-0 backdrop-blur-[5px] bg-white/50 pointer-events-none z-0" />
+
+      <div className="max-w-6xl mx-auto relative z-10">
         <header className="flex justify-between items-center mb-16">
           <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[3rem] shadow-[0_12px_0_rgba(0,0,0,1)] -rotate-1">
             <h1 className="text-6xl font-black text-gray-900 mb-2 uppercase tracking-tighter">เลือกภารกิจของคุณ!</h1>
