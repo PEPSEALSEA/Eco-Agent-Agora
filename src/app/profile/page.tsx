@@ -25,7 +25,7 @@ type Session = {
 };
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -34,6 +34,8 @@ export default function ProfilePage() {
   const [loadingMessage, setLoadingMessage] = useState('กำลังเรียกดูข้อมูลตัวตนของคุณ...');
 
   useEffect(() => {
+    if (authLoading) return;
+    
     if (!user) {
       router.push('/login');
       return;

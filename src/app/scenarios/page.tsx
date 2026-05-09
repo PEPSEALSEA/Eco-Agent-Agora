@@ -37,7 +37,8 @@ export default function ScenariosPage() {
       try {
         const result = await gasFetchWithSWR('read', 'scenarios', {}, (freshData) => {
           setScenarios(Array.isArray(freshData) ? freshData : []);
-          setSyncStatus('updated');
+          // Only show 'updated' toast if we were actually syncing
+          setSyncStatus(prev => prev === 'syncing' ? 'updated' : 'idle');
         });
 
         if (result.data) {
@@ -47,6 +48,7 @@ export default function ScenariosPage() {
           } else if (result.source === 'cache_stale') {
             setSyncStatus('syncing');
           } else {
+            // It was a direct network fetch
             setSyncStatus('updated');
           }
         }

@@ -13,7 +13,7 @@ function DebriefContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId');
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<any[]>([]);
   const [feedback, setFeedback] = useState<any[]>([]);
   const [session, setSession] = useState<any>(null);
@@ -44,8 +44,13 @@ function DebriefContent() {
       }
     };
 
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
+    }
+
     fetchData();
-  }, [sessionId]);
+  }, [sessionId, user, authLoading, router]);
 
   const handleWhatIf = async (messageId: string, originalContent: string) => {
     setWhatIfLoading(messageId);
