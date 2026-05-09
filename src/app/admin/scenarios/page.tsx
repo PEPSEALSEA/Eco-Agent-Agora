@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
-import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCap, Settings } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCap, Settings, FileJson, Copy, Check } from 'lucide-react';
 import { CartoonLoading } from '@/components/CartoonLoading';
 import Link from 'next/link';
 
@@ -30,6 +30,9 @@ export default function AdminScenariosPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Scenario | null>(null);
+  const [showJsonInput, setShowJsonInput] = useState(false);
+  const [jsonInput, setJsonInput] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -131,6 +134,48 @@ export default function AdminScenariosPage() {
     setEditForm({ ...editForm, characters: newChars });
   };
 
+  const handleImportJson = () => {
+    try {
+      const parsed = JSON.parse(jsonInput);
+      // Validate basic fields
+      if (!parsed.title || !Array.isArray(parsed.characters)) {
+        throw new Error('รูปแบบ JSON ไม่ถูกต้อง (ต้องมี title และ characters)');
+      }
+      setEditForm({
+        ...editForm!,
+        ...parsed,
+        id: editForm?.id || uuid() // Keep current ID if exists
+      });
+      setShowJsonInput(false);
+      setJsonInput('');
+      alert('นำเข้าข้อมูลสำเร็จ!');
+    } catch (err: any) {
+      alert('เกิดข้อผิดพลาดในการนำเข้า: ' + err.message);
+    }
+  };
+
+  const getSampleJson = () => {
+    return JSON.stringify({
+      title: "ชื่อสถานการณ์",
+      description: "คำอธิบาย...",
+      target_group: "professional",
+      characters: [
+        { id: "char_1", name: "ชื่อตัวละคร", role: "บทบาท", agenda: "เป้าหมาย", personality: "นิสัย" }
+      ],
+      phase_rules: {
+        phases: ["opening", "conflict", "negotiation", "resolution"],
+        win_condition: "เงื่อนไขชนะ",
+        fail_condition: "เงื่อนไขแพ้"
+      }
+    }, null, 2);
+  };
+
+  const handleCopySample = () => {
+    navigator.clipboard.writeText(getSampleJson());
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
+
   if (loading && scenarios.length === 0) {
     return <CartoonLoading isOpen={true} message="กำลังเตรียมสมุดจัดการสถานการณ์..." />;
   }
@@ -180,9 +225,31 @@ export default function AdminScenariosPage() {
               <div className="absolute top-0 left-0 w-full h-6 bg-nintendo-blue rounded-t-[2.8rem]" />
               
               <div className="flex justify-between items-center mb-10 mt-2">
-                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
-                  {editingId === 'new' ? '✨ สร้างสถานการณ์ใหม่' : '✏️ แก้ไขสถานการณ์'}
-                </h2>
+                <div className="flex flex-col">
+                  <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">
+                    {editingId === 'new' ? '✨ สร้างสถานการณ์ใหม่' : '✏️ แก้ไขสถานการณ์'}
+                  </h2>
+                  <div className="flex space-x-4 mt-2">
+                    <button 
+                      onClick={() => {
+                        setJsonInput(getSampleJson());
+                        setShowJsonInput(true);
+                      }}
+                      className="text-xs font-black text-nintendo-blue uppercase tracking-widest hover:underline flex items-center"
+                    >
+                      <FileJson size={14} className="mr-1" /> View Sample JSON
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setJsonInput('');
+                        setShowJsonInput(true);
+                      }}
+                      className="text-xs font-black text-nintendo-green uppercase tracking-widest hover:underline flex items-center"
+                    >
+                      <FileJson size={14} className="mr-1" /> Import JSON
+                    </button>
+                  </div>
+                </div>
                 <button 
                   onClick={() => setEditingId(null)} 
                   className="w-12 h-12 flex items-center justify-center bg-gray-100 border-4 border-gray-900 rounded-2xl text-gray-900 hover:bg-nintendo-pink hover:text-white transition-colors"
@@ -190,6 +257,43 @@ export default function AdminScenariosPage() {
                   <X size={24} />
                 </button>
               </div>
+
+              {showJsonInput && (
+                <div className="mb-10 p-6 bg-gray-900 rounded-3xl border-4 border-gray-900 relative animate-in slide-in-from-top duration-300">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-white font-black uppercase text-sm tracking-widest flex items-center">
+                      <FileJson size={16} className="mr-2 text-nintendo-yellow" /> JSON Editor / Importer
+                    </h3>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={handleCopySample}
+                        className="text-[10px] bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-lg transition-all flex items-center"
+                      >
+                        {copySuccess ? <Check size={12} className="mr-1 text-green-400" /> : <Copy size={12} className="mr-1" />}
+                        Copy Sample
+                      </button>
+                      <button onClick={() => setShowJsonInput(false)} className="text-white/50 hover:text-white">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  <textarea 
+                    value={jsonInput}
+                    onChange={(e) => setJsonInput(e.target.value)}
+                    rows={10}
+                    className="w-full bg-black/40 border-2 border-white/10 rounded-xl p-4 font-mono text-xs text-green-400 focus:border-nintendo-blue outline-none custom-scrollbar"
+                    placeholder="วาง JSON ของคุณที่นี่..."
+                  />
+                  <div className="mt-4 flex justify-end">
+                    <button 
+                      onClick={handleImportJson}
+                      className="bg-nintendo-blue text-white px-6 py-2 rounded-xl font-black uppercase text-xs tracking-widest shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none transition-all"
+                    >
+                      นำเข้าข้อมูล (Import Now)
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
