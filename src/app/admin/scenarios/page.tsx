@@ -174,8 +174,8 @@ export default function AdminScenariosPage() {
         </header>
 
         {editingId && editForm && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-y-auto">
-            <div className="bg-white border-[8px] border-gray-900 rounded-[3.5rem] w-full max-w-4xl p-10 shadow-[0_30px_0_rgba(0,0,0,1)] my-8 relative">
+          <div className="fixed inset-0 z-[60] flex justify-center items-start bg-black/60 backdrop-blur-md p-4 overflow-y-auto custom-scrollbar md:pt-10 md:pb-20">
+            <div className="bg-white border-[8px] border-gray-900 rounded-[3.5rem] w-full max-w-4xl p-10 shadow-[0_30px_0_rgba(0,0,0,1)] relative animate-in zoom-in duration-300">
               {/* Top Stripe Decorative */}
               <div className="absolute top-0 left-0 w-full h-6 bg-nintendo-blue rounded-t-[2.8rem]" />
               
@@ -435,15 +435,15 @@ export default function AdminScenariosPage() {
           width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(0, 0, 0, 0.05);
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(0, 0, 0, 0.2);
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(0, 0, 0, 0.3);
         }
       `}</style>
     </div>
