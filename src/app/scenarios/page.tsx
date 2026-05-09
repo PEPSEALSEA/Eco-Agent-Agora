@@ -141,12 +141,9 @@ export default function ScenariosPage() {
   };
 
   return (
-    <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8 relative overflow-x-hidden">
+    <div className="min-h-screen cartoon-bg-blue p-8 relative overflow-x-hidden">
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       <SyncStatus status={syncStatus} />
-
-      {/* Visual focus layer to separate content from background points */}
-      <div className="fixed inset-0 backdrop-blur-[5px] bg-white/50 pointer-events-none z-0" />
 
       <div className="max-w-6xl mx-auto relative z-10">
         <header className="flex justify-between items-center mb-16">

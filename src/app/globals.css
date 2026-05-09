@@ -18,6 +18,8 @@
   --color-nintendo-yellow: #f8cc00;
   --color-nintendo-green: #00aa4b;
   --color-nintendo-pink: #ed47a2;
+  --color-cartoon-blue: #bae6fd;
+  --color-cartoon-dot: #7dd3fc;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -57,4 +59,28 @@ body {
      2px -2px 0 #000,
     -2px  2px 0 #000,
      2px  2px 0 #000;
+}
+
+.cartoon-bg-blue {
+  background-color: var(--color-cartoon-blue);
+  background-image: radial-gradient(var(--color-cartoon-dot) 3px, transparent 3px);
+  background-size: 40px 40px;
+  position: relative;
+}
+
+/* Add a subtle highlight to make it feel more 'cartoon' and premium */
+.cartoon-bg-blue::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cartoon-bg-dark-blue {
+  background-color: #075985;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 3px, transparent 3px);
+  background-size: 60px 60px;
+  position: relative;
 }

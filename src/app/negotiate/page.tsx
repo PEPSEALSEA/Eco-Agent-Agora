@@ -471,8 +471,8 @@ function NegotiateContent(): React.ReactElement {
       <main 
         className={`flex-1 flex flex-col items-center relative overflow-hidden cursor-pointer transition-colors duration-1000 ${
           kidGameplayActive
-            ? 'bg-nintendo-yellow/20 bg-[radial-gradient(#f8cc00_1.5px,transparent_1.5px)] [background-size:40px_40px]' 
-            : 'bg-gradient-to-b from-indigo-950/40 via-slate-900 to-black'
+            ? 'bg-nintendo-yellow/20 bg-[radial-gradient(#f8cc00_2px,transparent_2px)] [background-size:60px_60px]' 
+            : 'cartoon-bg-dark-blue'
         }`}
         onClick={advanceMessage}
       >

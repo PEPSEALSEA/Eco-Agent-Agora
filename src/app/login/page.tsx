@@ -64,11 +64,8 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-4 relative overflow-x-hidden">
+    <div className="min-h-screen flex items-center justify-center cartoon-bg-blue p-4 relative overflow-x-hidden">
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
-      
-      {/* Visual focus layer to separate content from background points */}
-      <div className="fixed inset-0 backdrop-blur-[5px] bg-white/50 pointer-events-none z-0" />
 
       <div className="w-full max-w-md bg-white border-[6px] border-gray-900 p-10 rounded-[3rem] shadow-[0_15px_0_rgba(0,0,0,1)] -rotate-1 relative z-10">
         <h1 className="text-6xl font-black text-gray-900 mb-4 text-center uppercase tracking-tighter leading-none">

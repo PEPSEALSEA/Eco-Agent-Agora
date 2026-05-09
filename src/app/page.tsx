@@ -19,8 +19,8 @@ export default function Home() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen bg-nintendo-blue/10 flex items-center justify-center">
-      <div className="w-16 h-16 border-8 border-nintendo-red border-t-transparent rounded-full animate-spin"></div>
+    <div className="min-h-screen cartoon-bg-blue flex items-center justify-center">
+      <div className="w-16 h-16 border-8 border-nintendo-red border-t-transparent rounded-full animate-spin shadow-lg"></div>
     </div>
   );
 }
