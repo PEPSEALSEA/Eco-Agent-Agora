@@ -68,14 +68,14 @@ export default function LoginPage() {
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
 
       <div className="w-full max-w-md bg-white border-[6px] border-gray-900 p-10 rounded-[3rem] shadow-[0_15px_0_rgba(0,0,0,1)] -rotate-1 relative z-10">
-        <h1 className="text-6xl font-black text-gray-900 mb-4 text-center uppercase tracking-tighter leading-none">
+        <h1 className="text-6xl font-black text-gray-900 mb-4 text-center uppercase tracking-normal leading-normal">
           Wongjra Ja
         </h1>
-        <p className="text-gray-500 font-bold text-center mb-10 text-xl uppercase tracking-tighter">เชี่ยวชาญศิลปะการเจรจาต่อรอง</p>
+        <p className="text-gray-500 font-bold text-center mb-10 text-xl uppercase tracking-normal leading-relaxed">เชี่ยวชาญศิลปะการเจรจาต่อรอง</p>
         
         <div className="space-y-6">
           <div className="text-center">
-            <p className="text-gray-400 font-black uppercase tracking-tighter text-sm mb-6">ยินดีต้อนรับ! โปรดลงชื่อเข้าใช้เพื่อดำเนินการต่อ</p>
+            <p className="text-gray-400 font-black uppercase tracking-normal text-sm mb-6 leading-relaxed">ยินดีต้อนรับ! โปรดลงชื่อเข้าใช้เพื่อดำเนินการต่อ</p>
           </div>
 
           {error && (
@@ -87,7 +87,7 @@ export default function LoginPage() {
           <button
             onClick={() => googleLogin()}
             disabled={loading}
-            className="w-full bg-nintendo-red text-white font-black py-4 rounded-2xl border-4 border-gray-900 shadow-[0_8px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all flex items-center justify-center space-x-3 disabled:opacity-50 uppercase tracking-tighter text-xl"
+            className="w-full bg-nintendo-red text-white font-black py-4 rounded-2xl border-4 border-gray-900 shadow-[0_8px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all flex items-center justify-center space-x-3 disabled:opacity-50 uppercase tracking-normal text-xl"
           >
             <div className="bg-white p-1 rounded-lg">
               <svg className="w-6 h-6" viewBox="0 0 24 24">

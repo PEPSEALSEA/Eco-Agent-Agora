@@ -55,7 +55,7 @@ export const CartoonLoading = ({ isOpen, message, progress }: CartoonLoadingProp
               {/* Little speech bubble arrow */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-gray-100 border-l-4 border-t-4 border-gray-900 rotate-45" />
               
-              <h2 className="text-3xl font-black text-gray-900 text-center leading-tight tracking-tighter uppercase italic">
+              <h2 className="text-3xl font-black text-gray-900 text-center leading-relaxed tracking-normal uppercase italic">
                 {message}
               </h2>
             </motion.div>
@@ -63,7 +63,7 @@ export const CartoonLoading = ({ isOpen, message, progress }: CartoonLoadingProp
             {/* Loading Bar Container */}
             <div className="w-full space-y-3">
               <div className="flex justify-between items-end px-2">
-                <span className="font-black text-gray-900 text-sm uppercase tracking-widest">Loading...</span>
+                <span className="font-black text-gray-900 text-sm uppercase tracking-normal">Loading...</span>
                 {progress !== undefined && (
                   <span className="font-black text-nintendo-blue text-xl">{Math.round(progress)}%</span>
                 )}
@@ -109,7 +109,7 @@ export const CartoonLoading = ({ isOpen, message, progress }: CartoonLoadingProp
               className="mt-8 flex items-center space-x-2"
             >
               <div className="w-2 h-2 bg-nintendo-pink rounded-full" />
-              <p className="text-gray-400 font-black text-xs uppercase tracking-[0.2em]">
+              <p className="text-gray-400 font-black text-xs uppercase tracking-normal leading-relaxed">
                 Please wait a moment
               </p>
               <div className="w-2 h-2 bg-nintendo-pink rounded-full" />

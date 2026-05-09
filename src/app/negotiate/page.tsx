@@ -379,12 +379,12 @@ function NegotiateContent(): React.ReactElement {
               <MessageSquare size={32} />
             </div>
             <h1 className={kidGameplayActive
-              ? "text-5xl font-black text-gray-900 mb-4 uppercase tracking-tighter"
+              ? "text-5xl font-black text-gray-900 mb-4 uppercase tracking-normal leading-normal"
               : "text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-4"
             }>
               {scenario?.title}
             </h1>
-            <p className={kidGameplayActive ? "text-gray-600 font-bold mb-8 leading-tight text-xl" : "text-gray-300 mb-8 leading-relaxed"}>
+            <p className={kidGameplayActive ? "text-gray-600 font-bold mb-8 leading-relaxed text-xl" : "text-gray-300 mb-8 leading-relaxed"}>
               {scenario?.description}
             </p>
             <div className={kidGameplayActive
@@ -394,7 +394,7 @@ function NegotiateContent(): React.ReactElement {
               <h3 className={kidGameplayActive ? "text-lg font-black text-gray-900 uppercase mb-2 flex items-center" : "text-xs font-bold text-cyan-400 uppercase mb-2 flex items-center"}>
                 <Info size={14} className="mr-2" /> {kidGameplayActive ? 'เป้าหมาย!' : 'ภารกิจของคุณ'}
               </h3>
-              <p className={kidGameplayActive ? "text-gray-700 font-bold" : "text-sm text-gray-200"}>
+              <p className={kidGameplayActive ? "text-gray-700 font-bold leading-relaxed" : "text-sm text-gray-200"}>
                 {scenario?.target_group === 'professional' 
                   ? "จัดการข้อพิพาททางธุรกิจนี้และค้นหาทางออกที่ตอบสนองผู้มีส่วนได้ส่วนเสียในขณะที่ปกป้องผลประโยชน์ของคุณ"
                   : "ช่วยเพื่อนของคุณแก้ไขความขัดแย้งและทำให้ทุกอย่างกลับมาเป็นปกติ"}
@@ -572,7 +572,7 @@ function NegotiateContent(): React.ReactElement {
             }`}>
               {kidGameplayActive ? (
                 <div className="w-full flex flex-col items-center">
-                  <div className="bg-white border-4 border-gray-900 px-6 py-2 rounded-full mb-4 text-sm font-black text-gray-900 flex items-center shadow-[0_6px_0_rgba(0,0,0,1)] uppercase tracking-tighter">
+                  <div className="bg-white border-4 border-gray-900 px-6 py-2 rounded-full mb-4 text-sm font-black text-gray-900 flex items-center shadow-[0_6px_0_rgba(0,0,0,1)] uppercase tracking-normal">
                     <Sparkles size={16} className="mr-2 text-nintendo-yellow" /> ปัดเพื่อตัดสินใจ!
                   </div>
                   <ReignsSystem 

@@ -148,8 +148,8 @@ export default function ScenariosPage() {
       <div className="max-w-6xl mx-auto relative z-10">
         <header className="flex justify-between items-center mb-16">
           <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[3rem] shadow-[0_12px_0_rgba(0,0,0,1)] -rotate-1">
-            <h1 className="text-6xl font-black text-gray-900 mb-2 uppercase tracking-tighter">เลือกภารกิจของคุณ!</h1>
-            <p className="text-gray-500 font-bold text-xl uppercase tracking-tighter">เลือกสถานการณ์เพื่อฝึกฝนทักษะการเจรจาต่อรองของคุณ</p>
+            <h1 className="text-6xl font-black text-gray-900 mb-2 uppercase tracking-normal leading-normal">เลือกภารกิจของคุณ!</h1>
+            <p className="text-gray-500 font-bold text-xl uppercase tracking-normal leading-relaxed">เลือกสถานการณ์เพื่อฝึกฝนทักษะการเจรจาต่อรองของคุณ</p>
           </div>
           <Link 
             href="/profile"
@@ -160,8 +160,8 @@ export default function ScenariosPage() {
               <User size={24} strokeWidth={3} />
             </div>
             <div className="text-left">
-              <p className="text-xs text-gray-400 font-black uppercase leading-none mb-1">ผู้ฝึกสอน</p>
-              <p className="text-xl text-gray-900 font-black uppercase tracking-tighter leading-none">{user?.name || user?.email?.split('@')[0]}</p>
+              <p className="text-xs text-gray-400 font-black uppercase leading-normal mb-1">ผู้ฝึกสอน</p>
+              <p className="text-xl text-gray-900 font-black uppercase tracking-normal leading-normal">{user?.name || user?.email?.split('@')[0]}</p>
             </div>
           </Link>
         </header>
@@ -184,8 +184,8 @@ export default function ScenariosPage() {
                     {scenario.target_group?.toUpperCase() || 'GENERAL'}
                   </span>
                 </div>
-                <h3 className="text-3xl font-black text-gray-900 mb-3 uppercase tracking-tighter leading-none">{scenario.title}</h3>
-                <p className="text-gray-500 font-bold mb-8 text-lg line-clamp-3 leading-tight">{scenario.description}</p>
+                <h3 className="text-3xl font-black text-gray-900 mb-3 uppercase tracking-normal leading-relaxed">{scenario.title}</h3>
+                <p className="text-gray-500 font-bold mb-8 text-lg line-clamp-3 leading-relaxed">{scenario.description}</p>
                 
                 <div className="flex -space-x-4 mb-8">
                   {scenario.characters?.map((char: any, i: number) => (
