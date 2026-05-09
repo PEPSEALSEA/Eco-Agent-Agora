@@ -16,6 +16,11 @@ type Scenario = {
   description: string;
   target_group: 'professional' | 'kids';
   characters: any[];
+  phase_rules: {
+    phases: string[];
+    win_condition: string;
+    fail_condition: string;
+  };
 };
 
 export default function AdminScenariosPage() {
@@ -60,8 +65,13 @@ export default function AdminScenariosPage() {
       description: 'คำอธิบายสถานการณ์...',
       target_group: 'professional',
       characters: [
-        { name: 'ตัวละคร 1', role: 'บทบาท...', agenda: 'เป้าหมาย...', personality: 'นิสัย...' }
-      ]
+        { id: 'char_1', name: 'ตัวละคร 1', role: 'บทบาท...', agenda: 'เป้าหมาย...', personality: 'นิสัย...' }
+      ],
+      phase_rules: {
+        phases: ['opening', 'conflict', 'negotiation', 'resolution'],
+        win_condition: 'ทั้งสองฝ่ายตกลงกันได้',
+        fail_condition: 'turn > 20'
+      }
     };
     setEditForm(newScenario);
     setEditingId('new');
@@ -214,6 +224,52 @@ export default function AdminScenariosPage() {
                   />
                 </div>
 
+                <div className="bg-nintendo-blue/5 border-4 border-gray-900 p-6 rounded-[2rem]">
+                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter mb-4 flex items-center">
+                    <Settings size={20} className="mr-2" /> กฎของเฟส (Phase Rules)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                      <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เฟสการเจรจา (คั่นด้วยเครื่องหมายจุลภาค)</label>
+                      <input 
+                        value={editForm.phase_rules?.phases?.join(', ') || ''}
+                        onChange={(e) => setEditForm({ 
+                          ...editForm, 
+                          phase_rules: { 
+                            ...editForm.phase_rules, 
+                            phases: e.target.value.split(',').map(s => s.trim()).filter(s => s) 
+                          } 
+                        })}
+                        placeholder="เช่น opening, conflict, negotiation, resolution"
+                        className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เงื่อนไขชนะ (Win Condition)</label>
+                      <input 
+                        value={editForm.phase_rules?.win_condition || ''}
+                        onChange={(e) => setEditForm({ 
+                          ...editForm, 
+                          phase_rules: { ...editForm.phase_rules, win_condition: e.target.value } 
+                        })}
+                        className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เงื่อนไขแพ้ (Fail Condition)</label>
+                      <input 
+                        value={editForm.phase_rules?.fail_condition || ''}
+                        onChange={(e) => setEditForm({ 
+                          ...editForm, 
+                          phase_rules: { ...editForm.phase_rules, fail_condition: e.target.value } 
+                        })}
+                        placeholder="เช่น turn > 20"
+                        className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="pt-6 border-t-4 border-dashed border-gray-100">
                   <div className="flex justify-between items-center mb-8">
                     <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter flex items-center">
@@ -240,6 +296,15 @@ export default function AdminScenariosPage() {
                           <Trash2 size={18} />
                         </button>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-black uppercase text-gray-400 px-2">ID ตัวละคร (เช่น char_alex)</label>
+                             <input 
+                              placeholder="ID ตัวละคร"
+                              value={char.id || ''}
+                              onChange={(e) => handleCharChange(index, 'id', e.target.value)}
+                              className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none focus:border-nintendo-blue"
+                            />
+                          </div>
                           <div className="space-y-2">
                              <label className="text-[10px] font-black uppercase text-gray-400 px-2">ชื่อตัวละคร</label>
                              <input 

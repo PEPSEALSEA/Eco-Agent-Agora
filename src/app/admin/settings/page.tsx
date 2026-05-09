@@ -2,13 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Shield, Globe } from 'lucide-react';
+import { ArrowLeft, Save, Shield, Globe, Database, Loader2 } from 'lucide-react';
+import { gasFetch } from '@/lib/gas';
 
 export default function SettingsPage() {
   const router = useRouter();
   const [gasUrl, setGasUrl] = useState('');
   const [gasKey, setGasKey] = useState('');
   const [saved, setSaved] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(false);
+  const [setupResult, setSetupResult] = useState<any>(null);
 
   useEffect(() => {
     const savedUrl = localStorage.getItem('eco-agent-gas-url') || '';
@@ -22,6 +25,22 @@ export default function SettingsPage() {
     localStorage.setItem('eco-agent-gas-key', gasKey);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  };
+
+  const handleSetupDb = async () => {
+    if (!confirm('คุณต้องการอัปเดตโครงสร้างฐานข้อมูลใช่หรือไม่? (คอลัมน์ที่ขาดหายไปจะถูกเพิ่มเข้ามา)')) return;
+    setSetupLoading(true);
+    setSetupResult(null);
+    try {
+      const result = await gasFetch('setup');
+      setSetupResult(result);
+      if (result.success) alert('อัปเดตฐานข้อมูลสำเร็จแล้ว!');
+      else alert('เกิดข้อผิดพลาด: ' + (result.error || 'Unknown error'));
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setSetupLoading(false);
+    }
   };
 
   return (
@@ -84,14 +103,27 @@ export default function SettingsPage() {
 
           <section className="pt-8 border-t-4 border-dashed border-gray-100">
             <h2 className="text-2xl font-black flex items-center text-gray-900 uppercase tracking-tighter mb-4">
-              <div className="w-10 h-10 bg-nintendo-pink rounded-xl border-4 border-gray-900 flex items-center justify-center text-white mr-3">
-                <Shield size={20} />
+              <div className="w-10 h-10 bg-nintendo-red rounded-xl border-4 border-gray-900 flex items-center justify-center text-white mr-3">
+                <Database size={20} />
               </div>
-              Security & Privacy
+              Database Management
             </h2>
-            <p className="text-gray-500 font-bold leading-snug">
-              ระบบ "บันทึกการเข้าสู่ระบบ" ทำงานโดยการเก็บข้อมูลโปรไฟล์ของคุณไว้ใน LocalStorage เพื่อให้คุณไม่ต้อง Login ใหม่ทุกครั้ง
+            <p className="text-gray-500 font-bold leading-snug mb-6">
+              อัปเดตโครงสร้าง Google Sheets ของคุณให้เป็นเวอร์ชันล่าสุด (Smart Sync Headers)
             </p>
+            <button 
+              onClick={handleSetupDb}
+              disabled={setupLoading}
+              className="flex items-center px-6 py-3 bg-white border-4 border-gray-900 rounded-2xl font-black text-gray-900 hover:bg-gray-50 shadow-[0_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 transition-all uppercase tracking-tighter disabled:opacity-50"
+            >
+              {setupLoading ? <Loader2 size={20} className="mr-2 animate-spin" /> : <Database size={20} className="mr-2" />}
+              Update Database Schema
+            </button>
+            {setupResult && (
+              <div className="mt-4 p-4 bg-gray-50 border-2 border-gray-900 rounded-xl max-h-40 overflow-y-auto text-xs font-mono text-gray-600">
+                {setupResult.details?.map((d: string, i: number) => <div key={i}>• {d}</div>)}
+              </div>
+            )}
           </section>
 
           <button 
