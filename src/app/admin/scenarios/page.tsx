@@ -160,7 +160,8 @@ export default function AdminScenariosPage() {
       description: "คำอธิบาย...",
       target_group: "professional",
       characters: [
-        { id: "char_1", name: "ชื่อตัวละคร", role: "บทบาท", agenda: "เป้าหมาย", personality: "นิสัย" }
+        { id: "char_A", name: "ตัวละคร A", role: "บทบาท A", agenda: "เป้าหมาย A", personality: "นิสัย A" },
+        { id: "char_B", name: "ตัวละคร B", role: "บทบาท B", agenda: "เป้าหมาย B", personality: "นิสัย B" }
       ],
       phase_rules: {
         phases: ["opening", "conflict", "negotiation", "resolution"],
