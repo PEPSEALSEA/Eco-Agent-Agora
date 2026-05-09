@@ -15,11 +15,13 @@ import { Sparkles, Baby, Briefcase, GraduationCap } from 'lucide-react';
 import { CartoonLoading } from '@/components/CartoonLoading';
 
 type Character = {
+  id: string;
   name: string;
   role: string;
   agenda: string;
   personality: string;
   mood?: 'open' | 'neutral' | 'resistant';
+  stats?: { trust: number, anger: number };
 };
 
 type Message = {
@@ -51,7 +53,9 @@ function NegotiateContent(): React.ReactElement {
   const [showLogModal, setShowLogModal] = useState(false);
   const [mode, setMode] = useState<'kid' | 'adult' | 'pro'>('kid');
   const [currentDynamicDecisions, setCurrentDynamicDecisions] = useState<any>(null);
-  const [phase, setPhase] = useState<'rapport' | 'discovery' | 'bargaining' | 'closing'>('rapport');
+  const [phase, setPhase] = useState<'rapport' | 'discovery' | 'bargaining' | 'closing' | string>('rapport');
+  const [runtimeState, setRuntimeState] = useState<any>(null);
+  const [narrator, setNarrator] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const kidGameplayActive =
@@ -142,64 +146,51 @@ function NegotiateContent(): React.ReactElement {
     setLoadingMessage('AI กำลังเตรียมตัวเจรจา...');
     setSending(true);
 
-    const systemInstruction = `
-      You are a multi-character negotiation simulator ${kidGameplayActive ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
-      Current Scenario: ${scenario?.title} - ${scenario?.description}
-      Characters: ${JSON.stringify(scenario?.characters || [])}
-      
-      CURRENT PHASE: ${phase}
-      PHASE GOAL: ${phase === 'rapport' ? 'Build trust and introduce characters.' : phase === 'discovery' ? 'Explore needs and interests.' : phase === 'bargaining' ? 'Negotiate terms and make trade-offs.' : 'Seal the deal or finalize the agreement.'}
-
-      TASK: Provide an initial greeting and opening statement from the key characters to start the negotiation. 
-      The player is a negotiator trying to achieve the following: ${scenario?.target_group === 'professional' ? 'Resolve the conflict fairly while meeting business goals.' : 'Help friends resolve their conflict.'}
-      
-      ${kidGameplayActive ? 'CRITICAL KID MODE RULES: Keep responses EXTREMELY SHORT (max 1 short sentence, 5-8 words). Use heavy emojis. Use simple, expressive Thai language. ALSO, generate two dynamic negotiation choices for the player to swipe (left and right).' : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
-      
-      Format:
-      {
-        "characters": [{"name": "...", "mood": "neutral", "message": "ข้อความภาษาไทย..."}],
-        "feedback": {"score": 5, "text": "เริ่มการเจรจา...", "dimensions": {"length": "appropriate", "coverage": "initial", "logic": "starting"}},
-        "next_decisions": {
-          "left": {"id": "empathy_1", "label": "Empathy", "thaiLabel": "เข้าใจความรู้สึก", "description": "...", "type": "empathy"},
-          "right": {"id": "logic_1", "label": "Offer Solution", "thaiLabel": "เสนอทางออก", "description": "...", "type": "logic"}
-        },
-        "suggested_phase": "rapport|discovery|bargaining|closing"
-      }
-    `;
-
     try {
-      const geminiData = await getGeminiResponse(systemInstruction, []);
-      const aiMessages: any[] = [];
-      
-      for (const charResp of geminiData.characters) {
-        const aiMsgData: Message = {
-          id: uuid(),
-          session_id: sessionId!,
-          sender: 'ai',
-          character_name: charResp.name,
-          content: charResp.message,
-          created_at: new Date().toISOString()
-        };
-        const result = await gasPost('create', 'messages', aiMsgData);
-        if (!result.error) aiMessages.push(aiMsgData);
-      }
-
-      setMessages(prev => {
-        const updated = [...prev, ...aiMessages];
-        if (prev.length === 0) setCurrentMessageIndex(0);
-        return updated;
+      // For starting, we call the chat action with a system-initiated message or just empty
+      const result = await gasPost('chat', 'messages', {
+        sessionId: sessionId,
+        text: "สวัสดีครับ ผมพร้อมสำหรับการเจรจาแล้ว",
+        vibe: "Professional",
+        intensity: "0.5"
       });
 
-      if (geminiData.next_decisions) {
-        setCurrentDynamicDecisions(geminiData.next_decisions);
+      if (result.error) throw new Error(result.error);
+
+      const aiMessages: Message[] = result.dialogue.map((line: any) => ({
+        id: uuid(),
+        session_id: sessionId!,
+        sender: 'ai',
+        character_name: line.char,
+        content: line.line,
+        created_at: new Date().toISOString()
+      }));
+
+      setMessages(aiMessages);
+      setCurrentMessageIndex(0);
+      setNarrator(result.narrator);
+      
+      // Sync local state if returned
+      if (result.state) {
+        setRuntimeState(result.state);
+        if (result.state.current_phase) setPhase(result.state.current_phase);
+        
+        // Update character moods from relationships
+        setCharacters(prev => prev.map(c => {
+          const rel = result.state.relationships?.[c.id] || result.state.relationships?.[c.name];
+          if (rel) {
+            return {
+              ...c,
+              mood: rel.anger > 7 ? 'resistant' : rel.trust > 7 ? 'open' : 'neutral',
+              stats: { trust: rel.trust, anger: rel.anger }
+            };
+          }
+          return c;
+        }));
       }
-      if (geminiData.suggested_phase) {
-        setPhase(geminiData.suggested_phase);
-      }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error(err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError('การเริ่มต้น AI ล้มเหลว คุณยังสามารถพิมพ์เพื่อเริ่มได้ ' + errorMessage);
+      setError('การเริ่มต้น AI ล้มเหลว: ' + err.message);
     } finally {
       setSending(false);
       setLoading(false);
@@ -215,7 +206,6 @@ function NegotiateContent(): React.ReactElement {
     setSending(true);
     setError(null);
     const userMessageContent = strategyOverride ? strategyOverride.thaiLabel : input;
-    const strategyIntent = strategyOverride ? strategyOverride.label : 'freeform';
     setInput('');
 
     // 1. Save User Message
@@ -227,11 +217,9 @@ function NegotiateContent(): React.ReactElement {
       created_at: new Date().toISOString()
     };
 
-    const result = await gasPost('create', 'messages', userMsg);
-
-    if (result.error) {
-      console.error(result.error);
-      setError('ไม่สามารถส่งข้อความไปยังฐานข้อมูลได้');
+    const saveResult = await gasPost('create', 'messages', userMsg);
+    if (saveResult.error) {
+      setError('ไม่สามารถส่งข้อความได้');
       setSending(false);
       return;
     }
@@ -240,115 +228,60 @@ function NegotiateContent(): React.ReactElement {
     setMessages(newMessagesList);
     setCurrentMessageIndex(newMessagesList.length - 1);
 
-    // 2. Prepare Gemini Prompt (System Instruction)
-    const systemInstruction = `
-      You are a multi-character negotiation simulator ${kidGameplayActive ? 'for KIDS' : ''}. Play ALL characters in one JSON response.
-      Characters: ${JSON.stringify(scenario?.characters || [])}
-      
-      CURRENT PHASE: ${phase}
-      PHASE GOAL: ${phase === 'rapport' ? 'Establish rapport and trust. Do not rush into offers.' : phase === 'discovery' ? 'Ask questions and find out what stakeholders value most.' : phase === 'bargaining' ? 'Exchange value. If you give something up, ask for something in return.' : 'Finalize details and confirm commitment.'}
-      
-      Rules: Respond based on agenda/personality. Adjust tone based on user's message.
-      ${kidGameplayActive ? `USER STRATEGY CHOSEN: ${strategyIntent}. 
-      CRITICAL KID MODE RULES: RESPONSES MUST BE EXTREMELY SHORT (max 1 short sentence, 5-8 words max). 
-      Use simple, expressive Thai. Use heavy emojis. Be direct and emotional.
-      ALSO, generate the next two dynamic negotiation choices for the player (left and right) based on the current situation.` : 'CRITICAL RULE: ALL character messages AND feedback MUST BE IN THAI LANGUAGE.'}
-      
-      Format:
-      {
-        "characters": [{"name": "...", "mood": "open|neutral|resistant", "message": "ข้อความภาษาไทย..."}],
-        "feedback": {"score": 1-10, "text": "ข้อเสนอแนะภาษาไทย...", "dimensions": {"length": "...", "coverage": "...", "logic": "..."}},
-        "next_decisions": {
-          "left": {"id": "...", "label": "...", "thaiLabel": "...", "description": "...", "type": "empathy|logic|boundary|trade|ask|apology"},
-          "right": {"id": "...", "label": "...", "thaiLabel": "...", "description": "...", "type": "..."}
-        },
-        "suggested_phase": "rapport|discovery|bargaining|closing"
-      }
-    `;
-
-    // 3. Prepare and Prune History (Cost optimization: keep last 15 messages)
-    let chatHistory = messages.map(m => ({
-      role: m.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: m.content }]
-    })).slice(-25); // Increased history to 25 messages
-    
-    // Gemini requirement: First message must be 'user'
-    // If history starts with 'model', prepend a synthetic user start message
-    if (chatHistory.length > 0 && chatHistory[0].role === 'model') {
-      chatHistory = [
-        { role: 'user', parts: [{ text: "Let's start the negotiation." }] },
-        ...chatHistory
-      ];
-    }
-
-    chatHistory.push({ role: 'user', parts: [{ text: userMessageContent }] });
-
+    // 2. Call GAS Chat Action (Handles State & AI)
     try {
-      const geminiData = await getGeminiResponse(systemInstruction, chatHistory);
-
-      // 4. Process AI Responses
-      const aiMessages: any[] = [];
-      for (const charResp of geminiData.characters) {
-        const aiMsgData: Message = {
-          id: uuid(),
-          session_id: sessionId!,
-          sender: 'ai',
-          character_name: charResp.name,
-          content: charResp.message,
-          created_at: new Date().toISOString()
-        };
-        
-        const result = await gasPost('create', 'messages', aiMsgData);
-
-        if (result.error) console.error(result.error);
-        else aiMessages.push(aiMsgData);
-      }
-
-      setMessages(prev => [...prev, ...aiMessages]);
-      
-      // Update moods in local state
-      setCharacters(prev => prev.map(c => {
-        const charUpdate = geminiData.characters.find((cr: any) => cr.name === c.name);
-        return charUpdate ? { ...c, mood: charUpdate.mood } : c;
-      }));
-
-      if (geminiData.next_decisions) {
-        setCurrentDynamicDecisions(geminiData.next_decisions);
-      }
-      if (geminiData.suggested_phase) {
-        setPhase(geminiData.suggested_phase);
-      }
-
-      // 4. Save Feedback
-      await gasPost('create', 'feedback_logs', {
-        id: uuid(),
-        session_id: sessionId,
-        message_id: userMsg.id,
-        feedback_text: geminiData.feedback.text,
-        score: geminiData.feedback.score,
-        dimension: JSON.stringify(geminiData.feedback.dimensions),
-        created_at: new Date().toISOString()
+      const result = await gasPost('chat', 'messages', {
+        sessionId: sessionId,
+        text: userMessageContent,
+        vibe: "Neutral", // Could be dynamic
+        intensity: "0.5"
       });
 
-      // 5. Update Skills
-      const skills = ['opening_conversation', 'handling_pushback', 'finding_common_ground', 'empathy_expression', 'logical_argument'];
-      const skillName = skills[Math.floor(Math.random() * skills.length)];
-      
-      // Simple skill XP logic for GAS (using upsert on skill_progress)
-      // Note: Real logic would fetch existing XP first, but for simplicity we'll just upsert new record or let GAS handle it if we updated the script.
-      await gasPost('upsert', 'skill_progress', {
-        id: uuid(),
-        user_id: user.id,
-        skill_name: skillName,
-        xp: geminiData.feedback.score * 10,
-        level: 1, // Simple default
-        updated_at: new Date().toISOString()
-      }, { queryField: 'skill_name', queryValue: skillName });
+      if (result.error) throw new Error(result.error);
 
-    } catch (err: unknown) {
+      if (result.game_over) {
+        setError(result.narrator || 'จบการเจรจา');
+        setSending(false);
+        return;
+      }
+
+      // 3. Process AI Responses
+      const aiMessages: Message[] = result.dialogue.map((line: any) => ({
+        id: uuid(),
+        session_id: sessionId!,
+        sender: 'ai',
+        character_name: line.char,
+        content: line.line,
+        created_at: new Date().toISOString()
+      }));
+
+      setMessages(prev => [...prev, ...aiMessages]);
+      setNarrator(result.narrator);
+      
+      if (result.state) {
+        setRuntimeState(result.state);
+        if (result.state.current_phase) setPhase(result.state.current_phase);
+        
+        setCharacters(prev => prev.map(c => {
+          const rel = result.state.relationships?.[c.id] || result.state.relationships?.[c.name];
+          if (rel) {
+            return {
+              ...c,
+              mood: rel.anger > 7 ? 'resistant' : rel.trust > 7 ? 'open' : 'neutral',
+              stats: { trust: rel.trust, anger: rel.anger }
+            };
+          }
+          return c;
+        }));
+      }
+
+      if (result.next_decisions) {
+        setCurrentDynamicDecisions(result.next_decisions);
+      }
+      
+    } catch (err: any) {
       console.error(err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage || 'AI ไม่พร้อมใช้งานในขณะนี้ โปรดลองอีกครั้ง');
+      setError(err.message || 'AI ไม่พร้อมใช้งานในขณะนี้');
     } finally {
       setSending(false);
     }
@@ -454,7 +387,15 @@ function NegotiateContent(): React.ReactElement {
                   'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]'
                 }`}></div>
               </div>
-              <p className="text-[10px] text-gray-500 italic mb-3 line-clamp-1">{char.role}</p>
+              <p className="text-[10px] text-gray-500 italic mb-1 line-clamp-1">{char.role}</p>
+              
+              {char.stats && (
+                <div className="flex justify-between text-[9px] font-bold uppercase mb-1">
+                  <span className="text-green-400">Trust: {char.stats.trust}</span>
+                  <span className="text-red-400">Anger: {char.stats.anger}</span>
+                </div>
+              )}
+
               <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                 <div className={`h-full transition-all duration-500 ${
                   char.mood === 'open' ? 'w-full bg-green-500' :
@@ -617,11 +558,26 @@ function NegotiateContent(): React.ReactElement {
               )}
             </div>
 
+            {/* Narrator text */}
+            {narrator && currentMessageIndex === messages.length - 1 && !isTyping && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 px-6 py-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl text-xs font-bold text-gray-400 italic text-center"
+              >
+                {narrator}
+              </motion.div>
+            )}
+
             {/* Dialogue Box */}
             {messages.length > 0 && currentMessageIndex >= 0 && (
               <DialogueBox 
                 sender={messages[currentMessageIndex]?.sender || 'ai'}
-                characterName={messages[currentMessageIndex]?.character_name}
+                characterName={
+                  messages[currentMessageIndex]?.sender === 'ai' 
+                    ? (characters.find(c => c.id === messages[currentMessageIndex]?.character_name)?.name || messages[currentMessageIndex]?.character_name)
+                    : 'คุณ'
+                }
                 content={messages[currentMessageIndex]?.content || ''}
                 isTyping={isTyping}
                 onTypingComplete={() => setIsTyping(false)}

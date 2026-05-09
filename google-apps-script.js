@@ -230,8 +230,8 @@ function setupDatabase() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   const tables = {
     'users': ['id', 'email', 'created_at', 'streak_count', 'last_active_date'],
-    'scenarios': ['id', 'title', 'description', 'target_group', 'characters'],
-    'sessions': ['id', 'user_id', 'scenario_id', 'started_at', 'ended_at', 'outcome_score', 'status'],
+    'scenarios': ['id', 'title', 'description', 'target_group', 'characters', 'phase_rules'],
+    'sessions': ['id', 'user_id', 'scenario_id', 'started_at', 'ended_at', 'outcome_score', 'status', 'state', 'history_summary'],
     'messages': ['id', 'session_id', 'sender', 'character_name', 'content', 'created_at'],
     'feedback_logs': ['id', 'session_id', 'message_id', 'feedback_text', 'score', 'dimension', 'created_at'],
     'skill_progress': ['id', 'user_id', 'skill_name', 'level', 'xp', 'updated_at']
@@ -241,18 +241,40 @@ function setupDatabase() {
 
   for (const tableName in tables) {
     let sheet = ss.getSheetByName(tableName);
+    const targetHeaders = tables[tableName];
+
     if (!sheet) {
       sheet = ss.insertSheet(tableName);
-      sheet.appendRow(tables[tableName]);
+      sheet.appendRow(targetHeaders);
       results.push(`Created table: ${tableName}`);
     } else {
-      // Ensure headers are present
-      const headers = sheet.getRange(1, 1, 1, tables[tableName].length).getValues()[0];
-      if (headers[0] === "") {
-        sheet.getRange(1, 1, 1, tables[tableName].length).setValues([tables[tableName]]);
-        results.push(`Added headers to existing table: ${tableName}`);
-      } else {
-        results.push(`Table already exists: ${tableName}`);
+      const lastCol = Math.max(1, sheet.getLastColumn());
+      const existingHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+      
+      // 1. Add missing headers
+      targetHeaders.forEach(h => {
+        if (!existingHeaders.includes(h)) {
+          const newColPos = sheet.getLastColumn() + 1;
+          sheet.getRange(1, newColPos).setValue(h);
+          results.push(`Added [${h}] to ${tableName}`);
+        }
+      });
+
+      // 2. Remove extra headers (not in definition)
+      // Re-fetch existing headers to get updated positions
+      const updatedLastCol = sheet.getLastColumn();
+      const updatedHeaders = sheet.getRange(1, 1, 1, updatedLastCol).getValues()[0];
+      
+      for (let i = updatedHeaders.length - 1; i >= 0; i--) {
+        const h = updatedHeaders[i];
+        if (h && !targetHeaders.includes(h)) {
+          sheet.deleteColumn(i + 1);
+          results.push(`Removed extra column [${h}] from ${tableName}`);
+        }
+      }
+      
+      if (results.filter(r => r.includes(tableName)).length === 0) {
+        results.push(`Table ${tableName} is already up to date`);
       }
     }
   }
@@ -264,74 +286,240 @@ function setupDatabase() {
  * LLM INTERACTION (Antigravity Agent)
  */
 
-const SYSTEM_INSTRUCTION = `
-### Role: Antigravity Negotiation Expert
-คุณคือ AI นักเจรจาที่มีความฉลาดทางอารมณ์สูง (High EQ) และมีความสามารถในการ "ลอยตัวเหนือความขัดแย้ง" (Antigravity Approach)
+const SYSTEM_INSTRUCTION_TEMPLATE = `
+# Role: Antigravity Negotiation Expert
+คุณคือ AI นักเจรจาที่มีความฉลาดทางอารมณ์สูง (High EQ) และมีความสามารถในการ "ลอยตัวเหนือความขัดแย้ง"
 
-### Input Context:
-คุณจะได้รับข้อมูลในรูปแบบ Multimodal ประกอบด้วย:
-1. {{user_text}}: สิ่งที่ผู้ใช้พูด
-2. {{vibe}}: อารมณ์ที่วิเคราะห์จากน้ำเสียง (เช่น โกรธ, กังวล, ดีใจ, ลังเล)
-3. {{intensity}}: ระดับความรุนแรงของอารมณ์ (0.0 - 1.0)
-4. {{physical_clues}}: ข้อมูลเสริม (เช่น Eye contact, Volume, Pitch)
+# LAYER 1: Scenario Config (Immutable)
+{{scenario_config}}
 
-### Guidelines:
-- **Analyze Emotion First:** ก่อนตอบ ให้พิจารณา {{vibe}} และ {{intensity}} เสมอ หากผู้ใช้เสียงดังหรือโกรธ (Intensity > 0.7) ให้คุณใช้โทนเสียงที่ใจเย็นเป็นพิเศษ (De-escalation)
-- **Acknowledge the Nuance:** ให้พูดถึง "น้ำเสียง" หรือ "ท่าทาง" ของผู้ใช้ในคำตอบอย่างเป็นธรรมชาติ เช่น "ผมได้ยินจากน้ำเสียงที่ดูเลี่ยงๆ ของคุณ..." หรือ "ผมสัมผัสได้ว่าคุณมีความมั่นใจมากในประโยคนี้..."
-- **Antigravity Tone:** รักษาความสุภาพ มืออาชีพ แต่ไม่แข็งทื่อเหมือนหุ่นยนต์ มีความยืดหยุ่นเหมือนอากาศ
+# LAYER 2: Runtime State (Current)
+{{runtime_state}}
 
-### Constraint:
-- ถ้า {{physical_clues}} ระบุว่าผู้ใช้ไม่สบตา (No eye contact) ให้ลองทักด้วยความห่วงใยว่าเขากำลังกังวลเรื่องอะไรอยู่หรือไม่
-- ห้ามเพิกเฉยต่อระดับความดัง (Volume) หากเขาตะโกน ให้ตอบกลับด้วยความนุ่มนวลที่สุด
+# LAYER 3: Context & History Summary
+Summary of previous turns: {{history_summary}}
+
+# TASK
+วิเคราะห์ข้อความล่าสุดของผู้ใช้: "{{user_text}}"
+ตรวจพบอารมณ์ (Tone Detection): {{vibe}} (Intensity: {{intensity}})
+
+# RESPONSE GUIDELINES
+1. **Analyze State Delta**: ตรวจสอบว่าคำพูดของผู้ใช้ส่งผลต่อ trust, anger หรือความก้าวหน้าใน phase อย่างไร
+2. **Multi-Character Dialogue**: ตอบกลับในนามของตัวละครที่ Unlocked เท่านั้น (unlocked_characters)
+3. **Structured JSON**: คุณต้องตอบกลับเป็น JSON format ตามโครงสร้างด้านล่างนี้เสมอ
+
+# RESPONSE FORMAT (JSON ONLY)
+{
+  "dialogue": [
+    { "char": "character_id", "line": "ข้อความภาษาไทย..." }
+  ],
+  "state_delta": {
+    "relationships.char_id.trust": "+1/-1",
+    "relationships.char_id.anger": "+1/-1",
+    "resolved_issues": ["add item if resolved"],
+    "phase_flags.key": "value"
+  },
+  "phase_event": "advance_to_next_phase | none",
+  "narrator": "บรรยายสั้นๆ เกี่ยวกับบรรยากาศหรือท่าทางของตัวละคร"
+}
 `;
 
 /**
- * Call Gemini API to get a response based on audio metadata
- * @param {Object} metadata { text, vibe, intensity, context_note }
+ * Call Gemini API with 4-layer state injection
  */
-function getAntigravityResponse(metadata) {
-  const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-  if (!apiKey) throw new Error('GEMINI_API_KEY not found in Script Properties');
+function getAntigravityResponse(payload) {
+  const apiKey = props.getProperty('GEMINI_API_KEY');
+  if (!apiKey) throw new Error('GEMINI_API_KEY not found');
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
   
-  // Prepare the prompt by replacing placeholders
-  let prompt = SYSTEM_INSTRUCTION
-    .replace('{{user_text}}', metadata.text)
-    .replace('{{vibe}}', metadata.vibe)
-    .replace('{{intensity}}', metadata.intensity)
-    .replace('{{physical_clues}}', metadata.context_note);
+  const scenarioConfig = JSON.stringify(payload.scenario, null, 2);
+  const runtimeState = JSON.stringify(payload.state, null, 2);
+  const messages = payload.messages || [];
 
-  const payload = {
-    contents: [{
-      parts: [{ text: prompt + `\n\nUser said: "${metadata.text}"` }]
-    }],
+  let prompt = SYSTEM_INSTRUCTION_TEMPLATE
+    .replace('{{scenario_config}}', scenarioConfig)
+    .replace('{{runtime_state}}', runtimeState)
+    .replace('{{history_summary}}', payload.history_summary || 'None yet.')
+    .replace('{{user_text}}', payload.text)
+    .replace('{{vibe}}', payload.vibe || 'Neutral')
+    .replace('{{intensity}}', payload.intensity || '0.5');
+
+  // Convert messages to Gemini format
+  const contents = messages.map(m => ({
+    role: m.sender === 'user' ? 'user' : 'model',
+    parts: [{ text: m.content }]
+  }));
+
+  // Ensure first message is user
+  if (contents.length > 0 && contents[0].role === 'model') {
+    contents.unshift({ role: 'user', parts: [{ text: 'Start.' }] });
+  }
+
+  // Add the final prompt as the last user message
+  contents.push({ role: 'user', parts: [{ text: prompt }] });
+
+  const body = {
+    contents: contents,
     generationConfig: {
-      temperature: 0.7,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 1024,
+      temperature: 0.2, // Lower temperature for structured output
+      response_mime_type: "application/json"
     }
   };
 
   const options = {
     method: 'post',
     contentType: 'application/json',
-    payload: JSON.stringify(payload)
+    payload: JSON.stringify(body)
   };
 
   const response = UrlFetchApp.fetch(url, options);
   const json = JSON.parse(response.getContentText());
-  
-  return json.candidates[0].content.parts[0].text;
+  const responseText = json.candidates[0].content.parts[0].text;
+
+  try {
+    return JSON.parse(responseText);
+  } catch (e) {
+    // Fallback if AI didn't return valid JSON
+    return { dialogue: [{ char: 'system', line: responseText }], state_delta: {} };
+  }
 }
 
-// Example update to doPost to handle LLM requests
-// Usage: Body: { action: 'chat', data: { text: "...", vibe: "...", ... }, key: '...' }
+/**
+ * Core Chat Logic with Phase Guard
+ */
 function handleChatAction(data) {
-  const responseText = getAntigravityResponse(data);
+  const sessionId = data.sessionId;
+  const userText = data.text;
+  
+  // 1. Load Session & Scenario
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sessionTable = readTable('sessions');
+  const scenarioTable = readTable('scenarios');
+  
+  const sessionRow = sessionTable.find(s => s.id === sessionId);
+  if (!sessionRow) throw new Error('Session not found');
+  
+  const scenario = scenarioTable.find(s => s.id === sessionRow.scenario_id);
+  if (!scenario) throw new Error('Scenario not found');
+
+  // 2. Initialize State if needed
+  let state = sessionRow.state;
+  if (!state || typeof state !== 'object') {
+    state = {
+      current_phase: scenario.phase_rules?.phases?.[0] || 'opening',
+      phase_turn_count: 0,
+      unlocked_characters: [scenario.characters?.[0]?.id || 'char_1'],
+      phase_flags: {},
+      relationships: {},
+      resolved_issues: [],
+      pending_issues: [],
+      agreements: {},
+      score: 50
+    };
+    // Initialize character relationships
+    scenario.characters.forEach(c => {
+      state.relationships[c.id || c.name] = { trust: 5, anger: 0, concessions_made: [] };
+    });
+  }
+
+  // 3. Phase Guard
+  const winCondition = scenario.phase_rules?.win_condition;
+  const failCondition = scenario.phase_rules?.fail_condition; // e.g. "turn > 20"
+  
+  state.phase_turn_count++;
+  
+  if (state.phase_turn_count > 20) {
+    return { 
+      game_over: true, 
+      outcome: 'fail', 
+      narrator: 'เวลาหมดลงแล้ว การเจรจาล้มเหลว' 
+    };
+  }
+
+  // 4. Get History
+  const messages = readTable('messages').filter(m => m.session_id === sessionId);
+  
+  // 5. Call LLM
+  const aiResponse = getAntigravityResponse({
+    scenario: scenario,
+    state: state,
+    history_summary: sessionRow.history_summary,
+    messages: messages.slice(-10), // Send last 10 for context
+    text: userText,
+    vibe: data.vibe,
+    intensity: data.intensity
+  });
+
+  // 6. Apply State Delta
+  if (aiResponse.state_delta) {
+    Object.keys(aiResponse.state_delta).forEach(path => {
+      const value = aiResponse.state_delta[path];
+      applyPath(state, path, value);
+    });
+  }
+
+  if (aiResponse.phase_event === 'advance_to_next_phase') {
+    const phases = scenario.phase_rules?.phases || [];
+    const currentIndex = phases.indexOf(state.current_phase);
+    if (currentIndex < phases.length - 1) {
+      state.current_phase = phases[currentIndex + 1];
+    }
+  }
+
+  // 7. Rolling Summary Logic (Simplified)
+  let historySummary = sessionRow.history_summary || '';
+  if (messages.length > 15 && messages.length % 5 === 0) {
+    // In a real app, we'd call LLM to summarize here. 
+    // For now, we'll just note that we need to implement this or use a simple concat.
+    historySummary += ` | Turn ${messages.length}: User said "${userText}"`;
+  }
+
+  // 8. Save State
+  upsertRow('sessions', 'id', sessionId, {
+    state: JSON.stringify(state),
+    history_summary: historySummary
+  });
+
+  // 9. Save Messages
+  aiResponse.dialogue.forEach(line => {
+    createRow('messages', {
+      id: uuid(),
+      session_id: sessionId,
+      sender: 'ai',
+      character_name: line.char,
+      content: line.line,
+      created_at: new Date().toISOString()
+    });
+  });
+
+  // 10. Return with updated state
   return {
-    response: responseText,
-    metadata_used: data
+    ...aiResponse,
+    state: state
   };
+}
+
+/**
+ * Helper to update nested object properties using string path (e.g. "relationships.char_A.trust")
+ */
+function applyPath(obj, path, value) {
+  const parts = path.split('.');
+  let current = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (!current[parts[i]]) current[parts[i]] = {};
+    current = current[parts[i]];
+  }
+  
+  const lastPart = parts[parts.length - 1];
+  if (typeof value === 'string' && (value.startsWith('+') || value.startsWith('-'))) {
+    const delta = parseInt(value);
+    current[lastPart] = (current[lastPart] || 0) + delta;
+  } else {
+    current[lastPart] = value;
+  }
+}
+
+function uuid() {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
