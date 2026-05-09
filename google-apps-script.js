@@ -406,21 +406,29 @@ function handleChatAction(data) {
   // 2. Initialize State if needed
   let state = sessionRow.state;
   if (!state || typeof state !== 'object') {
-    state = {
-      current_phase: scenario.phase_rules?.phases?.[0] || 'opening',
-      phase_turn_count: 0,
-      unlocked_characters: [scenario.characters?.[0]?.id || 'char_1'],
-      phase_flags: {},
-      relationships: {},
-      resolved_issues: [],
-      pending_issues: [],
-      agreements: {},
-      score: 50
-    };
-    // Initialize character relationships
-    scenario.characters.forEach(c => {
-      state.relationships[c.id || c.name] = { trust: 5, anger: 0, concessions_made: [] };
-    });
+    if (scenario.initial_state) {
+      // Use advanced initial state if provided by the JSON
+      state = JSON.parse(JSON.stringify(scenario.initial_state));
+    } else {
+      // Fallback to basic state initialization
+      const firstPhase = scenario.phase_rules?.phases?.[0];
+      state = {
+        current_phase: typeof firstPhase === 'object' ? firstPhase.id : (firstPhase || 'opening'),
+        phase_turn_count: 0,
+        turn_total: 0,
+        unlocked_characters: [scenario.characters?.[0]?.id || 'char_1'],
+        phase_flags: {},
+        relationships: {},
+        resolved_issues: [],
+        pending_issues: [],
+        agreements: {},
+        score: 50
+      };
+      // Initialize character relationships
+      scenario.characters.forEach(c => {
+        state.relationships[c.id || c.name] = { trust: 5, anger: 0, concessions_made: [] };
+      });
+    }
   }
 
   // 3. Phase Guard
@@ -428,12 +436,22 @@ function handleChatAction(data) {
   const failCondition = scenario.phase_rules?.fail_condition; // e.g. "turn > 20"
   
   state.phase_turn_count++;
+  state.turn_total = (state.turn_total || 0) + 1;
   
-  if (state.phase_turn_count > 20) {
+  let currentTurnLimit = 20; // Default
+  const phases = scenario.phase_rules?.phases || [];
+  if (phases.length > 0 && typeof phases[0] === 'object') {
+    const currentPhaseObj = phases.find(p => p.id === state.current_phase || p.name === state.current_phase);
+    if (currentPhaseObj && currentPhaseObj.turn_limit) {
+      currentTurnLimit = currentPhaseObj.turn_limit;
+    }
+  }
+
+  if (state.phase_turn_count > currentTurnLimit) {
     return { 
       game_over: true, 
       outcome: 'fail', 
-      narrator: 'เวลาหมดลงแล้ว การเจรจาล้มเหลว' 
+      narrator: `หมดเวลาในเฟส ${state.current_phase} แล้ว การเจรจาล้มเหลว` 
     };
   }
 
@@ -461,9 +479,19 @@ function handleChatAction(data) {
 
   if (aiResponse.phase_event === 'advance_to_next_phase') {
     const phases = scenario.phase_rules?.phases || [];
-    const currentIndex = phases.indexOf(state.current_phase);
-    if (currentIndex < phases.length - 1) {
-      state.current_phase = phases[currentIndex + 1];
+    let currentIndex = -1;
+    
+    // Support both string array and object array for phases
+    if (phases.length > 0 && typeof phases[0] === 'object') {
+      currentIndex = phases.findIndex(p => p.id === state.current_phase || p.name === state.current_phase);
+    } else {
+      currentIndex = phases.indexOf(state.current_phase);
+    }
+
+    if (currentIndex !== -1 && currentIndex < phases.length - 1) {
+      const nextPhase = phases[currentIndex + 1];
+      state.current_phase = typeof nextPhase === 'object' ? (nextPhase.id || nextPhase.name) : nextPhase;
+      state.phase_turn_count = 0; // Reset turn count for new phase
     }
   }
 

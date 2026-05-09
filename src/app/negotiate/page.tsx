@@ -147,11 +147,11 @@ function NegotiateContent(): React.ReactElement {
     setSending(true);
 
     try {
-      // For starting, we call the chat action with a system-initiated message or just empty
+      // For starting, we call the chat action with a system-initiated message to kick off the scene
       const result = await gasPost('chat', 'messages', {
         sessionId: sessionId,
-        text: "สวัสดีครับ ผมพร้อมสำหรับการเจรจาแล้ว",
-        vibe: "Professional",
+        text: "[System: เริ่มต้นสถานการณ์ อ้างอิงจาก opening_scene และ phase_rules. กรุณาเริ่มบทสนทนาได้เลย]",
+        vibe: "Neutral",
         intensity: "0.5"
       });
 
