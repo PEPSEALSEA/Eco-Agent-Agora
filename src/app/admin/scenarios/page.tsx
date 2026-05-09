@@ -16,11 +16,10 @@ type Scenario = {
   description: string;
   target_group: 'professional' | 'kids';
   characters: any[];
-  phase_rules: {
-    phases: string[];
-    win_condition: string;
-    fail_condition: string;
-  };
+  player_role?: any;
+  phase_rules?: any;
+  initial_state?: any;
+  opening_scene?: string;
 };
 
 export default function AdminScenariosPage() {
@@ -156,18 +155,68 @@ export default function AdminScenariosPage() {
 
   const getSampleJson = () => {
     return JSON.stringify({
-      title: "ชื่อสถานการณ์",
-      description: "คำอธิบาย...",
+      title: "ไกล่เกลี่ยความขัดแย้งเรื่องฟีเจอร์ใหม่ก่อน Deadline",
+      description: "นาย A (Dev) ต้องการเพิ่มระบบ Notification... (คำอธิบายแบบย่อ)",
       target_group: "professional",
+      player_role: {
+        id: "player",
+        name: "Leader",
+        role: "Project Leader",
+        objective: "ไกล่เกลี่ยให้ทั้งสองฝ่ายตกลงกันได้..."
+      },
       characters: [
-        { id: "char_A", name: "ตัวละคร A", role: "บทบาท A", agenda: "เป้าหมาย A", personality: "นิสัย A" },
-        { id: "char_B", name: "ตัวละคร B", role: "บทบาท B", agenda: "เป้าหมาย B", personality: "นิสัย B" }
+        {
+          id: "char_A",
+          name: "นาย A",
+          role: "Software Developer",
+          agenda: "ต้องการเพิ่มระบบ Notification...",
+          personality: "กระตือรือร้น...",
+          hidden_concern: "กลัวว่าไอเดีย...",
+          unlock_condition: "จะเปิดรับฟังถ้า..."
+        },
+        {
+          id: "char_B",
+          name: "นาย B",
+          role: "Tech Lead",
+          agenda: "ปกป้อง deadline...",
+          personality: "รอบคอบ...",
+          hidden_concern: "เคยโดนโยน scope...",
+          unlock_condition: "จะยืดหยุ่นถ้า..."
+        }
       ],
       phase_rules: {
-        phases: ["opening", "conflict", "negotiation", "resolution"],
-        win_condition: "เงื่อนไขชนะ",
-        fail_condition: "เงื่อนไขแพ้"
-      }
+        phases: [
+          {
+            id: "opening",
+            name: "เข้าใจปัญหา",
+            description: "Leader รับฟัง...",
+            turn_limit: 4,
+            advance_condition: "player ได้ถาม...",
+            ai_behavior: "ตัวละครทั้งคู่อธิบาย..."
+          }
+        ],
+        win_condition: "มี agreements >= 1 ข้อ...",
+        fail_conditions: [
+          "turn_total > 22",
+          "char_A.anger >= 9"
+        ]
+      },
+      initial_state: {
+        current_phase: "opening",
+        phase_turn_count: 0,
+        turn_total: 0,
+        unlocked_characters: ["char_A", "char_B"],
+        phase_flags: {},
+        relationships: {
+          char_A: { trust: 5, anger: 4, concessions_made: [] },
+          char_B: { trust: 5, anger: 2, concessions_made: [] }
+        },
+        resolved_issues: [],
+        pending_issues: ["เพิ่ม Notification system หรือไม่"],
+        agreements: {},
+        score: 0
+      },
+      opening_scene: "ห้องประชุมทีม บ่ายโมง — นาย A เพิ่งเสนอ..."
     }, null, 2);
   };
 
@@ -337,22 +386,41 @@ export default function AdminScenariosPage() {
                     <div className="md:col-span-2">
                       <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เฟสการเจรจา (คั่นด้วยเครื่องหมายจุลภาค)</label>
                       <input 
-                        value={editForm.phase_rules?.phases?.join(', ') || ''}
-                        onChange={(e) => setEditForm({ 
-                          ...editForm, 
-                          phase_rules: { 
-                            ...editForm.phase_rules, 
-                            phases: e.target.value.split(',').map(s => s.trim()).filter(s => s) 
-                          } 
-                        })}
-                        placeholder="เช่น opening, conflict, negotiation, resolution"
+                        value={
+                          Array.isArray(editForm.phase_rules?.phases) 
+                            ? editForm.phase_rules.phases.map((p: any) => typeof p === 'string' ? p : (p.name || p.id)).join(', ') 
+                            : ''
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const newNames = val.split(',').map(s => s.trim()).filter(s => s);
+                          const oldPhases = Array.isArray(editForm.phase_rules?.phases) ? editForm.phase_rules.phases : [];
+                          
+                          // Try to preserve object structures if they exist
+                          const updatedPhases = newNames.map((name, i) => {
+                            const old = oldPhases[i];
+                            if (old && typeof old === 'object') {
+                              return { ...old, name: name }; // Update name but keep rest
+                            }
+                            return name; // Or just return string
+                          });
+
+                          setEditForm({ 
+                            ...editForm, 
+                            phase_rules: { 
+                              ...editForm.phase_rules, 
+                              phases: updatedPhases 
+                            } 
+                          });
+                        }}
+                        placeholder="เช่น opening, conflict, negotiation, resolution (สำหรับข้อมูลที่ซับซ้อน แนะนำให้ใช้ JSON Editor)"
                         className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none"
                       />
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เงื่อนไขชนะ (Win Condition)</label>
                       <input 
-                        value={editForm.phase_rules?.win_condition || ''}
+                        value={typeof editForm.phase_rules?.win_condition === 'string' ? editForm.phase_rules.win_condition : JSON.stringify(editForm.phase_rules?.win_condition || '')}
                         onChange={(e) => setEditForm({ 
                           ...editForm, 
                           phase_rules: { ...editForm.phase_rules, win_condition: e.target.value } 
@@ -363,7 +431,7 @@ export default function AdminScenariosPage() {
                     <div>
                       <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เงื่อนไขแพ้ (Fail Condition)</label>
                       <input 
-                        value={editForm.phase_rules?.fail_condition || ''}
+                        value={typeof editForm.phase_rules?.fail_condition === 'string' ? editForm.phase_rules.fail_condition : (Array.isArray(editForm.phase_rules?.fail_conditions) ? editForm.phase_rules.fail_conditions.join(' | ') : '')}
                         onChange={(e) => setEditForm({ 
                           ...editForm, 
                           phase_rules: { ...editForm.phase_rules, fail_condition: e.target.value } 

@@ -230,7 +230,7 @@ function setupDatabase() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   const tables = {
     'users': ['id', 'email', 'created_at', 'streak_count', 'last_active_date'],
-    'scenarios': ['id', 'title', 'description', 'target_group', 'characters', 'phase_rules'],
+    'scenarios': ['id', 'title', 'description', 'target_group', 'player_role', 'characters', 'phase_rules', 'initial_state', 'opening_scene'],
     'sessions': ['id', 'user_id', 'scenario_id', 'started_at', 'ended_at', 'outcome_score', 'status', 'state', 'history_summary'],
     'messages': ['id', 'session_id', 'sender', 'character_name', 'content', 'created_at'],
     'feedback_logs': ['id', 'session_id', 'message_id', 'feedback_text', 'score', 'dimension', 'created_at'],
