@@ -76,6 +76,11 @@ function doPost(e) {
       return jsonResponse(result);
     }
 
+    if (action === 'end_session') {
+      const result = handleEndSession(data.sessionId);
+      return jsonResponse(result);
+    }
+
     return errorResponse('Invalid action');
   } catch (err) {
     return errorResponse(err.message);
@@ -434,7 +439,12 @@ Summary of previous turns: {{history_summary}}
 2. **Multi-Character Dialogue**: ตอบกลับในนามของตัวละครที่ Unlocked เท่านั้น (unlocked_characters)
 3. **DO NOT PARROT/COPY**: ห้ามทวนคำพูดของผู้ใช้หรือลอกประโยคที่ผู้ใช้ป้อนมาโดยเด็ดขาด! ให้ตอบกลับอย่างเป็นธรรมชาติในมุมมองและนิสัยของตัวละครนั้นๆ คุณมีความคิดเป็นของตัวเอง
 4. **Natural Conversation**: ใช้ภาษาพูดที่เป็นธรรมชาติ หลีกเลี่ยงการพูดเป็นแพทเทิร์นหุ่นยนต์ มีการโต้แย้ง เห็นด้วย หรือเสนอทางเลือกใหม่ตามบุคลิกของตัวละคร
-5. **Structured JSON**: คุณต้องตอบกลับเป็น JSON format ตามโครงสร้างด้านล่างนี้เสมอ
+5. **Phase & Game Over**: 
+   - 'none': ดำเนินการเจรจาปกติ
+   - 'advance_to_next_phase': เมื่อผู้ใช้ทำตาม win_condition ของ Phase ปัจจุบันสำเร็จ
+   - 'game_over_win': เมื่อผู้ใช้ทำตามเป้าหมายหลักสำเร็จทั้งหมด (ปิดดีลได้, หาข้อสรุปได้) และไม่มี Phase ถัดไป
+   - 'game_over_fail': เมื่อการเจรจาล้มเหลวอย่างรุนแรง หรือละเมิด fail_condition
+6. **Structured JSON**: คุณต้องตอบกลับเป็น JSON format ตามโครงสร้างด้านล่างนี้เสมอ
 
 # RESPONSE FORMAT (JSON ONLY)
 {
@@ -664,7 +674,7 @@ function handleChatAction(data) {
   
   if (gameOver) {
     sessionUpdateData.status = 'completed';
-    sessionUpdateData.outcome_score = outcome === 'win' ? (state.score || 100) : 0;
+    sessionUpdateData.outcome_score = outcome === 'win' ? calculateScore(state, scenario) : Math.floor(calculateScore(state, scenario) / 2);
     sessionUpdateData.ended_at = new Date().toISOString();
   }
 
@@ -690,6 +700,91 @@ function handleChatAction(data) {
     game_over: gameOver,
     outcome: outcome
   };
+}
+
+/**
+ * Handle manual End Session
+ */
+function handleEndSession(sessionId) {
+  const sessionRow = readRowById('sessions', sessionId);
+  if (!sessionRow) throw new Error('Session not found');
+  
+  const scenario = readRowById('scenarios', sessionRow.scenario_id);
+  if (!scenario) throw new Error('Scenario not found');
+
+  let state = sessionRow.state;
+  if (typeof state === 'string') state = JSON.parse(state);
+
+  const finalScore = calculateScore(state, scenario);
+
+  const sessionUpdateData = {
+    status: 'completed',
+    outcome_score: finalScore,
+    ended_at: new Date().toISOString()
+  };
+
+  upsertRow('sessions', 'id', sessionId, sessionUpdateData);
+  return { success: true, score: finalScore };
+}
+
+/**
+ * Advanced Score Calculation Engine
+ */
+function calculateScore(state, scenario) {
+  let score = 0;
+  
+  // 1. Phase Progression (40 points max)
+  const phases = scenario.phase_rules?.phases || [];
+  let currentPhaseIndex = 0;
+  if (phases.length > 0 && typeof phases[0] === 'object') {
+    currentPhaseIndex = phases.findIndex(p => p.id === state.current_phase || p.name === state.current_phase);
+  } else {
+    currentPhaseIndex = phases.indexOf(state.current_phase);
+  }
+  if (currentPhaseIndex === -1) currentPhaseIndex = 0;
+  
+  const phaseProgress = (currentPhaseIndex / Math.max(1, phases.length - 1)) * 40;
+  score += phaseProgress;
+
+  // 2. Trust and Anger Dynamics (40 points max)
+  let relationshipScore = 0;
+  const rels = state.relationships || {};
+  const charIds = Object.keys(rels);
+  if (charIds.length > 0) {
+    let totalTrust = 0;
+    let totalAnger = 0;
+    charIds.forEach(id => {
+      // Normalize trust to 0-10
+      totalTrust += Math.min(10, Math.max(0, parseInt(rels[id].trust || 5, 10)));
+      // Normalize anger to 0-10
+      totalAnger += Math.min(10, Math.max(0, parseInt(rels[id].anger || 0, 10)));
+    });
+    
+    // Trust contributes up to 20 points
+    const avgTrust = totalTrust / charIds.length;
+    relationshipScore += (avgTrust / 10) * 20;
+    
+    // Anger contributes up to 20 points (less anger = more points)
+    const avgAnger = totalAnger / charIds.length;
+    relationshipScore += ((10 - avgAnger) / 10) * 20;
+  } else {
+    relationshipScore = 20; // Default if no characters
+  }
+  score += relationshipScore;
+
+  // 3. Resolved Issues Bonus (20 points max)
+  const resolvedCount = (state.resolved_issues || []).length;
+  // Assume 3 resolved issues gives max score for this category
+  const resolvedScore = Math.min(20, (resolvedCount / 3) * 20);
+  score += Math.max(0, resolvedScore);
+
+  // 4. Efficiency Penalty
+  // Subtract 2 points for every turn after 15 turns
+  const totalTurns = parseInt(state.turn_total || 0, 10);
+  const turnPenalty = Math.max(0, totalTurns - 15) * 2;
+  score -= turnPenalty;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 /**

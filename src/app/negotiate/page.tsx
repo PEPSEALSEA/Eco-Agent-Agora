@@ -56,6 +56,8 @@ function NegotiateContent(): React.ReactElement {
   const [phase, setPhase] = useState<'rapport' | 'discovery' | 'bargaining' | 'closing' | string>('rapport');
   const [runtimeState, setRuntimeState] = useState<any>(null);
   const [narrator, setNarrator] = useState<string | null>(null);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [outcome, setOutcome] = useState<'win' | 'fail' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const kidGameplayActive =
@@ -108,6 +110,11 @@ function NegotiateContent(): React.ReactElement {
         if (messagesData.length > 0) {
           setCurrentMessageIndex(messagesData.length - 1);
           setIsStarted(true);
+        }
+        
+        if (sessionData.status === 'completed') {
+          setIsGameOver(true);
+          setOutcome(sessionData.outcome_score > 0 ? 'win' : 'fail');
         }
       } catch (err) {
         console.error('Fetch data error:', err);
@@ -239,14 +246,8 @@ function NegotiateContent(): React.ReactElement {
 
       if (result.error) throw new Error(result.error);
 
-      if (result.game_over) {
-        setError(result.narrator || 'จบการเจรจา');
-        setSending(false);
-        return;
-      }
-
       // 3. Process AI Responses
-      const aiMessages: Message[] = result.dialogue.map((line: any) => ({
+      const aiMessages: Message[] = (result.dialogue || []).map((line: any) => ({
         id: uuid(),
         session_id: sessionId!,
         sender: 'ai',
@@ -257,6 +258,11 @@ function NegotiateContent(): React.ReactElement {
 
       setMessages(prev => [...prev, ...aiMessages]);
       setNarrator(result.narrator);
+      
+      if (result.game_over) {
+        setIsGameOver(true);
+        setOutcome(result.outcome);
+      }
       
       if (result.state) {
         setRuntimeState(result.state);
@@ -460,7 +466,20 @@ function NegotiateContent(): React.ReactElement {
               <ScrollText size={16} className="mr-2"/> ประวัติ
             </button>
             <button 
-              onClick={(e) => { e.stopPropagation(); router.push(`/debrief?sessionId=${sessionId}`); }}
+              onClick={async (e) => { 
+                e.stopPropagation(); 
+                if (window.confirm('คุณแน่ใจหรือไม่ว่าต้องการยุติการเจรจาตอนนี้? (ระบบจะสรุปคะแนนจากผลงานปัจจุบัน)')) {
+                  try {
+                    setLoading(true);
+                    setLoadingMessage('กำลังสรุปผลคะแนน...');
+                    await gasPost('end_session', 'sessions', { sessionId });
+                    router.push(`/debrief?sessionId=${sessionId}`);
+                  } catch (err) {
+                    console.error(err);
+                    setLoading(false);
+                  }
+                }
+              }}
               className="px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-xl text-sm font-bold transition-all"
             >
               ยุติเซสชัน
@@ -622,6 +641,37 @@ function NegotiateContent(): React.ReactElement {
               ))}
               <div ref={messagesEndRef} />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Game Over Modal */}
+      {isGameOver && currentMessageIndex === messages.length - 1 && !isTyping && (
+        <div className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-1000">
+          <div className={`max-w-md w-full p-10 text-center rounded-3xl shadow-2xl border-2 ${
+            outcome === 'win' ? 'bg-gradient-to-b from-green-900/90 to-emerald-950 border-green-500/50' : 'bg-gradient-to-b from-red-900/90 to-rose-950 border-red-500/50'
+          }`}>
+            <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,0,0,0.5)] ${
+              outcome === 'win' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`}>
+              {outcome === 'win' ? <Sparkles size={40} /> : <Info size={40} />}
+            </div>
+            <h2 className="text-4xl font-black text-white mb-4 drop-shadow-md">
+              {outcome === 'win' ? 'สำเร็จ!' : 'ล้มเหลว'}
+            </h2>
+            <p className="text-gray-300 mb-8 leading-relaxed">
+              {narrator || (outcome === 'win' ? 'การเจรจาจบลงด้วยดี คุณสามารถหาข้อตกลงร่วมกันได้' : 'การเจรจาล้มเหลว ไม่สามารถหาข้อสรุปได้ในเวลาที่กำหนด')}
+            </p>
+            <button
+              onClick={() => router.push(`/debrief?sessionId=${sessionId}`)}
+              className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:scale-105 active:scale-95 ${
+                outcome === 'win' 
+                  ? 'bg-green-500 hover:bg-green-400 text-white shadow-green-500/20' 
+                  : 'bg-red-500 hover:bg-red-400 text-white shadow-red-500/20'
+              }`}
+            >
+              ดูผลลัพธ์การประเมิน
+            </button>
           </div>
         </div>
       )}
