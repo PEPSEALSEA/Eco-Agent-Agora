@@ -86,8 +86,16 @@ function doPost(e) {
  * CORE CRUD FUNCTIONS
  */
 
+let cachedSS = null;
+function getSpreadsheet() {
+  if (!cachedSS) {
+    cachedSS = SpreadsheetApp.openById(SHEET_ID);
+  }
+  return cachedSS;
+}
+
 function readTable(tableName) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(tableName);
   if (!sheet) throw new Error('Table ' + tableName + ' not found');
 
@@ -111,8 +119,83 @@ function readTable(tableName) {
   });
 }
 
+function readRowById(tableName, id) {
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName(tableName);
+  if (!sheet) throw new Error('Table ' + tableName + ' not found');
+
+  const finder = sheet.createTextFinder(id.toString()).matchEntireCell(true).findAll();
+  if (finder.length === 0) return null;
+
+  const lastCol = Math.max(1, sheet.getLastColumn());
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const idIndex = headers.indexOf('id');
+
+  let targetRow = -1;
+  for (const cell of finder) {
+    if (cell.getColumn() === idIndex + 1) {
+      targetRow = cell.getRow();
+      break;
+    }
+  }
+
+  if (targetRow === -1) return null;
+
+  const rowData = sheet.getRange(targetRow, 1, 1, headers.length).getValues()[0];
+  const obj = {};
+  headers.forEach((header, i) => {
+    let val = rowData[i];
+    if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
+      try { val = JSON.parse(val); } catch (e) {}
+    }
+    obj[header] = val;
+  });
+  return obj;
+}
+
+function readMessagesBySessionId(sessionId) {
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName('messages');
+  if (!sheet) return [];
+
+  const lastCol = Math.max(1, sheet.getLastColumn());
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const sessionIdIndex = headers.indexOf('session_id');
+
+  const finder = sheet.createTextFinder(sessionId.toString()).matchEntireCell(true).findAll();
+  if (finder.length === 0) return [];
+
+  const rowIndices = finder
+    .filter(cell => cell.getColumn() === sessionIdIndex + 1)
+    .map(cell => cell.getRow())
+    .sort((a, b) => a - b);
+
+  if (rowIndices.length === 0) return [];
+
+  const minRow = rowIndices[0];
+  const maxRow = rowIndices[rowIndices.length - 1];
+  
+  const blockValues = sheet.getRange(minRow, 1, maxRow - minRow + 1, headers.length).getValues();
+  
+  const results = [];
+  rowIndices.forEach(r => {
+    const rowData = blockValues[r - minRow];
+    const obj = {};
+    headers.forEach((header, i) => {
+      let val = rowData[i];
+      if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
+        try { val = JSON.parse(val); } catch (e) {}
+      }
+      obj[header] = val;
+    });
+    results.push(obj);
+  });
+  
+  return results;
+}
+
 function readAllTables() {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ss = getSpreadsheet();
   const sheets = ss.getSheets();
   const result = {};
 
@@ -144,7 +227,7 @@ function readAllTables() {
 }
 
 function createRow(tableName, data) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ss = getSpreadsheet();
   let sheet = ss.getSheetByName(tableName);
   
   // Create sheet if it doesn't exist
@@ -165,40 +248,86 @@ function createRow(tableName, data) {
   return { success: true, data: data };
 }
 
+function createRows(tableName, dataArray) {
+  if (!dataArray || dataArray.length === 0) return { success: true, count: 0 };
+  const ss = getSpreadsheet();
+  let sheet = ss.getSheetByName(tableName);
+  
+  if (!sheet) {
+    sheet = ss.insertSheet(tableName);
+    const headers = Object.keys(dataArray[0]);
+    sheet.appendRow(headers);
+  }
+
+  const lastCol = Math.max(1, sheet.getLastColumn());
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  
+  const newRows = dataArray.map(data => {
+    return headers.map(h => {
+      let val = data[h] || '';
+      if (typeof val === 'object') val = JSON.stringify(val);
+      return val;
+    });
+  });
+
+  sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, headers.length).setValues(newRows);
+  return { success: true, count: newRows.length };
+}
+
 function updateRow(tableName, id, data) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(tableName);
-  const values = sheet.getDataRange().getValues();
-  const headers = values[0];
+  
+  const finder = sheet.createTextFinder(id.toString()).matchEntireCell(true).findAll();
+  const lastCol = Math.max(1, sheet.getLastColumn());
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
   const idIndex = headers.indexOf('id');
 
-  for (let i = 1; i < values.length; i++) {
-    if (values[i][idIndex] == id) {
-      headers.forEach((h, j) => {
-        if (data[h] !== undefined) {
-          let val = data[h];
-          if (typeof val === 'object') val = JSON.stringify(val);
-          sheet.getRange(i + 1, j + 1).setValue(val);
-        }
-      });
-      return { success: true };
+  let targetRow = -1;
+  for (const cell of finder) {
+    if (cell.getColumn() === idIndex + 1) {
+      targetRow = cell.getRow();
+      break;
     }
   }
+
+  if (targetRow !== -1) {
+    headers.forEach((h, j) => {
+      if (data[h] !== undefined) {
+        let val = data[h];
+        if (typeof val === 'object') val = JSON.stringify(val);
+        sheet.getRange(targetRow, j + 1).setValue(val);
+      }
+    });
+    return { success: true };
+  }
+  
   throw new Error('ID not found');
 }
 
 function upsertRow(tableName, queryField, queryValue, data) {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(tableName);
-  const values = sheet.getDataRange().getValues();
-  const headers = values[0];
+  
+  const finder = sheet.createTextFinder(queryValue.toString()).matchEntireCell(true).findAll();
+  const lastCol = Math.max(1, sheet.getLastColumn());
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
   const fieldIndex = headers.indexOf(queryField);
 
-  for (let i = 1; i < values.length; i++) {
-    if (values[i][fieldIndex] == queryValue) {
-      return updateRow(tableName, values[i][headers.indexOf('id')], data);
+  let targetRow = -1;
+  for (const cell of finder) {
+    if (cell.getColumn() === fieldIndex + 1) {
+      targetRow = cell.getRow();
+      break;
     }
   }
+
+  if (targetRow !== -1) {
+    // Found existing, get its ID and update
+    const existingId = sheet.getRange(targetRow, headers.indexOf('id') + 1).getValue();
+    return updateRow(tableName, existingId, data);
+  }
+  
   return createRow(tableName, data);
 }
 
@@ -227,7 +356,7 @@ function errorResponse(msg) {
  * Creates all necessary sheets and headers
  */
 function setupDatabase() {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ss = getSpreadsheet();
   const tables = {
     'users': ['id', 'email', 'created_at', 'streak_count', 'last_active_date'],
     'scenarios': ['id', 'title', 'description', 'target_group', 'player_role', 'characters', 'phase_rules', 'initial_state', 'opening_scene'],
@@ -409,15 +538,11 @@ function handleChatAction(data) {
   const sessionId = data.sessionId;
   const userText = data.text;
   
-  // 1. Load Session & Scenario
-  const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sessionTable = readTable('sessions');
-  const scenarioTable = readTable('scenarios');
-  
-  const sessionRow = sessionTable.find(s => s.id === sessionId);
+  // 1. Load Session & Scenario using fast TextFinder lookups
+  const sessionRow = readRowById('sessions', sessionId);
   if (!sessionRow) throw new Error('Session not found');
   
-  const scenario = scenarioTable.find(s => s.id === sessionRow.scenario_id);
+  const scenario = readRowById('scenarios', sessionRow.scenario_id);
   if (!scenario) throw new Error('Scenario not found');
 
   // 2. Initialize State if needed
@@ -472,8 +597,8 @@ function handleChatAction(data) {
     };
   }
 
-  // 4. Get History
-  const messages = readTable('messages').filter(m => m.session_id === sessionId);
+  // 4. Get History using fast TextFinder lookup
+  const messages = readMessagesBySessionId(sessionId);
   
   // 5. Call LLM
   const aiResponse = getAntigravityResponse({
@@ -545,17 +670,18 @@ function handleChatAction(data) {
 
   upsertRow('sessions', 'id', sessionId, sessionUpdateData);
 
-  // 9. Save Messages
-  aiResponse.dialogue.forEach(line => {
-    createRow('messages', {
+  // 9. Save Messages (Batch Insert for Performance)
+  if (aiResponse.dialogue && aiResponse.dialogue.length > 0) {
+    const messagesData = aiResponse.dialogue.map(line => ({
       id: uuid(),
       session_id: sessionId,
       sender: 'ai',
       character_name: line.char,
       content: line.line,
       created_at: new Date().toISOString()
-    });
-  });
+    }));
+    createRows('messages', messagesData);
+  }
 
   // 10. Return with updated state
   return {
