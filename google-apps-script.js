@@ -289,6 +289,7 @@ function setupDatabase() {
 const SYSTEM_INSTRUCTION_TEMPLATE = `
 # Role: Antigravity Negotiation Expert
 คุณคือ AI นักเจรจาที่มีความฉลาดทางอารมณ์สูง (High EQ) และมีความสามารถในการ "ลอยตัวเหนือความขัดแย้ง"
+สวมบทบาทเป็นตัวละครใน Scenario อย่างแนบเนียนที่สุด ให้ความรู้สึกเหมือนกำลังคุยกับมนุษย์จริงๆ ที่มีอารมณ์ มีความเห็น และมีเป้าหมายส่วนตัว
 
 # LAYER 1: Scenario Config (Immutable)
 {{scenario_config}}
@@ -299,14 +300,12 @@ const SYSTEM_INSTRUCTION_TEMPLATE = `
 # LAYER 3: Context & History Summary
 Summary of previous turns: {{history_summary}}
 
-# TASK
-วิเคราะห์ข้อความล่าสุดของผู้ใช้: "{{user_text}}"
-ตรวจพบอารมณ์ (Tone Detection): {{vibe}} (Intensity: {{intensity}})
-
 # RESPONSE GUIDELINES
 1. **Analyze State Delta**: ตรวจสอบว่าคำพูดของผู้ใช้ส่งผลต่อ trust, anger หรือความก้าวหน้าใน phase อย่างไร
 2. **Multi-Character Dialogue**: ตอบกลับในนามของตัวละครที่ Unlocked เท่านั้น (unlocked_characters)
-3. **Structured JSON**: คุณต้องตอบกลับเป็น JSON format ตามโครงสร้างด้านล่างนี้เสมอ
+3. **DO NOT PARROT/COPY**: ห้ามทวนคำพูดของผู้ใช้หรือลอกประโยคที่ผู้ใช้ป้อนมาโดยเด็ดขาด! ให้ตอบกลับอย่างเป็นธรรมชาติในมุมมองและนิสัยของตัวละครนั้นๆ คุณมีความคิดเป็นของตัวเอง
+4. **Natural Conversation**: ใช้ภาษาพูดที่เป็นธรรมชาติ หลีกเลี่ยงการพูดเป็นแพทเทิร์นหุ่นยนต์ มีการโต้แย้ง เห็นด้วย หรือเสนอทางเลือกใหม่ตามบุคลิกของตัวละคร
+5. **Structured JSON**: คุณต้องตอบกลับเป็น JSON format ตามโครงสร้างด้านล่างนี้เสมอ
 
 # RESPONSE FORMAT (JSON ONLY)
 {
@@ -319,7 +318,7 @@ Summary of previous turns: {{history_summary}}
     "resolved_issues": ["add item if resolved"],
     "phase_flags.key": "value"
   },
-  "phase_event": "advance_to_next_phase | none",
+  "phase_event": "advance_to_next_phase | game_over_win | game_over_fail | none",
   "narrator": "บรรยายสั้นๆ เกี่ยวกับบรรยากาศหรือท่าทางของตัวละคร"
 }
 `;
@@ -331,38 +330,56 @@ function getAntigravityResponse(payload) {
   const apiKey = props.getProperty('GEMINI_API_KEY');
   if (!apiKey) throw new Error('GEMINI_API_KEY not found');
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
   
   const scenarioConfig = JSON.stringify(payload.scenario, null, 2);
   const runtimeState = JSON.stringify(payload.state, null, 2);
   const messages = payload.messages || [];
 
-  let prompt = SYSTEM_INSTRUCTION_TEMPLATE
+  const systemPrompt = SYSTEM_INSTRUCTION_TEMPLATE
     .replace('{{scenario_config}}', scenarioConfig)
     .replace('{{runtime_state}}', runtimeState)
-    .replace('{{history_summary}}', payload.history_summary || 'None yet.')
-    .replace('{{user_text}}', payload.text)
-    .replace('{{vibe}}', payload.vibe || 'Neutral')
-    .replace('{{intensity}}', payload.intensity || '0.5');
+    .replace('{{history_summary}}', payload.history_summary || 'None yet.');
 
   // Convert messages to Gemini format
-  const contents = messages.map(m => ({
-    role: m.sender === 'user' ? 'user' : 'model',
-    parts: [{ text: m.content }]
-  }));
+  const contents = messages.map(m => {
+    // Prefix character name to model responses to maintain identity in history
+    const textContext = (m.sender === 'ai' || m.sender === 'model') && m.character_name 
+      ? `[${m.character_name}]: ${m.content}` 
+      : m.content;
+      
+    return {
+      role: m.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: textContext }]
+    };
+  });
 
   // Ensure first message is user
   if (contents.length > 0 && contents[0].role === 'model') {
-    contents.unshift({ role: 'user', parts: [{ text: 'Start.' }] });
+    contents.unshift({ role: 'user', parts: [{ text: '(Conversation started)' }] });
   }
 
-  // Add the final prompt as the last user message
-  contents.push({ role: 'user', parts: [{ text: prompt }] });
+  // Add the final user message with vibe context
+  const latestUserInput = `[Detected Vibe: ${payload.vibe || 'Neutral'}, Intensity: ${payload.intensity || '0.5'}]\nUser: ${payload.text}`;
+  contents.push({ role: 'user', parts: [{ text: latestUserInput }] });
+
+  // Merge consecutive messages with the same role (Gemini requirement)
+  const mergedContents = [];
+  for (const msg of contents) {
+    if (mergedContents.length > 0 && mergedContents[mergedContents.length - 1].role === msg.role) {
+      mergedContents[mergedContents.length - 1].parts[0].text += `\n\n${msg.parts[0].text}`;
+    } else {
+      mergedContents.push(msg);
+    }
+  }
 
   const body = {
-    contents: contents,
+    systemInstruction: {
+      parts: [{ text: systemPrompt }]
+    },
+    contents: mergedContents,
     generationConfig: {
-      temperature: 0.2, // Lower temperature for structured output
+      temperature: 0.7, // Higher temperature for more natural/human-like responses
       response_mime_type: "application/json"
     }
   };
@@ -477,6 +494,9 @@ function handleChatAction(data) {
     });
   }
 
+  let gameOver = false;
+  let outcome = null;
+
   if (aiResponse.phase_event === 'advance_to_next_phase') {
     const phases = scenario.phase_rules?.phases || [];
     let currentIndex = -1;
@@ -492,22 +512,38 @@ function handleChatAction(data) {
       const nextPhase = phases[currentIndex + 1];
       state.current_phase = typeof nextPhase === 'object' ? (nextPhase.id || nextPhase.name) : nextPhase;
       state.phase_turn_count = 0; // Reset turn count for new phase
+    } else {
+      // No more phases, so player wins
+      gameOver = true;
+      outcome = 'win';
     }
+  } else if (aiResponse.phase_event === 'game_over_win') {
+    gameOver = true;
+    outcome = 'win';
+  } else if (aiResponse.phase_event === 'game_over_fail') {
+    gameOver = true;
+    outcome = 'fail';
   }
 
   // 7. Rolling Summary Logic (Simplified)
   let historySummary = sessionRow.history_summary || '';
   if (messages.length > 15 && messages.length % 5 === 0) {
-    // In a real app, we'd call LLM to summarize here. 
-    // For now, we'll just note that we need to implement this or use a simple concat.
     historySummary += ` | Turn ${messages.length}: User said "${userText}"`;
   }
 
   // 8. Save State
-  upsertRow('sessions', 'id', sessionId, {
+  const sessionUpdateData = {
     state: JSON.stringify(state),
     history_summary: historySummary
-  });
+  };
+  
+  if (gameOver) {
+    sessionUpdateData.status = 'completed';
+    sessionUpdateData.outcome_score = outcome === 'win' ? (state.score || 100) : 0;
+    sessionUpdateData.ended_at = new Date().toISOString();
+  }
+
+  upsertRow('sessions', 'id', sessionId, sessionUpdateData);
 
   // 9. Save Messages
   aiResponse.dialogue.forEach(line => {
@@ -524,7 +560,9 @@ function handleChatAction(data) {
   // 10. Return with updated state
   return {
     ...aiResponse,
-    state: state
+    state: state,
+    game_over: gameOver,
+    outcome: outcome
   };
 }
 
@@ -541,8 +579,8 @@ function applyPath(obj, path, value) {
   
   const lastPart = parts[parts.length - 1];
   if (typeof value === 'string' && (value.startsWith('+') || value.startsWith('-'))) {
-    const delta = parseInt(value);
-    current[lastPart] = (current[lastPart] || 0) + delta;
+    const delta = parseInt(value, 10);
+    current[lastPart] = parseInt(current[lastPart] || 0, 10) + delta;
   } else {
     current[lastPart] = value;
   }
