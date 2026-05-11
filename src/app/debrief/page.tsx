@@ -20,6 +20,9 @@ function DebriefContent() {
   const [loading, setLoading] = useState(true);
   const [whatIfLoading, setWhatIfLoading] = useState<string | null>(null);
   const [whatIfResponse, setWhatIfResponse] = useState<string | null>(null);
+  const [showLog, setShowLog] = useState(false);
+  const [aiEvaluation, setAiEvaluation] = useState<any>(null);
+  const [isReanalyzing, setIsReanalyzing] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -63,11 +66,12 @@ function DebriefContent() {
         Analyze this and describe how a more empathetic or more logical approach (depending on what was missing) would have changed the mood of the stakeholders.
         CRITICAL RULE: YOUR ANALYSIS MUST BE IN THAI LANGUAGE.
         Keep it brief and insightful.
+        Format as plain text, or valid JSON containing a {"feedback": {"text": "..."}} structure if required.
       `;
       
       const history = [{ role: 'user', parts: [{ text: "What if I said something else?" }] }];
       const result = await getGeminiResponse(systemPrompt, history);
-      setWhatIfResponse(result.feedback.text);
+      setWhatIfResponse(result.feedback?.text || result.text || JSON.stringify(result));
     } catch (err) {
       console.error(err);
     } finally {
@@ -75,16 +79,51 @@ function DebriefContent() {
     }
   };
 
+  const handleReanalyze = async () => {
+    setIsReanalyzing(true);
+    setAiEvaluation(null);
+    try {
+      const transcript = messages.map(m => `[${m.sender === 'user' ? 'คุณ' : (m.character_name || 'AI')}]: ${m.content}`).join('\n');
+      
+      const systemPrompt = `
+        You are an expert negotiation coach. Review this entire conversation transcript and evaluate the user's (คุณ) performance.
+        Return the result strictly as a JSON object with this exact structure (no markdown):
+        {
+          "overall_score": 8.5,
+          "feedback_text": "Overall feedback in THAI",
+          "key_strengths": ["strength1 in THAI", "strength2 in THAI"],
+          "areas_for_improvement": ["area1 in THAI", "area2 in THAI"]
+        }
+      `;
+      
+      const history = [{ role: 'user', parts: [{ text: `Transcript:\n${transcript}\n\nPlease evaluate my performance.` }] }];
+      const result = await getGeminiResponse(systemPrompt, history);
+      setAiEvaluation(result);
+    } catch (err) {
+      console.error(err);
+      alert('เกิดข้อผิดพลาดในการประเมินผล: ' + err);
+    } finally {
+      setIsReanalyzing(false);
+    }
+  };
+
   if (loading || !sessionId) {
     return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">กำลังโหลดข้อมูลสรุป...</div>;
   }
 
-  const averageScore = feedback.length > 0 
-    ? feedback.reduce((acc, f) => acc + f.score, 0) / feedback.length 
-    : 0;
+  const averageScore = session?.outcome_score 
+    ? (session.outcome_score / 10) 
+    : (feedback.length > 0 ? feedback.reduce((acc, f) => acc + f.score, 0) / feedback.length : 0);
+
+  const totalSkillPoints = session?.outcome_score 
+    ? session.outcome_score 
+    : feedback.reduce((acc, f) => acc + f.score * 10, 0);
+
+  const finalScoreToShow = aiEvaluation ? aiEvaluation.overall_score : averageScore;
+  const finalPointsToShow = aiEvaluation ? Math.round(aiEvaluation.overall_score * 10) : totalSkillPoints;
 
   return (
-    <div className="min-h-screen bg-nintendo-blue/10 bg-[radial-gradient(#0087e5_1px,transparent_1px)] [background-size:20px_20px] p-8 relative overflow-x-hidden">
+    <div className="min-h-screen cartoon-bg-blue p-8 relative overflow-x-hidden">
       <CartoonLoading isOpen={loading} message="กำลังรวบรวมบทเรียนของคุณ..." />
       
       {/* Visual focus layer to separate content from background points */}
@@ -120,7 +159,7 @@ function DebriefContent() {
               <Trophy size={24} />
             </div>
             <p className="text-gray-400 font-black text-xs uppercase tracking-widest mb-1">คะแนนผลลัพธ์</p>
-            <p className="text-5xl font-black text-nintendo-blue tracking-tighter">{averageScore.toFixed(1)}/10</p>
+            <p className="text-5xl font-black text-nintendo-blue tracking-tighter">{(finalScoreToShow || 0).toFixed(1)}/10</p>
           </div>
           
           <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)] text-center">
@@ -136,85 +175,172 @@ function DebriefContent() {
               <Zap size={24} />
             </div>
             <p className="text-gray-400 font-black text-xs uppercase tracking-widest mb-1">แต้มทักษะ</p>
-            <p className="text-5xl font-black text-nintendo-pink tracking-tighter">+{feedback.reduce((acc, f) => acc + f.score * 10, 0)}</p>
+            <p className="text-5xl font-black text-nintendo-pink tracking-tighter">+{Math.round(finalPointsToShow || 0)}</p>
           </div>
         </section>
 
-        <section className="mb-16">
-          <h2 className="text-4xl font-black text-gray-900 mb-10 flex items-center uppercase tracking-tighter">
-            <div className="p-3 bg-nintendo-blue rounded-2xl border-4 border-gray-900 mr-4 text-white">
-              <Target size={32} />
+        {/* AI Evaluation Section */}
+        {(aiEvaluation || isReanalyzing || feedback.length === 0) && (
+          <section className="mb-16">
+            <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)]">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                 <h2 className="text-2xl font-black text-gray-900 flex items-center uppercase tracking-tighter">
+                   <div className="p-2 bg-nintendo-yellow rounded-xl border-4 border-gray-900 mr-3 text-gray-900">
+                     <Zap size={24} />
+                   </div>
+                   บทวิเคราะห์ภาพรวมจาก AI โค้ช
+                 </h2>
+                 <button 
+                   onClick={handleReanalyze}
+                   disabled={isReanalyzing || messages.length === 0}
+                   className="flex items-center bg-nintendo-blue text-white px-4 py-2 rounded-xl border-4 border-gray-900 font-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                 >
+                   <RefreshCcw size={16} className={`mr-2 ${isReanalyzing ? 'animate-spin' : ''}`} />
+                   {isReanalyzing ? 'กำลังวิเคราะห์...' : 'ประเมินใหม่ (Reanalysis)'}
+                 </button>
+              </div>
+
+              {isReanalyzing ? (
+                 <div className="py-12 flex flex-col items-center justify-center text-nintendo-blue">
+                   <RefreshCcw size={48} className="animate-spin mb-4" />
+                   <p className="font-black uppercase tracking-tighter animate-pulse">กำลังอ่านประวัติการสนทนาและประเมินผล...</p>
+                 </div>
+              ) : aiEvaluation ? (
+                 <div className="space-y-6 slide-in-bottom">
+                   <div className="bg-nintendo-blue/10 border-4 border-nintendo-blue p-6 rounded-2xl">
+                      <p className="text-gray-800 font-bold leading-relaxed">{aiEvaluation.feedback_text}</p>
+                   </div>
+                   
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="bg-nintendo-green/10 border-4 border-nintendo-green p-6 rounded-2xl">
+                        <h3 className="font-black text-nintendo-green uppercase tracking-tighter mb-4 flex items-center">
+                          <Trophy size={20} className="mr-2" /> จุดเด่นของคุณ
+                        </h3>
+                        <ul className="list-disc pl-5 space-y-2 text-gray-700 font-bold">
+                          {(aiEvaluation.key_strengths || []).map((item: string, idx: number) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                     </div>
+                     <div className="bg-nintendo-pink/10 border-4 border-nintendo-pink p-6 rounded-2xl">
+                        <h3 className="font-black text-nintendo-pink uppercase tracking-tighter mb-4 flex items-center">
+                          <Target size={20} className="mr-2" /> จุดที่ควรพัฒนา
+                        </h3>
+                        <ul className="list-disc pl-5 space-y-2 text-gray-700 font-bold">
+                          {(aiEvaluation.areas_for_improvement || []).map((item: string, idx: number) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                     </div>
+                   </div>
+                 </div>
+              ) : (
+                 <div className="py-8 text-center">
+                    <p className="text-gray-500 font-bold mb-4">ยังไม่มีบทวิเคราะห์ภาพรวม หรือไม่พบข้อมูลการประเมินรายข้อ</p>
+                    <button onClick={handleReanalyze} className="bg-nintendo-yellow text-gray-900 px-6 py-3 rounded-xl border-4 border-gray-900 font-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none transition-all">
+                      สร้างบทวิเคราะห์เลย
+                    </button>
+                 </div>
+              )}
             </div>
-            ลำดับเหตุการณ์การเจรจา
-          </h2>
-          
-          <div className="space-y-12 relative before:absolute before:inset-0 before:ml-8 before:h-full before:w-[6px] before:bg-gray-200 before:rounded-full">
-            {messages.filter(m => m.sender === 'user').map((m, i) => {
-              const f = feedback.find(fb => fb.message_id === m.id);
-              let dims = null;
-              if (f && f.dimension) {
-                try {
-                  dims = typeof f.dimension === 'string' ? JSON.parse(f.dimension) : f.dimension;
-                } catch (e) {
-                  console.error('Dimension parse error', e);
+          </section>
+        )}
+
+        {!showLog ? (
+          <div className="text-center mb-16">
+             <button 
+               onClick={() => setShowLog(true)}
+               className="bg-white text-gray-900 border-[6px] border-gray-900 px-10 py-5 rounded-[2.5rem] font-black uppercase tracking-tighter text-2xl shadow-[0_10px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all flex items-center justify-center mx-auto"
+             >
+               <Target size={32} className="mr-4 text-nintendo-blue" />
+               ดูลำดับเหตุการณ์การเจรจา
+             </button>
+          </div>
+        ) : (
+          <section className="mb-16 slide-in-bottom">
+            <h2 className="text-4xl font-black text-gray-900 mb-10 flex items-center uppercase tracking-tighter">
+              <div className="p-3 bg-nintendo-blue rounded-2xl border-4 border-gray-900 mr-4 text-white">
+                <Target size={32} />
+              </div>
+              ลำดับเหตุการณ์การเจรจา
+            </h2>
+            
+            <div className="space-y-12 relative before:absolute before:inset-0 before:ml-8 before:h-full before:w-[6px] before:bg-gray-200 before:rounded-full">
+              {messages.map((m, i) => {
+                const isUser = m.sender === 'user';
+                const f = isUser ? feedback.find(fb => fb.message_id === m.id) : null;
+                let dims = null;
+                if (f && f.dimension) {
+                  try {
+                    dims = typeof f.dimension === 'string' ? JSON.parse(f.dimension) : f.dimension;
+                  } catch (e) {
+                    console.error('Dimension parse error', e);
+                  }
                 }
-              }
-              
-              return (
-                <div key={i} className="relative pl-20">
-                  <div className="absolute left-0 w-16 h-16 bg-white border-[6px] border-gray-900 rounded-2xl flex items-center justify-center font-black text-2xl text-gray-900 shadow-[0_6px_0_rgba(0,0,0,1)] z-10">
-                    {i + 1}
-                  </div>
-                  
-                  <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[0_5px_0_rgba(0,0,0,1)] transition-all">
-                    <div className="flex justify-between items-start mb-6 gap-4">
-                      <p className="text-xl font-bold text-gray-900 italic leading-snug">"{m.content}"</p>
-                      <button 
-                        onClick={() => handleWhatIf(m.id, m.content)}
-                        className="flex-shrink-0 p-3 bg-nintendo-blue text-white rounded-2xl border-4 border-gray-900 shadow-[0_6px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all"
-                        title="What If?"
-                      >
-                        <HelpCircle size={24} />
-                      </button>
+                
+                return (
+                  <div key={i} className="relative pl-20">
+                    <div className={`absolute left-0 w-16 h-16 ${isUser ? 'bg-white border-gray-900 text-gray-900' : 'bg-slate-100 border-slate-700 text-slate-700'} border-[6px] rounded-2xl flex items-center justify-center font-black text-2xl shadow-[0_6px_0_rgba(0,0,0,1)] z-10`}>
+                      {i + 1}
                     </div>
                     
-                    {f && (
-                      <div className="mt-6 pt-6 border-t-4 border-dashed border-gray-100">
-                        <div className="bg-gray-50 border-4 border-gray-900 p-6 rounded-2xl mb-4 relative">
-                           <div className="absolute -top-3 left-6 px-3 bg-white border-4 border-gray-900 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-400">คำแนะนำจากโค้ช</div>
-                           <p className="text-gray-600 font-bold leading-relaxed">{f.feedback_text}</p>
+                    <div className={`bg-white border-[6px] ${isUser ? 'border-gray-900' : 'border-slate-700'} p-8 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[0_5px_0_rgba(0,0,0,1)] transition-all`}>
+                      <div className="flex justify-between items-start mb-6 gap-4">
+                        <div>
+                          <span className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">
+                             {isUser ? 'คุณ' : (m.character_name || 'AI')}
+                          </span>
+                          <p className={`text-xl font-bold ${isUser ? 'text-gray-900' : 'text-slate-700'} italic leading-snug`}>"{m.content}"</p>
                         </div>
-                        
-                        <div className="flex flex-wrap gap-3 mt-4">
-                          <span className="px-4 py-2 bg-nintendo-blue/10 border-2 border-nintendo-blue/30 rounded-full text-xs font-black text-nintendo-blue uppercase tracking-tighter">ความยาว: {dims?.length || 'N/A'}</span>
-                          <span className="px-4 py-2 bg-nintendo-green/10 border-2 border-nintendo-green/30 rounded-full text-xs font-black text-nintendo-green uppercase tracking-tighter">ความครอบคลุม: {dims?.coverage || 'N/A'}</span>
-                          <span className="px-4 py-2 bg-nintendo-pink/10 border-2 border-nintendo-pink/30 rounded-full text-xs font-black text-nintendo-pink uppercase tracking-tighter">ตรรกะ: {dims?.logic || 'N/A'}</span>
-                        </div>
+                        {isUser && (
+                          <button 
+                            onClick={() => handleWhatIf(m.id, m.content)}
+                            className="flex-shrink-0 p-3 bg-nintendo-blue text-white rounded-2xl border-4 border-gray-900 shadow-[0_6px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all"
+                            title="What If?"
+                          >
+                            <HelpCircle size={24} />
+                          </button>
+                        )}
                       </div>
-                    )}
+                      
+                      {f && (
+                        <div className="mt-6 pt-6 border-t-4 border-dashed border-gray-100">
+                          <div className="bg-gray-50 border-4 border-gray-900 p-6 rounded-2xl mb-4 relative">
+                             <div className="absolute -top-3 left-6 px-3 bg-white border-4 border-gray-900 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-400">คำแนะนำจากโค้ช</div>
+                             <p className="text-gray-600 font-bold leading-relaxed">{f.feedback_text}</p>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-3 mt-4">
+                            <span className="px-4 py-2 bg-nintendo-blue/10 border-2 border-nintendo-blue/30 rounded-full text-xs font-black text-nintendo-blue uppercase tracking-tighter">ความยาว: {dims?.length || 'N/A'}</span>
+                            <span className="px-4 py-2 bg-nintendo-green/10 border-2 border-nintendo-green/30 rounded-full text-xs font-black text-nintendo-green uppercase tracking-tighter">ความครอบคลุม: {dims?.coverage || 'N/A'}</span>
+                            <span className="px-4 py-2 bg-nintendo-pink/10 border-2 border-nintendo-pink/30 rounded-full text-xs font-black text-nintendo-pink uppercase tracking-tighter">ตรรกะ: {dims?.logic || 'N/A'}</span>
+                          </div>
+                        </div>
+                      )}
 
-                    {whatIfLoading === m.id && (
-                      <div className="mt-6 p-6 bg-nintendo-yellow/20 border-4 border-nintendo-yellow rounded-2xl animate-pulse flex items-center">
-                        <RefreshCcw size={20} className="mr-3 animate-spin text-nintendo-yellow" />
-                        <p className="text-sm font-black text-gray-900 uppercase tracking-tighter">กำลังจำลองผลลัพธ์ใหม่...</p>
-                      </div>
-                    )}
-                    
-                    {whatIfResponse && whatIfLoading === null && (
-                      <div className="mt-6 p-6 bg-nintendo-yellow border-4 border-gray-900 rounded-2xl shadow-[0_6px_0_rgba(0,0,0,0.1)] slide-in-bottom">
-                         <div className="flex items-center mb-3">
-                           <Zap size={18} className="mr-2 text-gray-900" />
-                           <p className="text-xs font-black text-gray-900 uppercase tracking-widest">บทวิเคราะห์แบบ What-If</p>
-                         </div>
-                         <p className="text-gray-800 font-bold leading-relaxed">{whatIfResponse}</p>
-                      </div>
-                    )}
+                      {whatIfLoading === m.id && (
+                        <div className="mt-6 p-6 bg-nintendo-yellow/20 border-4 border-nintendo-yellow rounded-2xl animate-pulse flex items-center">
+                          <RefreshCcw size={20} className="mr-3 animate-spin text-nintendo-yellow" />
+                          <p className="text-sm font-black text-gray-900 uppercase tracking-tighter">กำลังจำลองผลลัพธ์ใหม่...</p>
+                        </div>
+                      )}
+                      
+                      {whatIfResponse && whatIfLoading === null && (
+                        <div className="mt-6 p-6 bg-nintendo-yellow border-4 border-gray-900 rounded-2xl shadow-[0_6px_0_rgba(0,0,0,0.1)] slide-in-bottom">
+                           <div className="flex items-center mb-3">
+                             <Zap size={18} className="mr-2 text-gray-900" />
+                             <p className="text-xs font-black text-gray-900 uppercase tracking-widest">บทวิเคราะห์แบบ What-If</p>
+                           </div>
+                           <p className="text-gray-800 font-bold leading-relaxed">{whatIfResponse}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <footer className="text-center pb-20">
           <button 
