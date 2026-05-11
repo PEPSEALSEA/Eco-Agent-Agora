@@ -472,11 +472,17 @@ function NegotiateContent(): React.ReactElement {
                   try {
                     setLoading(true);
                     setLoadingMessage('กำลังสรุปผลคะแนน...');
-                    await gasPost('end_session', 'sessions', { sessionId });
+                    const result = await gasPost('end_session', 'sessions', { sessionId });
+                    if (result.error) throw new Error(result.error);
                     router.push(`/debrief?sessionId=${sessionId}`);
                   } catch (err) {
                     console.error(err);
+                    alert('เกิดข้อผิดพลาดในการจบการเจรจา กรุณาลองใหม่อีกครั้ง');
                     setLoading(false);
+                  } finally {
+                    // Note: We don't set loading false here because we are navigating away
+                    // But if navigation fails or stays, we should allow user to try again
+                    setTimeout(() => setLoading(false), 5000); 
                   }
                 }
               }}

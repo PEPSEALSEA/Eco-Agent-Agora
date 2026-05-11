@@ -736,11 +736,23 @@ function handleEndSession(sessionId) {
  * Handle saving AI Evaluation from Debrief
  */
 function handleSaveEvaluation(data) {
+  console.log('Saving evaluation for session: ' + data.sessionId);
   const sessionId = data.sessionId;
   const evaluation = data.evaluation;
   const lineAnalysis = data.lineAnalysis;
 
+  const ss = getSpreadsheet();
+  const sessionSheet = ss.getSheetByName('sessions');
+  const headers = sessionSheet.getRange(1, 1, 1, sessionSheet.getLastColumn()).getValues()[0];
+  
+  // Auto-heal: If ai_evaluation column is missing, run setup
+  if (!headers.includes('ai_evaluation')) {
+    console.log('ai_evaluation column missing, running setup...');
+    setupDatabase();
+  }
+
   if (evaluation) {
+    console.log('Updating session with evaluation data');
     upsertRow('sessions', 'id', sessionId, {
       ai_evaluation: JSON.stringify(evaluation),
       outcome_score: evaluation.overall_score,

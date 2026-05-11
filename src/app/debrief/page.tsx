@@ -25,7 +25,10 @@ function DebriefContent() {
   const [isReanalyzing, setIsReanalyzing] = useState(false);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId) {
+      setLoading(false);
+      return;
+    }
     
     const fetchData = async () => {
       try {
@@ -143,10 +146,23 @@ function DebriefContent() {
     }
   };
 
-  if (loading || !sessionId) {
+  if (loading) {
     return (
       <div className="min-h-screen cartoon-bg-blue p-8 relative overflow-x-hidden">
         <CartoonLoading isOpen={true} message="กำลังรวบรวมบทเรียนของคุณ..." />
+      </div>
+    );
+  }
+
+  if (!sessionId) {
+    return (
+      <div className="min-h-screen cartoon-bg-blue p-8 flex items-center justify-center">
+        <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] text-center shadow-[0_10px_0_rgba(0,0,0,1)]">
+          <h1 className="text-2xl font-black mb-4">ไม่พบรหัสการเจรจา</h1>
+          <Link href="/scenarios" className="bg-nintendo-blue text-white px-6 py-3 rounded-xl border-4 border-gray-900 font-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:translate-y-1 transition-all inline-block">
+            กลับไปหน้าเลือกสถานการณ์
+          </Link>
+        </div>
       </div>
     );
   }
