@@ -229,7 +229,7 @@ function DebriefContent() {
         </section>
 
         {/* AI Evaluation Section */}
-        {(aiEvaluation || isReanalyzing || feedback.length === 0) && (
+        <section className="mb-16">
           <section className="mb-16">
             <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)]">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
