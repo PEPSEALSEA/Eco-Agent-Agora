@@ -90,19 +90,19 @@ function DebriefContent() {
         Return the result strictly as a JSON object with this exact structure (no markdown):
         {
           "overall_score": 8.5,
-          "feedback_text": "Overall feedback in THAI",
+          "feedback_text": "Overall feedback in THAI (use markdown like **bold**)",
           "key_strengths": ["strength1 in THAI", "strength2 in THAI"],
           "areas_for_improvement": ["area1 in THAI", "area2 in THAI"],
           "line_analysis": [
             {
-              "message_id": "message id from transcript",
-              "feedback_text": "feedback for this specific line in THAI",
+              "message_id": "MUST exactly match the ID from transcript (e.g. 550e8400...)",
+              "feedback_text": "UNIQUE and SPECIFIC feedback for this exact line in THAI. Do not repeat the same feedback for all lines.",
               "score": 8,
               "dimension": { "length": "Good", "coverage": "Excellent", "logic": "Clear" }
             }
           ]
         }
-        Make sure to provide line_analysis only for the user's (คุณ) messages.
+        CRITICAL RULE: Make sure to provide a line_analysis item for EVERY SINGLE message sent by 'คุณ'. Each feedback_text MUST be unique and directly address what was said in that specific message.
       `;
       
       const history = [{ role: 'user', parts: [{ text: `Transcript:\n${transcript}\n\nPlease evaluate my performance.` }] }];
@@ -139,6 +139,15 @@ function DebriefContent() {
 
   const finalScoreToShow = aiEvaluation ? aiEvaluation.overall_score : averageScore;
   const finalPointsToShow = aiEvaluation ? Math.round(aiEvaluation.overall_score * 10) : totalSkillPoints;
+
+  const formatMarkdown = (text: string) => {
+    if (!text) return { __html: '' };
+    let html = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br />');
+    return { __html: html };
+  };
 
   return (
     <div className="min-h-screen cartoon-bg-blue p-8 relative overflow-x-hidden">
@@ -226,7 +235,7 @@ function DebriefContent() {
               ) : aiEvaluation ? (
                  <div className="space-y-6 slide-in-bottom">
                    <div className="bg-nintendo-blue/10 border-4 border-nintendo-blue p-6 rounded-2xl">
-                      <p className="text-gray-800 font-bold leading-relaxed">{aiEvaluation.feedback_text}</p>
+                      <div className="text-gray-800 font-bold leading-relaxed" dangerouslySetInnerHTML={formatMarkdown(aiEvaluation.feedback_text)} />
                    </div>
                    
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -325,7 +334,7 @@ function DebriefContent() {
                         <div className="mt-6 pt-6 border-t-4 border-dashed border-gray-100">
                           <div className="bg-gray-50 border-4 border-gray-900 p-6 rounded-2xl mb-4 relative">
                              <div className="absolute -top-3 left-6 px-3 bg-white border-4 border-gray-900 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-400">คำแนะนำจากโค้ช</div>
-                             <p className="text-gray-600 font-bold leading-relaxed">{f.feedback_text}</p>
+                             <div className="text-gray-600 font-bold leading-relaxed" dangerouslySetInnerHTML={formatMarkdown(f.feedback_text)} />
                           </div>
                           
                           <div className="flex flex-wrap gap-3 mt-4">
@@ -349,7 +358,7 @@ function DebriefContent() {
                              <Zap size={18} className="mr-2 text-gray-900" />
                              <p className="text-xs font-black text-gray-900 uppercase tracking-widest">บทวิเคราะห์แบบ What-If</p>
                            </div>
-                           <p className="text-gray-800 font-bold leading-relaxed">{whatIfResponse}</p>
+                           <div className="text-gray-800 font-bold leading-relaxed" dangerouslySetInnerHTML={formatMarkdown(whatIfResponse)} />
                         </div>
                       )}
                     </div>
