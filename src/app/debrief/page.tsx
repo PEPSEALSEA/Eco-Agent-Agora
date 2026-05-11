@@ -230,7 +230,6 @@ function DebriefContent() {
 
         {/* AI Evaluation Section */}
         <section className="mb-16">
-          <section className="mb-16">
             <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)]">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                  <h2 className="text-2xl font-black text-gray-900 flex items-center uppercase tracking-tighter">
@@ -301,7 +300,7 @@ function DebriefContent() {
               )}
             </div>
           </section>
-        )}
+        </section>
 
         {!showLog ? (
           <div className="text-center mb-16">
