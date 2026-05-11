@@ -82,36 +82,28 @@ function NegotiateContent(): React.ReactElement {
     const fetchData = async () => {
       setLoadingMessage('กำลังดึงข้อมูลเซสชัน...');
       try {
-        // Fetch all data needed in one go (or in parallel)
-        // Optimization: Still using read_all for now but via the improved POST method
-        // which is faster and avoids CORS issues.
+        // Fetch session
         const allData = await gasFetch('read_all');
-        
-        if (!allData || allData.error) {
-          throw new Error(allData?.error || 'ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์ได้');
-        }
+        if (allData.error) throw new Error(allData.error);
 
-        const sessionData = (allData.sessions || []).find((s: any) => s.id === sessionId);
+        const sessionData = allData.sessions.find((s: any) => s.id === sessionId);
         if (!sessionData) {
-          console.error('Session not found:', sessionId);
           router.push('/scenarios');
           return;
         }
 
-        const scenarioData = (allData.scenarios || []).find((s: any) => s.id === sessionData.scenario_id);
+        const scenarioData = allData.scenarios.find((s: any) => s.id === sessionData.scenario_id);
         if (!scenarioData) {
-          console.error('Scenario not found for session:', sessionData.scenario_id);
           router.push('/scenarios');
           return;
         }
 
         setSession(sessionData);
         setScenario(scenarioData);
-        setCharacters((scenarioData.characters || []).map((c: any) => ({ ...c, mood: 'neutral' })));
+        setCharacters(scenarioData.characters.map((c: any) => ({ ...c, mood: 'neutral' })));
 
-        // Fetch messages for this session
-        const messagesData = (allData.messages || [])
-          .filter((m: any) => m.session_id === sessionId)
+        // Fetch messages
+        const messagesData = allData.messages.filter((m: any) => m.session_id === sessionId)
           .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
         setMessages(messagesData);
@@ -124,13 +116,9 @@ function NegotiateContent(): React.ReactElement {
           setIsGameOver(true);
           setOutcome(sessionData.outcome_score > 0 ? 'win' : 'fail');
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Fetch data error:', err);
-        setError('ไม่สามารถเชื่อมต่อระบบได้: ' + (err.message || 'Unknown error'));
-        // Don't redirect immediately to allow user to see error
-        setTimeout(() => {
-          if (!session) router.push('/scenarios');
-        }, 3000);
+        router.push('/scenarios');
       } finally {
         setLoading(false);
       }

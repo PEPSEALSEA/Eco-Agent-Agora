@@ -33,22 +33,14 @@ export async function gasFetch(action: string, table?: string, id?: string) {
   const { url: GAS_URL, key: SECRET_KEY } = getGasConfig();
   if (!GAS_URL) return { error: 'GAS URL not configured' };
   
+  const url = new URL(GAS_URL);
+  url.searchParams.append('action', action);
+  if (table) url.searchParams.append('table', table);
+  if (id) url.searchParams.append('id', id);
+  url.searchParams.append('key', SECRET_KEY || '');
+
   try {
-    // Using POST with text/plain to avoid CORS preflight and potentially speed up response
-    const response = await fetch(GAS_URL, {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
-      body: JSON.stringify({
-        action,
-        table,
-        data: { id },
-        key: SECRET_KEY
-      }),
-    });
-    
+    const response = await fetch(url.toString());
     const text = await response.text();
     try {
       return JSON.parse(text);
