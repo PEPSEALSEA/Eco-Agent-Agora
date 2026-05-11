@@ -122,7 +122,11 @@ function DebriefContent() {
   };
 
   if (loading || !sessionId) {
-    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">กำลังโหลดข้อมูลสรุป...</div>;
+    return (
+      <div className="min-h-screen cartoon-bg-blue p-8 relative overflow-x-hidden">
+        <CartoonLoading isOpen={true} message="กำลังรวบรวมบทเรียนของคุณ..." />
+      </div>
+    );
   }
 
   const averageScore = session?.outcome_score 
@@ -372,7 +376,7 @@ function DebriefContent() {
 
 export default function DebriefPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen cartoon-bg-blue p-8 relative overflow-x-hidden"><CartoonLoading isOpen={true} message="กำลังโหลดข้อมูล..." /></div>}>
       <DebriefContent />
     </Suspense>
   );
