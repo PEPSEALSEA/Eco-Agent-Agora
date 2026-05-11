@@ -3,4 +3,7 @@ openai-whisper
 numpy
 soundfile
 scipy
+fastapi
+uvicorn
+python-multipart
 # Note: ffmpeg must be installed on the system (Render handles this via Aptfile or Buildpack)

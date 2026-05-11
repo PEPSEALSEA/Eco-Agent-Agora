@@ -1,59 +1,69 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "placeholder-key";
-const genAI = new GoogleGenerativeAI(apiKey);
+const proxyUrl = process.env.NEXT_PUBLIC_GEMINI_PROXY_URL || "";
 
 export const getGeminiResponse = async (
   systemInstruction: string,
   history: { role: string; parts: { text: string }[] }[]
 ) => {
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash-lite",
-    systemInstruction,
+  const payload = {
+    contents: history.length === 0 
+      ? [{ role: "user", parts: [{ text: "Please start the negotiation with an opening statement." }] }]
+      : history,
+    systemInstruction: {
+      parts: [{ text: systemInstruction }]
+    },
     generationConfig: {
       responseMimeType: "application/json",
     },
-  });
-
-  // If history is empty, we're doing an initial greeting
-  if (history.length === 0) {
-    try {
-      const result = await model.generateContent("Please start the negotiation with an opening statement.");
-      const response = await result.response;
-      const text = response.text();
-      // Strip markdown code blocks if any
-      let cleanText = text.replace(/^```(json)?|```$/gm, '').trim();
-      const startIdx = Math.min(
-        cleanText.indexOf('{') !== -1 ? cleanText.indexOf('{') : Infinity,
-        cleanText.indexOf('[') !== -1 ? cleanText.indexOf('[') : Infinity
-      );
-      const endIdx = Math.max(cleanText.lastIndexOf('}'), cleanText.lastIndexOf(']'));
-      if (startIdx !== Infinity && endIdx !== -1) {
-        cleanText = cleanText.substring(startIdx, endIdx + 1);
-      }
-      return JSON.parse(cleanText);
-    } catch (error) {
-      console.error("Gemini Greeting error:", error);
-      throw error;
-    }
-  }
-
-  // Last message is the user prompt
-  const userMessage = history[history.length - 1];
-  // Previous messages for context (excluding the last one)
-  const chatHistory = history.slice(0, -1);
-
-  const chat = model.startChat({
-    history: chatHistory,
-  });
+  };
 
   try {
-    const result = await chat.sendMessage(userMessage.parts[0].text);
-    const response = await result.response;
-    const text = response.text();
-    
+    const response = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Proxy error: ${response.status} ${errorText}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("Response body is not readable");
+
+    const decoder = new TextDecoder();
+    let fullText = "";
+    let accumulatedText = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      accumulatedText += chunk;
+
+      // SSE lines are separated by newlines
+      const lines = accumulatedText.split('\n');
+      accumulatedText = lines.pop() || ""; // Keep the last partial line
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const dataStr = line.substring(6).trim();
+          if (dataStr === '[DONE]') break;
+          try {
+            const data = JSON.parse(dataStr);
+            const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            fullText += content;
+          } catch (e) {
+            // Ignore incomplete JSON chunks
+          }
+        }
+      }
+    }
+
+    // Process the final accumulated text
     // Strip markdown code blocks if any
-    let cleanText = text.replace(/^```(json)?|```$/gm, '').trim();
+    let cleanText = fullText.replace(/^```(json)?|```$/gm, '').trim();
     
     // Find the first { or [ and the last } or ]
     const startIdx = Math.min(
@@ -67,8 +77,9 @@ export const getGeminiResponse = async (
     }
 
     return JSON.parse(cleanText);
+
   } catch (error) {
-    console.error("Gemini API error:", error);
+    console.error("Gemini Proxy API error:", error);
     throw error;
   }
 };

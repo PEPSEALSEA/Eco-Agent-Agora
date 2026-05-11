@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
 import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
-import { Send, User as UserIcon, Bot, ArrowLeft, MessageSquare, Info, Users, ScrollText, X } from 'lucide-react';
+import { Send, User as UserIcon, Bot, ArrowLeft, MessageSquare, Info, Users, ScrollText, X, Mic } from 'lucide-react';
 import { CharacterAvatar } from '@/components/CharacterAvatar';
 import { DialogueBox } from '@/components/DialogueBox';
 import { StrategyBlocks, Strategy } from '@/components/StrategyBlocks';
@@ -13,6 +13,7 @@ import { ReignsSystem } from '@/components/ReignsSystem';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Baby, Briefcase, GraduationCap } from 'lucide-react';
 import { CartoonLoading } from '@/components/CartoonLoading';
+import { VoiceRecorder } from '@/components/VoiceRecorder';
 
 type Character = {
   id: string;
@@ -204,16 +205,19 @@ function NegotiateContent(): React.ReactElement {
     }
   };
 
-  const handleSend = async (strategyOverride?: Strategy) => {
-    if ((!input.trim() && !strategyOverride) || !user || sending || !sessionId) {
+  const handleSend = async (strategyOverride?: Strategy, audioResult?: { text: string, vibe: string, intensity: number }) => {
+    if ((!input.trim() && !strategyOverride && !audioResult) || !user || sending || !sessionId) {
       if (!user) setError('คุณต้องเข้าสู่ระบบเพื่อส่งข้อความ');
       return;
     }
 
     setSending(true);
     setError(null);
-    const userMessageContent = strategyOverride ? strategyOverride.thaiLabel : input;
-    setInput('');
+    const userMessageContent = audioResult ? audioResult.text : (strategyOverride ? strategyOverride.thaiLabel : input);
+    const vibe = audioResult ? audioResult.vibe : "Neutral";
+    const intensity = audioResult ? audioResult.intensity : "0.5";
+    
+    if (!audioResult) setInput('');
 
     // 1. Save User Message
     const userMsg: Message = {
@@ -554,31 +558,38 @@ function NegotiateContent(): React.ReactElement {
                   isKidMode={false}
                 />
               ) : (
-                <div className="w-full border p-2 rounded-[2rem] flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl bg-slate-900/90 border-white/20 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(52,211,153,0.15)]">
-                  <div className="pl-6 text-emerald-400">
-                    <GraduationCap size={20} />
+                <div className="w-full flex items-center space-x-4">
+                  <div className="flex-1 border p-2 rounded-[2rem] flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl bg-slate-900/90 border-white/20 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(52,211,153,0.15)]">
+                    <div className="pl-6 text-emerald-400">
+                      <GraduationCap size={20} />
+                    </div>
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                      onClick={(e) => e.stopPropagation()}
+                      disabled={!isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping}
+                      placeholder="พิมพ์อิสระ... ใช้ทักษะการเจรจาขั้นสูงของคุณ (กด Enter เพื่อส่ง)"
+                      className="flex-1 bg-transparent border-none outline-none px-4 py-4 text-[17px] placeholder:text-gray-500 text-white font-sans"
+                    />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleSend(); }}
+                      disabled={sending || !input.trim() || !isStarted || currentMessageIndex < messages.length - 1 || isTyping}
+                      className={`p-4 rounded-full transition-all text-white ${
+                        !input.trim() || !isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping
+                          ? 'bg-white/5 text-gray-600 cursor-not-allowed' 
+                          : 'bg-gradient-to-r from-emerald-400 to-teal-600 shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:scale-110 active:scale-95'
+                      }`}
+                    >
+                      <Send size={20} className={input.trim() ? "translate-x-0.5 -translate-y-0.5" : ""} />
+                    </button>
                   </div>
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                    onClick={(e) => e.stopPropagation()}
-                    disabled={!isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping}
-                    placeholder="พิมพ์อิสระ... ใช้ทักษะการเจรจาขั้นสูงของคุณ (กด Enter เพื่อส่ง)"
-                    className="flex-1 bg-transparent border-none outline-none px-4 py-4 text-[17px] placeholder:text-gray-500 text-white font-sans"
+                  
+                  <VoiceRecorder 
+                    onTranscription={(res) => handleSend(undefined, res)}
+                    disabled={sending || currentMessageIndex < messages.length - 1 || isTyping}
                   />
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleSend(); }}
-                    disabled={sending || !input.trim() || !isStarted || currentMessageIndex < messages.length - 1 || isTyping}
-                    className={`p-4 rounded-full transition-all text-white ${
-                      !input.trim() || !isStarted || sending || currentMessageIndex < messages.length - 1 || isTyping
-                        ? 'bg-white/5 text-gray-600 cursor-not-allowed' 
-                        : 'bg-gradient-to-r from-emerald-400 to-teal-600 shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:scale-110 active:scale-95'
-                    }`}
-                  >
-                    <Send size={20} className={input.trim() ? "translate-x-0.5 -translate-y-0.5" : ""} />
-                  </button>
                 </div>
               )}
             </div>
