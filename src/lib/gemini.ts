@@ -21,9 +21,17 @@ export const getGeminiResponse = async (
       const result = await model.generateContent("Please start the negotiation with an opening statement.");
       const response = await result.response;
       const text = response.text();
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? jsonMatch[0] : text;
-      return JSON.parse(jsonStr);
+      // Strip markdown code blocks if any
+      let cleanText = text.replace(/^```(json)?|```$/gm, '').trim();
+      const startIdx = Math.min(
+        cleanText.indexOf('{') !== -1 ? cleanText.indexOf('{') : Infinity,
+        cleanText.indexOf('[') !== -1 ? cleanText.indexOf('[') : Infinity
+      );
+      const endIdx = Math.max(cleanText.lastIndexOf('}'), cleanText.lastIndexOf(']'));
+      if (startIdx !== Infinity && endIdx !== -1) {
+        cleanText = cleanText.substring(startIdx, endIdx + 1);
+      }
+      return JSON.parse(cleanText);
     } catch (error) {
       console.error("Gemini Greeting error:", error);
       throw error;
@@ -44,11 +52,21 @@ export const getGeminiResponse = async (
     const response = await result.response;
     const text = response.text();
     
-    // Attempt to extract JSON from the response text
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    const jsonStr = jsonMatch ? jsonMatch[0] : text;
+    // Strip markdown code blocks if any
+    let cleanText = text.replace(/^```(json)?|```$/gm, '').trim();
     
-    return JSON.parse(jsonStr);
+    // Find the first { or [ and the last } or ]
+    const startIdx = Math.min(
+      cleanText.indexOf('{') !== -1 ? cleanText.indexOf('{') : Infinity,
+      cleanText.indexOf('[') !== -1 ? cleanText.indexOf('[') : Infinity
+    );
+    const endIdx = Math.max(cleanText.lastIndexOf('}'), cleanText.lastIndexOf(']'));
+    
+    if (startIdx !== Infinity && endIdx !== -1) {
+      cleanText = cleanText.substring(startIdx, endIdx + 1);
+    }
+
+    return JSON.parse(cleanText);
   } catch (error) {
     console.error("Gemini API error:", error);
     throw error;

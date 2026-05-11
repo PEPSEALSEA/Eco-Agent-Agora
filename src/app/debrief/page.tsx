@@ -83,7 +83,7 @@ function DebriefContent() {
     setIsReanalyzing(true);
     setAiEvaluation(null);
     try {
-      const transcript = messages.map(m => `[${m.sender === 'user' ? 'คุณ' : (m.character_name || 'AI')}]: ${m.content}`).join('\n');
+      const transcript = messages.map(m => `[ID: ${m.id}] [${m.sender === 'user' ? 'คุณ' : (m.character_name || 'AI')}]: ${m.content}`).join('\n');
       
       const systemPrompt = `
         You are an expert negotiation coach. Review this entire conversation transcript and evaluate the user's (คุณ) performance.
@@ -92,13 +92,27 @@ function DebriefContent() {
           "overall_score": 8.5,
           "feedback_text": "Overall feedback in THAI",
           "key_strengths": ["strength1 in THAI", "strength2 in THAI"],
-          "areas_for_improvement": ["area1 in THAI", "area2 in THAI"]
+          "areas_for_improvement": ["area1 in THAI", "area2 in THAI"],
+          "line_analysis": [
+            {
+              "message_id": "message id from transcript",
+              "feedback_text": "feedback for this specific line in THAI",
+              "score": 8,
+              "dimension": { "length": "Good", "coverage": "Excellent", "logic": "Clear" }
+            }
+          ]
         }
+        Make sure to provide line_analysis only for the user's (คุณ) messages.
       `;
       
       const history = [{ role: 'user', parts: [{ text: `Transcript:\n${transcript}\n\nPlease evaluate my performance.` }] }];
       const result = await getGeminiResponse(systemPrompt, history);
       setAiEvaluation(result);
+      
+      if (result.line_analysis && Array.isArray(result.line_analysis)) {
+        // Replace current local feedback with the new line-by-line analysis
+        setFeedback(result.line_analysis);
+      }
     } catch (err) {
       console.error(err);
       alert('เกิดข้อผิดพลาดในการประเมินผล: ' + err);
