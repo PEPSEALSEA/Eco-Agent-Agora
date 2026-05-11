@@ -163,14 +163,22 @@ function NegotiateContent(): React.ReactElement {
 
       if (result.error) throw new Error(result.error);
 
-      const aiMessages: Message[] = (result.dialogue || []).map((line: any) => ({
-        id: uuid(),
-        session_id: sessionId!,
-        sender: 'ai',
-        character_name: line.char,
-        content: line.line,
-        created_at: new Date().toISOString()
-      }));
+      const aiMessages: Message[] = (result.dialogue || [])
+        .filter((line: any) => {
+          if (useFreeTextInput) {
+            const char = line.char?.toLowerCase();
+            return char !== 'narrator' && char !== 'system' && char !== 'บรรยาย';
+          }
+          return true;
+        })
+        .map((line: any) => ({
+          id: uuid(),
+          session_id: sessionId!,
+          sender: 'ai',
+          character_name: line.char,
+          content: line.line,
+          created_at: new Date().toISOString()
+        }));
 
       setMessages(aiMessages);
       setCurrentMessageIndex(0);
@@ -244,14 +252,22 @@ function NegotiateContent(): React.ReactElement {
 
       if (result.error) throw new Error(result.error);
 
-      const aiMessages: Message[] = (result.dialogue || []).map((line: any) => ({
-        id: uuid(),
-        session_id: sessionId!,
-        sender: 'ai',
-        character_name: line.char,
-        content: line.line,
-        created_at: new Date().toISOString()
-      }));
+      const aiMessages: Message[] = (result.dialogue || [])
+        .filter((line: any) => {
+          if (useFreeTextInput) {
+            const char = line.char?.toLowerCase();
+            return char !== 'narrator' && char !== 'system' && char !== 'บรรยาย';
+          }
+          return true;
+        })
+        .map((line: any) => ({
+          id: uuid(),
+          session_id: sessionId!,
+          sender: 'ai',
+          character_name: line.char,
+          content: line.line,
+          created_at: new Date().toISOString()
+        }));
 
       setMessages(prev => [...prev, ...aiMessages]);
       setNarrator(result.narrator);
@@ -584,7 +600,7 @@ function NegotiateContent(): React.ReactElement {
             </div>
 
             {/* Narrator text */}
-            {narrator && currentMessageIndex === messages.length - 1 && !isTyping && (
+            {!useFreeTextInput && narrator && currentMessageIndex === messages.length - 1 && !isTyping && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
