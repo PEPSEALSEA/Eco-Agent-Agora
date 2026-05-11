@@ -154,7 +154,7 @@ function NegotiateContent(): React.ReactElement {
     setSending(true);
 
     try {
-      const result = await gasPost('chat', 'messages', {
+      const result = await gasPost('chat', 'logs', {
         sessionId: sessionId,
         text: "[System: เริ่มต้นสถานการณ์ อ้างอิงจาก opening_scene และ phase_rules. กรุณาเริ่มบทสนทนาได้เลย]",
         vibe: "Neutral",
@@ -179,6 +179,11 @@ function NegotiateContent(): React.ReactElement {
           content: line.line,
           created_at: new Date().toISOString()
         }));
+      
+      // Save AI messages to database individually for correct formatting
+      if (aiMessages.length > 0) {
+        await Promise.all(aiMessages.map(msg => gasPost('create', 'messages', msg)));
+      }
 
       setMessages(aiMessages);
       setCurrentMessageIndex(0);
@@ -247,7 +252,7 @@ function NegotiateContent(): React.ReactElement {
         return;
       }
 
-      const result = await gasPost('chat', 'messages', {
+      const result = await gasPost('chat', 'logs', {
         sessionId: sessionId,
         text: userMessageContent,
         vibe: vibe,
@@ -272,6 +277,12 @@ function NegotiateContent(): React.ReactElement {
           content: line.line,
           created_at: new Date().toISOString()
         }));
+
+      // Save AI messages to database individually for correct formatting
+      if (aiMessages.length > 0) {
+        // Use Promise.all to save messages in parallel
+        await Promise.all(aiMessages.map(msg => gasPost('create', 'messages', msg)));
+      }
 
       setMessages(prev => [...prev, ...aiMessages]);
       setNarrator(result.narrator);
