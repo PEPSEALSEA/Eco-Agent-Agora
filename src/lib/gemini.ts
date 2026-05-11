@@ -42,30 +42,39 @@ export const getGeminiResponse = async (
       const chunk = decoder.decode(value, { stream: true });
       accumulatedText += chunk;
 
-      // SSE lines are separated by newlines
       const lines = accumulatedText.split('\n');
-      accumulatedText = lines.pop() || ""; // Keep the last partial line
+      accumulatedText = lines.pop() || "";
 
       for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const dataStr = line.substring(6).trim();
-          if (dataStr === '[DONE]') break;
-          try {
-            const data = JSON.parse(dataStr);
-            const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            fullText += content;
-          } catch (e) {
-            // Ignore incomplete JSON chunks
+        const trimmedLine = line.trim();
+        if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+        
+        const dataStr = trimmedLine.substring(6).trim();
+        if (dataStr === '[DONE]') break;
+        
+        try {
+          const data = JSON.parse(dataStr);
+          const parts = data.candidates?.[0]?.content?.parts;
+          if (parts && parts.length > 0) {
+            for (const part of parts) {
+              if (part.text) fullText += part.text;
+            }
           }
+        } catch (e) {
+          // Log parsing errors for debugging but don't crash the loop
+          console.warn("Error parsing SSE chunk:", e, "Line:", trimmedLine);
         }
       }
     }
 
+    if (!fullText) {
+      throw new Error("No response content received from Gemini");
+    }
+
     // Process the final accumulated text
-    // Strip markdown code blocks if any
     let cleanText = fullText.replace(/^```(json)?|```$/gm, '').trim();
     
-    // Find the first { or [ and the last } or ]
+    // Find the first { or [ and the last } or ] to isolate the JSON object
     const startIdx = Math.min(
       cleanText.indexOf('{') !== -1 ? cleanText.indexOf('{') : Infinity,
       cleanText.indexOf('[') !== -1 ? cleanText.indexOf('[') : Infinity
@@ -74,9 +83,16 @@ export const getGeminiResponse = async (
     
     if (startIdx !== Infinity && endIdx !== -1) {
       cleanText = cleanText.substring(startIdx, endIdx + 1);
+    } else {
+      console.error("Failed to find JSON boundaries in response:", cleanText);
     }
 
-    return JSON.parse(cleanText);
+    try {
+      return JSON.parse(cleanText);
+    } catch (e: any) {
+      console.error("Final JSON parse error:", e, "Cleaned text:", cleanText);
+      throw new Error(`Invalid JSON response: ${e.message}`);
+    }
 
   } catch (error) {
     console.error("Gemini Proxy API error:", error);
