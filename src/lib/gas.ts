@@ -57,7 +57,7 @@ export async function gasFetch(action: string, table?: string, id?: string) {
 /**
  * Post data to Google Apps Script
  */
-export async function gasPost(action: 'create' | 'update' | 'upsert' | 'chat' | 'end_session' | 'save_evaluation', table: string, data: any, options: { id?: string, queryField?: string, queryValue?: any } = {}) {
+export async function gasPost(action: 'create' | 'update' | 'upsert' | 'chat' | 'end_session' | 'save_evaluation' | 'get_chat_context' | 'process_chat_result', table: string, data: any, options: { id?: string, queryField?: string, queryValue?: any } = {}) {
   const { url: GAS_URL, key: SECRET_KEY } = getGasConfig();
   if (!GAS_URL) return { error: 'GAS URL not configured' };
 

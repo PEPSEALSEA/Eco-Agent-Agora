@@ -81,6 +81,16 @@ function doPost(e) {
       return jsonResponse(result);
     }
 
+    if (action === 'get_chat_context') {
+      const result = handleGetContextAction(data);
+      return jsonResponse(result);
+    }
+
+    if (action === 'process_chat_result') {
+      const result = handleProcessChatResultAction(data);
+      return jsonResponse(result);
+    }
+
     if (action === 'save_evaluation') {
       const result = handleSaveEvaluation(data);
       return jsonResponse(result);
@@ -730,6 +740,151 @@ function handleEndSession(sessionId) {
 
   upsertRow('sessions', 'id', sessionId, sessionUpdateData);
   return { success: true, score: finalScore };
+}
+
+/**
+ * Phase 1: Prepare Context for AI (Frontend will then call Gemini Streaming)
+ */
+function handleGetContextAction(data) {
+  const sessionId = data.sessionId;
+  const userText = data.text;
+  
+  const sessionRow = readRowById('sessions', sessionId);
+  if (!sessionRow) throw new Error('Session not found');
+  
+  const scenario = readRowById('scenarios', sessionRow.scenario_id);
+  if (!scenario) throw new Error('Scenario not found');
+
+  let state = sessionRow.state;
+  if (!state || typeof state !== 'object') {
+    if (scenario.initial_state) {
+      state = JSON.parse(JSON.stringify(scenario.initial_state));
+    } else {
+      const firstPhase = scenario.phase_rules?.phases?.[0];
+      state = {
+        current_phase: typeof firstPhase === 'object' ? firstPhase.id : (firstPhase || 'opening'),
+        phase_turn_count: 0,
+        turn_total: 0,
+        unlocked_characters: [scenario.characters?.[0]?.id || 'char_1'],
+        phase_flags: {},
+        relationships: {},
+        resolved_issues: [],
+        pending_issues: [],
+        agreements: {},
+        score: 50
+      };
+      scenario.characters.forEach(c => {
+        state.relationships[c.id || c.name] = { trust: 5, anger: 0, concessions_made: [] };
+      });
+    }
+  }
+
+  // Increment turn count
+  state.phase_turn_count++;
+  state.turn_total = (state.turn_total || 0) + 1;
+
+  const messages = readMessagesBySessionId(sessionId);
+  const historySummary = sessionRow.history_summary || 'None yet.';
+
+  const systemPrompt = SYSTEM_INSTRUCTION_TEMPLATE
+    .replace('{{scenario_config}}', JSON.stringify(scenario, null, 2))
+    .replace('{{runtime_state}}', JSON.stringify(state, null, 2))
+    .replace('{{history_summary}}', historySummary);
+
+  const history = messages.slice(-10).map(m => ({
+    role: m.sender === 'user' ? 'user' : 'model',
+    parts: [{ text: (m.sender === 'ai' || m.sender === 'model') && m.character_name ? `[${m.character_name}]: ${m.content}` : m.content }]
+  }));
+
+  return {
+    systemPrompt: systemPrompt,
+    history: history,
+    state: state,
+    scenario: scenario, // Pass back to frontend for local use
+    historySummary: historySummary
+  };
+}
+
+/**
+ * Phase 2: Process the AI Result (JSON) and update state/persistence
+ */
+function handleProcessChatResultAction(data) {
+  const { sessionId, aiResponse, state } = data;
+  
+  const sessionRow = readRowById('sessions', sessionId);
+  if (!sessionRow) throw new Error('Session not found');
+  
+  const scenario = readRowById('scenarios', sessionRow.scenario_id);
+  if (!scenario) throw new Error('Scenario not found');
+
+  // 1. Apply State Delta
+  if (aiResponse.state_delta) {
+    Object.keys(aiResponse.state_delta).forEach(path => {
+      const value = aiResponse.state_delta[path];
+      applyPath(state, path, value);
+    });
+  }
+
+  let gameOver = false;
+  let outcome = null;
+
+  // 2. Check Phase Transitions
+  if (aiResponse.phase_event === 'advance_to_next_phase') {
+    const phases = scenario.phase_rules?.phases || [];
+    let currentIndex = -1;
+    if (phases.length > 0 && typeof phases[0] === 'object') {
+      currentIndex = phases.findIndex(p => p.id === state.current_phase || p.name === state.current_phase);
+    } else {
+      currentIndex = phases.indexOf(state.current_phase);
+    }
+
+    if (currentIndex !== -1 && currentIndex < phases.length - 1) {
+      const nextPhase = phases[currentIndex + 1];
+      state.current_phase = typeof nextPhase === 'object' ? (nextPhase.id || nextPhase.name) : nextPhase;
+      state.phase_turn_count = 0;
+    } else {
+      gameOver = true;
+      outcome = 'win';
+    }
+  } else if (aiResponse.phase_event === 'game_over_win') {
+    gameOver = true;
+    outcome = 'win';
+  } else if (aiResponse.phase_event === 'game_over_fail') {
+    gameOver = true;
+    outcome = 'fail';
+  }
+
+  // 3. Check for Timeout in Phase Guard
+  let currentTurnLimit = 20;
+  const phases = scenario.phase_rules?.phases || [];
+  if (phases.length > 0 && typeof phases[0] === 'object') {
+    const currentPhaseObj = phases.find(p => p.id === state.current_phase || p.name === state.current_phase);
+    if (currentPhaseObj && currentPhaseObj.turn_limit) {
+      currentTurnLimit = currentPhaseObj.turn_limit;
+    }
+  }
+
+  if (!gameOver && state.phase_turn_count > currentTurnLimit) {
+    gameOver = true;
+    outcome = 'fail';
+    aiResponse.narrator = `หมดเวลาในเฟส ${state.current_phase} แล้ว การเจรจาล้มเหลว`;
+  }
+
+  // 4. Save Updates
+  const sessionUpdateData = {
+    state: JSON.stringify(state),
+    status: gameOver ? 'completed' : 'ongoing',
+    outcome_score: gameOver ? (outcome === 'win' ? 100 : 0) : null
+  };
+  updateRow('sessions', sessionId, sessionUpdateData);
+
+  return {
+    success: true,
+    state: state,
+    game_over: gameOver,
+    outcome: outcome,
+    narrator: aiResponse.narrator
+  };
 }
 
 /**
