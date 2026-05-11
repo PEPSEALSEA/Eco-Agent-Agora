@@ -1,4 +1,4 @@
-const proxyUrl = process.env.NEXT_PUBLIC_GEMINI_PROXY_URL || "";
+const proxyUrl = process.env.NEXT_PUBLIC_GEMINI_PROXY_URL || "https://gemini-proxy.sealseapep.workers.dev/";
 
 export const getGeminiResponse = async (
   systemInstruction: string,

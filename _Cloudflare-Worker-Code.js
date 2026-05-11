@@ -6,18 +6,20 @@ export default {
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
-    // Handle CORS preflight
+    // 1. จัดการ CORS Preflight (OPTIONS)
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
 
+    // 2. รับเฉพาะ POST เท่านั้น
+    if (request.method !== "POST") {
+      return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+    }
+
     try {
       const payload = await request.json();
-      
-      // Target the streaming endpoint
-      // Using gemini-2.0-flash as the default model
-      const model = "gemini-2.0-flash";
-      const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${env.GEMINI_API_KEY}`;
+
+      const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${env.GEMINI_API_KEY}`;
 
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -25,7 +27,16 @@ export default {
         body: JSON.stringify(payload)
       });
 
-      // Stream the response back to the client
+      // ถ้า Google ส่ง Error กลับมา ให้ส่ง Error นั้นไปที่ Frontend
+      if (!response.ok) {
+        const errorData = await response.text();
+        return new Response(errorData, { 
+          status: response.status, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+
+      // ส่ง Stream กลับไปที่ Client
       return new Response(response.body, {
         headers: { 
           ...corsHeaders, 
