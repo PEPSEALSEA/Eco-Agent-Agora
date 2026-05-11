@@ -13,7 +13,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Baby, Briefcase, GraduationCap } from 'lucide-react';
 import { CartoonLoading } from '@/components/CartoonLoading';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
-import { getGeminiResponse } from '@/lib/gemini';
 
 type Character = {
   id: string;
@@ -155,31 +154,16 @@ function NegotiateContent(): React.ReactElement {
     setSending(true);
 
     try {
-      // Hybrid Step 1: Get Context from GAS
-      const context = await gasPost('get_chat_context', 'messages', {
+      const result = await gasPost('chat', 'messages', {
         sessionId: sessionId,
         text: "[System: เริ่มต้นสถานการณ์ อ้างอิงจาก opening_scene และ phase_rules. กรุณาเริ่มบทสนทนาได้เลย]",
         vibe: "Neutral",
         intensity: 0.5
       });
 
-      if (context.error) throw new Error(context.error);
-
-      // Hybrid Step 2: Call Gemini Streaming via Cloudflare
-      const aiResponse = await getGeminiResponse(context.systemPrompt, context.history);
-      if (aiResponse.error) throw new Error(aiResponse.error);
-
-      // Hybrid Step 3: Process and Save Result in GAS
-      const result = await gasPost('process_chat_result', 'messages', {
-        sessionId: sessionId,
-        aiResponse: aiResponse,
-        state: context.state
-      });
-
       if (result.error) throw new Error(result.error);
 
-      // UI Update
-      const aiMessages: Message[] = (aiResponse.dialogue || []).map((line: any) => ({
+      const aiMessages: Message[] = (result.dialogue || []).map((line: any) => ({
         id: uuid(),
         session_id: sessionId!,
         sender: 'ai',
@@ -187,10 +171,6 @@ function NegotiateContent(): React.ReactElement {
         content: line.line,
         created_at: new Date().toISOString()
       }));
-
-      for (const msg of aiMessages) {
-        await gasPost('create', 'messages', msg);
-      }
 
       setMessages(aiMessages);
       setCurrentMessageIndex(0);
@@ -235,7 +215,6 @@ function NegotiateContent(): React.ReactElement {
     
     if (!audioResult) setInput('');
 
-    // 1. Save User Message
     const userMsg: Message = {
       id: uuid(),
       session_id: sessionId!,
@@ -256,31 +235,16 @@ function NegotiateContent(): React.ReactElement {
     setCurrentMessageIndex(newMessagesList.length - 1);
 
     try {
-      // Hybrid Step 1: Get Context from GAS (Logic stays in GAS)
-      const context = await gasPost('get_chat_context', 'messages', {
+      const result = await gasPost('chat', 'messages', {
         sessionId: sessionId,
         text: userMessageContent,
         vibe: vibe,
         intensity: intensity
       });
 
-      if (context.error) throw new Error(context.error);
-
-      // Hybrid Step 2: Call Gemini Streaming via Cloudflare Proxy
-      const aiResponse = await getGeminiResponse(context.systemPrompt, context.history);
-      if (aiResponse.error) throw new Error(aiResponse.error);
-
-      // Hybrid Step 3: Process/Save State Delta & Transitions in GAS
-      const result = await gasPost('process_chat_result', 'messages', {
-        sessionId: sessionId,
-        aiResponse: aiResponse,
-        state: context.state
-      });
-
       if (result.error) throw new Error(result.error);
 
-      // 4. Update UI
-      const aiMessages: Message[] = (aiResponse.dialogue || []).map((line: any) => ({
+      const aiMessages: Message[] = (result.dialogue || []).map((line: any) => ({
         id: uuid(),
         session_id: sessionId!,
         sender: 'ai',
@@ -288,11 +252,6 @@ function NegotiateContent(): React.ReactElement {
         content: line.line,
         created_at: new Date().toISOString()
       }));
-
-      // Save AI messages to persistence
-      for (const msg of aiMessages) {
-        await gasPost('create', 'messages', msg);
-      }
 
       setMessages(prev => [...prev, ...aiMessages]);
       setNarrator(result.narrator);
@@ -321,7 +280,7 @@ function NegotiateContent(): React.ReactElement {
       
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'AI ไม่พร้อมใช้งานในขณะนี้ (Streaming Error)');
+      setError(err.message || 'AI ไม่พร้อมใช้งานในขณะนี้');
     } finally {
       setSending(false);
     }
