@@ -154,7 +154,7 @@ function NegotiateContent(): React.ReactElement {
     handleSend(undefined, { 
       text: "[System: เริ่มต้นสถานการณ์ อ้างอิงจาก opening_scene และ phase_rules. กรุณาเริ่มบทสนทนาได้เลย]", 
       vibe: "Neutral", 
-      intensity: "0.5" 
+      intensity: 0.5 
     });
   };
 
@@ -185,7 +185,7 @@ function NegotiateContent(): React.ReactElement {
     setError(null);
     const userMessageContent = audioResult ? audioResult.text : (strategyOverride ? strategyOverride.thaiLabel : input);
     const vibe = audioResult ? audioResult.vibe : "Neutral";
-    const intensity = audioResult ? audioResult.intensity : "0.5";
+    const intensity = audioResult ? audioResult.intensity : 0.5;
     
     if (!audioResult) setInput('');
 
@@ -264,7 +264,7 @@ function NegotiateContent(): React.ReactElement {
       }
 
       let gameOver = false;
-      let finalOutcome = null;
+      let finalOutcome: 'win' | 'fail' | null = null;
 
       if (aiResponse.phase_event === 'advance_to_next_phase') {
         const phases = scenario.phase_rules?.phases || [];
