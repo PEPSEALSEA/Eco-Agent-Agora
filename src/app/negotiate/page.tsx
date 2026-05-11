@@ -215,13 +215,13 @@ function NegotiateContent(): React.ReactElement {
       return;
     }
 
-    setSending(true);
-    setError(null);
     const userMessageContent = audioResult ? audioResult.text : (strategyOverride ? strategyOverride.thaiLabel : input);
     const vibe = audioResult ? audioResult.vibe : "Neutral";
     const intensity = audioResult ? audioResult.intensity : 0.5;
     
+    // Clear input and show user message immediately
     if (!audioResult) setInput('');
+    setError(null);
 
     const userMsg: Message = {
       id: uuid(),
@@ -231,18 +231,22 @@ function NegotiateContent(): React.ReactElement {
       created_at: new Date().toISOString()
     };
 
-    const saveResult = await gasPost('create', 'messages', userMsg);
-    if (saveResult.error) {
-      setError('ไม่สามารถส่งข้อความได้');
-      setSending(false);
-      return;
-    }
-
     const newMessagesList = [...messages, userMsg];
     setMessages(newMessagesList);
     setCurrentMessageIndex(newMessagesList.length - 1);
 
+    // Now start the loading state for AI processing
+    setSending(true);
+
     try {
+      // Save to background
+      const saveResult = await gasPost('create', 'messages', userMsg);
+      if (saveResult.error) {
+        setError('ไม่สามารถบันทึกข้อความได้');
+        setSending(false);
+        return;
+      }
+
       const result = await gasPost('chat', 'messages', {
         sessionId: sessionId,
         text: userMessageContent,
