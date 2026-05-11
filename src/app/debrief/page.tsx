@@ -300,7 +300,6 @@ function DebriefContent() {
               )}
             </div>
           </section>
-        </section>
 
         {!showLog ? (
           <div className="text-center mb-16">
