@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
-import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
 import { Send, User as UserIcon, Bot, ArrowLeft, MessageSquare, Info, Users, ScrollText, X, Mic } from 'lucide-react';
 import { CharacterAvatar } from '@/components/CharacterAvatar';
@@ -14,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Baby, Briefcase, GraduationCap } from 'lucide-react';
 import { CartoonLoading } from '@/components/CartoonLoading';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
+import { getGeminiResponse } from '@/lib/gemini';
+import { SYSTEM_INSTRUCTION_TEMPLATE } from '@/lib/prompts';
 
 type Character = {
   id: string;
@@ -150,63 +151,32 @@ function NegotiateContent(): React.ReactElement {
   const handleStart = async () => {
     if (!scenario || isStarted) return;
     setIsStarted(true);
-    setLoading(true);
-    setLoadingMessage('AI กำลังเตรียมตัวเจรจา...');
-    setSending(true);
+    handleSend(undefined, { 
+      text: "[System: เริ่มต้นสถานการณ์ อ้างอิงจาก opening_scene และ phase_rules. กรุณาเริ่มบทสนทนาได้เลย]", 
+      vibe: "Neutral", 
+      intensity: "0.5" 
+    });
+  };
 
-    try {
-      // For starting, we call the chat action with a system-initiated message to kick off the scene
-      const result = await gasPost('chat', 'messages', {
-        sessionId: sessionId,
-        text: "[System: เริ่มต้นสถานการณ์ อ้างอิงจาก opening_scene และ phase_rules. กรุณาเริ่มบทสนทนาได้เลย]",
-        vibe: "Neutral",
-        intensity: "0.5"
-      });
-
-      if (result.error) throw new Error(result.error);
-
-      const aiMessages: Message[] = result.dialogue.map((line: any) => ({
-        id: uuid(),
-        session_id: sessionId!,
-        sender: 'ai',
-        character_name: line.char,
-        content: line.line,
-        created_at: new Date().toISOString()
-      }));
-
-      setMessages(aiMessages);
-      setCurrentMessageIndex(0);
-      setNarrator(result.narrator);
-      
-      // Sync local state if returned
-      if (result.state) {
-        setRuntimeState(result.state);
-        if (result.state.current_phase) setPhase(result.state.current_phase);
-        
-        // Update character moods from relationships
-        setCharacters(prev => prev.map(c => {
-          const rel = result.state.relationships?.[c.id] || result.state.relationships?.[c.name];
-          if (rel) {
-            return {
-              ...c,
-              mood: rel.anger > 7 ? 'resistant' : rel.trust > 7 ? 'open' : 'neutral',
-              stats: { trust: rel.trust, anger: rel.anger }
-            };
-          }
-          return c;
-        }));
-      }
-    } catch (err: any) {
-      console.error(err);
-      setError('การเริ่มต้น AI ล้มเหลว: ' + err.message);
-    } finally {
-      setSending(false);
-      setLoading(false);
+  const applyPath = (obj: any, path: string, value: any) => {
+    const parts = path.split('.');
+    let current = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!current[parts[i]]) current[parts[i]] = {};
+      current = current[parts[i]];
+    }
+    const lastPart = parts[parts.length - 1];
+    
+    if (typeof value === 'string' && (value.startsWith('+') || value.startsWith('-'))) {
+      const delta = parseInt(value, 10);
+      current[lastPart] = (parseInt(current[lastPart], 10) || 0) + delta;
+    } else {
+      current[lastPart] = value;
     }
   };
 
   const handleSend = async (strategyOverride?: Strategy, audioResult?: { text: string, vibe: string, intensity: number }) => {
-    if ((!input.trim() && !strategyOverride && !audioResult) || !user || sending || !sessionId) {
+    if ((!input.trim() && !strategyOverride && !audioResult) || !user || sending || !sessionId || !scenario) {
       if (!user) setError('คุณต้องเข้าสู่ระบบเพื่อส่งข้อความ');
       return;
     }
@@ -219,7 +189,6 @@ function NegotiateContent(): React.ReactElement {
     
     if (!audioResult) setInput('');
 
-    // 1. Save User Message
     const userMsg: Message = {
       id: uuid(),
       session_id: sessionId!,
@@ -230,7 +199,7 @@ function NegotiateContent(): React.ReactElement {
 
     const saveResult = await gasPost('create', 'messages', userMsg);
     if (saveResult.error) {
-      setError('ไม่สามารถส่งข้อความได้');
+      setError('ไม่สามารถบันทึกข้อความได้');
       setSending(false);
       return;
     }
@@ -239,19 +208,90 @@ function NegotiateContent(): React.ReactElement {
     setMessages(newMessagesList);
     setCurrentMessageIndex(newMessagesList.length - 1);
 
-    // 2. Call GAS Chat Action (Handles State & AI)
     try {
-      const result = await gasPost('chat', 'messages', {
-        sessionId: sessionId,
-        text: userMessageContent,
-        vibe: "Neutral", // Could be dynamic
-        intensity: "0.5"
-      });
+      let currentState = runtimeState;
+      if (!currentState) {
+        if (scenario.initial_state) {
+          currentState = JSON.parse(JSON.stringify(scenario.initial_state));
+        } else {
+          const firstPhase = scenario.phase_rules?.phases?.[0];
+          currentState = {
+            current_phase: typeof firstPhase === 'object' ? firstPhase.id : (firstPhase || 'opening'),
+            phase_turn_count: 0,
+            turn_total: 0,
+            unlocked_characters: [scenario.characters?.[0]?.id || 'char_1'],
+            phase_flags: {},
+            relationships: {},
+            resolved_issues: [],
+            pending_issues: [],
+            agreements: {},
+            score: 50
+          };
+          scenario.characters.forEach((c: any) => {
+            currentState.relationships[c.id || c.name] = { trust: 5, anger: 0, concessions_made: [] };
+          });
+        }
+      }
 
-      if (result.error) throw new Error(result.error);
+      currentState.phase_turn_count++;
+      currentState.turn_total = (currentState.turn_total || 0) + 1;
 
-      // 3. Process AI Responses
-      const aiMessages: Message[] = (result.dialogue || []).map((line: any) => ({
+      const systemPrompt = SYSTEM_INSTRUCTION_TEMPLATE
+        .replace('{{scenario_config}}', JSON.stringify(scenario, null, 2))
+        .replace('{{runtime_state}}', JSON.stringify(currentState, null, 2))
+        .replace('{{history_summary}}', session?.history_summary || 'None yet.');
+
+      const history = newMessagesList.slice(-10).map(m => ({
+        role: m.sender === 'user' ? 'user' : 'model',
+        parts: [{ 
+          text: m.character_name ? `[${m.character_name}]: ${m.content}` : m.content 
+        }]
+      }));
+
+      const lastMsg = history[history.length - 1];
+      if (lastMsg.role === 'user') {
+        lastMsg.parts[0].text = `[Detected Vibe: ${vibe}, Intensity: ${intensity}]\nUser: ${lastMsg.parts[0].text}`;
+      }
+
+      const aiResponse = await getGeminiResponse(systemPrompt, history);
+
+      if (aiResponse.error) throw new Error(aiResponse.error);
+
+      if (aiResponse.state_delta) {
+        Object.keys(aiResponse.state_delta).forEach(path => {
+          applyPath(currentState, path, aiResponse.state_delta[path]);
+        });
+      }
+
+      let gameOver = false;
+      let finalOutcome = null;
+
+      if (aiResponse.phase_event === 'advance_to_next_phase') {
+        const phases = scenario.phase_rules?.phases || [];
+        let currentIndex = -1;
+        if (phases.length > 0 && typeof phases[0] === 'object') {
+          currentIndex = phases.findIndex((p: any) => p.id === currentState.current_phase || p.name === currentState.current_phase);
+        } else {
+          currentIndex = phases.indexOf(currentState.current_phase);
+        }
+
+        if (currentIndex !== -1 && currentIndex < phases.length - 1) {
+          const nextPhase = phases[currentIndex + 1];
+          currentState.current_phase = typeof nextPhase === 'object' ? (nextPhase.id || nextPhase.name) : nextPhase;
+          currentState.phase_turn_count = 0;
+        } else {
+          gameOver = true;
+          finalOutcome = 'win';
+        }
+      } else if (aiResponse.phase_event === 'game_over_win') {
+        gameOver = true;
+        finalOutcome = 'win';
+      } else if (aiResponse.phase_event === 'game_over_fail') {
+        gameOver = true;
+        finalOutcome = 'fail';
+      }
+
+      const aiMessages: Message[] = (aiResponse.dialogue || []).map((line: any) => ({
         id: uuid(),
         session_id: sessionId!,
         sender: 'ai',
@@ -260,38 +300,43 @@ function NegotiateContent(): React.ReactElement {
         created_at: new Date().toISOString()
       }));
 
-      setMessages(prev => [...prev, ...aiMessages]);
-      setNarrator(result.narrator);
-      
-      if (result.game_over) {
-        setIsGameOver(true);
-        setOutcome(result.outcome);
-      }
-      
-      if (result.state) {
-        setRuntimeState(result.state);
-        if (result.state.current_phase) setPhase(result.state.current_phase);
-        
-        setCharacters(prev => prev.map(c => {
-          const rel = result.state.relationships?.[c.id] || result.state.relationships?.[c.name];
-          if (rel) {
-            return {
-              ...c,
-              mood: rel.anger > 7 ? 'resistant' : rel.trust > 7 ? 'open' : 'neutral',
-              stats: { trust: rel.trust, anger: rel.anger }
-            };
-          }
-          return c;
-        }));
+      for (const msg of aiMessages) {
+        await gasPost('create', 'messages', msg);
       }
 
-      if (result.next_decisions) {
-        setCurrentDynamicDecisions(result.next_decisions);
+      const sessionUpdate = {
+        id: sessionId,
+        status: gameOver ? 'completed' : 'ongoing',
+        outcome_score: gameOver ? (finalOutcome === 'win' ? 100 : 0) : null,
+        state: JSON.stringify(currentState)
+      };
+      await gasPost('update', 'sessions', sessionUpdate);
+
+      setMessages(prev => [...prev, ...aiMessages]);
+      setRuntimeState(currentState);
+      setNarrator(aiResponse.narrator);
+      if (currentState.current_phase) setPhase(currentState.current_phase);
+      
+      if (gameOver) {
+        setIsGameOver(true);
+        setOutcome(finalOutcome);
       }
+
+      setCharacters(prev => prev.map(c => {
+        const rel = currentState.relationships?.[c.id] || currentState.relationships?.[c.name];
+        if (rel) {
+          return {
+            ...c,
+            mood: rel.anger > 7 ? 'resistant' : rel.trust > 7 ? 'open' : 'neutral',
+            stats: { trust: rel.trust, anger: rel.anger }
+          };
+        }
+        return c;
+      }));
       
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'AI ไม่พร้อมใช้งานในขณะนี้');
+      setError(err.message || 'AI ไม่พร้อมใช้งานในขณะนี้ (ตรวจสอบ Cloudflare Proxy)');
     } finally {
       setSending(false);
     }
