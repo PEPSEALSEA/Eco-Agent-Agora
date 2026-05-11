@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { gasFetch } from '@/lib/gas';
+import { gasFetch, gasPost } from '@/lib/gas';
 import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
 import { ArrowLeft, RefreshCcw, TrendingUp, Zap, HelpCircle, Trophy, Target, MessageSquare } from 'lucide-react';
@@ -40,6 +40,14 @@ function DebriefContent() {
         setSession(sessionData);
         setMessages(messageData || []);
         setFeedback(feedbackData || []);
+        
+        if (sessionData && sessionData.ai_evaluation) {
+          try {
+            setAiEvaluation(typeof sessionData.ai_evaluation === 'string' ? JSON.parse(sessionData.ai_evaluation) : sessionData.ai_evaluation);
+          } catch (e) {
+            console.error('Failed to parse ai_evaluation', e);
+          }
+        }
       } catch (err) {
         console.error('Fetch debrief data error:', err);
       } finally {
@@ -113,6 +121,18 @@ function DebriefContent() {
         // Replace current local feedback with the new line-by-line analysis
         setFeedback(result.line_analysis);
       }
+      
+      // Save everything to backend seamlessly
+      gasPost('save_evaluation', 'sessions', {
+        sessionId,
+        evaluation: {
+          overall_score: result.overall_score,
+          feedback_text: result.feedback_text,
+          key_strengths: result.key_strengths,
+          areas_for_improvement: result.areas_for_improvement
+        },
+        lineAnalysis: result.line_analysis
+      }).catch(err => console.error('Failed to save evaluation to backend', err));
     } catch (err) {
       console.error(err);
       alert('เกิดข้อผิดพลาดในการประเมินผล: ' + err);

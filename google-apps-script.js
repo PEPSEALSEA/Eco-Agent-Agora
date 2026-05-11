@@ -81,6 +81,11 @@ function doPost(e) {
       return jsonResponse(result);
     }
 
+    if (action === 'save_evaluation') {
+      const result = handleSaveEvaluation(data);
+      return jsonResponse(result);
+    }
+
     return errorResponse('Invalid action');
   } catch (err) {
     return errorResponse(err.message);
@@ -365,7 +370,7 @@ function setupDatabase() {
   const tables = {
     'users': ['id', 'email', 'created_at', 'streak_count', 'last_active_date'],
     'scenarios': ['id', 'title', 'description', 'target_group', 'player_role', 'characters', 'phase_rules', 'initial_state', 'opening_scene'],
-    'sessions': ['id', 'user_id', 'scenario_id', 'started_at', 'ended_at', 'outcome_score', 'status', 'state', 'history_summary'],
+    'sessions': ['id', 'user_id', 'scenario_id', 'started_at', 'ended_at', 'outcome_score', 'status', 'state', 'history_summary', 'ai_evaluation'],
     'messages': ['id', 'session_id', 'sender', 'character_name', 'content', 'created_at'],
     'feedback_logs': ['id', 'session_id', 'message_id', 'feedback_text', 'score', 'dimension', 'created_at'],
     'skill_progress': ['id', 'user_id', 'skill_name', 'level', 'xp', 'updated_at']
@@ -725,6 +730,38 @@ function handleEndSession(sessionId) {
 
   upsertRow('sessions', 'id', sessionId, sessionUpdateData);
   return { success: true, score: finalScore };
+}
+
+/**
+ * Handle saving AI Evaluation from Debrief
+ */
+function handleSaveEvaluation(data) {
+  const sessionId = data.sessionId;
+  const evaluation = data.evaluation;
+  const lineAnalysis = data.lineAnalysis;
+
+  if (evaluation) {
+    upsertRow('sessions', 'id', sessionId, {
+      ai_evaluation: JSON.stringify(evaluation),
+      outcome_score: evaluation.overall_score
+    });
+  }
+
+  if (lineAnalysis && Array.isArray(lineAnalysis)) {
+    lineAnalysis.forEach(line => {
+      upsertRow('feedback_logs', 'message_id', line.message_id, {
+        id: sessionId + '_' + line.message_id,
+        session_id: sessionId,
+        message_id: line.message_id,
+        feedback_text: line.feedback_text,
+        score: line.score,
+        dimension: JSON.stringify(line.dimension),
+        created_at: new Date().toISOString()
+      });
+    });
+  }
+
+  return { success: true };
 }
 
 /**
