@@ -743,7 +743,8 @@ function handleSaveEvaluation(data) {
   if (evaluation) {
     upsertRow('sessions', 'id', sessionId, {
       ai_evaluation: JSON.stringify(evaluation),
-      outcome_score: evaluation.overall_score
+      outcome_score: evaluation.overall_score,
+      history_summary: evaluation.history_summary
     });
   }
 

@@ -99,6 +99,7 @@ function DebriefContent() {
         {
           "overall_score": 8.5,
           "feedback_text": "Overall feedback in THAI (use markdown like **bold**)",
+          "history_summary": "Concise summary of the negotiation events in THAI",
           "key_strengths": ["strength1 in THAI", "strength2 in THAI"],
           "areas_for_improvement": ["area1 in THAI", "area2 in THAI"],
           "line_analysis": [
@@ -128,6 +129,7 @@ function DebriefContent() {
         evaluation: {
           overall_score: result.overall_score,
           feedback_text: result.feedback_text,
+          history_summary: result.history_summary,
           key_strengths: result.key_strengths,
           areas_for_improvement: result.areas_for_improvement
         },
@@ -255,6 +257,14 @@ function DebriefContent() {
               ) : aiEvaluation ? (
                  <div className="space-y-6 slide-in-bottom">
                    <div className="bg-nintendo-blue/10 border-4 border-nintendo-blue p-6 rounded-2xl">
+                      <h3 className="font-black text-nintendo-blue uppercase tracking-tighter mb-3 flex items-center">
+                        <MessageSquare size={20} className="mr-2" /> สรุปเหตุการณ์สำคัญ
+                      </h3>
+                      <div className="text-gray-800 font-bold leading-relaxed mb-6" dangerouslySetInnerHTML={formatMarkdown(aiEvaluation.history_summary || session?.history_summary)} />
+                      
+                      <h3 className="font-black text-nintendo-blue uppercase tracking-tighter mb-3 flex items-center border-t-2 border-nintendo-blue/20 pt-4">
+                        <Zap size={20} className="mr-2" /> บทวิเคราะห์จาก AI โค้ช
+                      </h3>
                       <div className="text-gray-800 font-bold leading-relaxed" dangerouslySetInnerHTML={formatMarkdown(aiEvaluation.feedback_text)} />
                    </div>
                    
