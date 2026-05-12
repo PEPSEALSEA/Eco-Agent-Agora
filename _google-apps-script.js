@@ -96,6 +96,16 @@ function doPost(e) {
       return jsonResponse(result);
     }
 
+    if (action === 'generate_evaluation') {
+      const result = handleGenerateEvaluation(data);
+      return jsonResponse(result);
+    }
+
+    if (action === 'generate_what_if') {
+      const result = handleGenerateWhatIf(data);
+      return jsonResponse(result);
+    }
+
     return errorResponse('Invalid action');
   } catch (err) {
     return errorResponse(err.message);
@@ -930,6 +940,127 @@ function handleSaveEvaluation(data) {
   }
 
   return { success: true };
+}
+
+/**
+ * Generate AI Evaluation from Transcript using Backend API Key
+ */
+function handleGenerateEvaluation(data) {
+  const { transcript } = data;
+  const apiKey = props.getProperty('GEMINI_API_KEY');
+  if (!apiKey) throw new Error('GEMINI_API_KEY not found');
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  
+  const systemPrompt = `
+    You are an expert negotiation coach. Review this entire conversation transcript and evaluate the user's (คุณ) performance.
+    Return the result strictly as a JSON object with this exact structure (no markdown):
+    {
+      "overall_score": 8.5,
+      "feedback_text": "Overall feedback in THAI (use markdown like **bold**)",
+      "history_summary": "Concise summary of the negotiation events in THAI",
+      "key_strengths": ["strength1 in THAI", "strength2 in THAI"],
+      "areas_for_improvement": ["area1 in THAI", "area2 in THAI"],
+      "line_analysis": [
+        {
+          "message_id": "MUST exactly match the ID from transcript (e.g. 550e8400...)",
+          "feedback_text": "UNIQUE and SPECIFIC feedback for this exact line in THAI. Do not repeat the same feedback for all lines.",
+          "score": 8,
+          "dimension": { "length": "Good", "coverage": "Excellent", "logic": "Clear" }
+        }
+      ]
+    }
+    CRITICAL RULE: Make sure to provide a line_analysis item for EVERY SINGLE message sent by 'คุณ'. Each feedback_text MUST be unique and directly address what was said in that specific message.
+  `;
+
+  const body = {
+    systemInstruction: {
+      parts: [{ text: systemPrompt }]
+    },
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: `Transcript:\n${transcript}\n\nPlease evaluate my performance.` }]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.2, // Lower temperature for more consistent JSON
+      response_mime_type: "application/json"
+    }
+  };
+
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(body),
+    muteHttpExceptions: true
+  };
+
+  const response = UrlFetchApp.fetch(url, options);
+  const responseCode = response.getResponseCode();
+  const responseText = response.getContentText();
+
+  if (responseCode !== 200) {
+    throw new Error(`Gemini API Error (${responseCode}): ${responseText}`);
+  }
+
+  const json = JSON.parse(responseText);
+  const aiText = json.candidates[0].content.parts[0].text;
+
+  try {
+    return JSON.parse(aiText);
+  } catch (e) {
+    throw new Error('AI returned invalid JSON: ' + aiText);
+  }
+}
+
+/**
+ * Generate 'What If' feedback using Backend API Key
+ */
+function handleGenerateWhatIf(data) {
+  const { originalContent } = data;
+  const apiKey = props.getProperty('GEMINI_API_KEY');
+  if (!apiKey) throw new Error('GEMINI_API_KEY not found');
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  
+  const systemPrompt = `
+    You are a negotiation coach. The user is looking at a "What If" scenario.
+    They previously said: "${originalContent}"
+    Analyze this and describe how a more empathetic or more logical approach (depending on what was missing) would have changed the mood of the stakeholders.
+    CRITICAL RULE: YOUR ANALYSIS MUST BE IN THAI LANGUAGE.
+    Keep it brief and insightful.
+    Return as a JSON object: {"feedback": {"text": "บทวิเคราะห์ของคุณ..."}}
+  `;
+
+  const body = {
+    systemInstruction: {
+      parts: [{ text: systemPrompt }]
+    },
+    contents: [{ role: 'user', parts: [{ text: "What if I said something else?" }] }],
+    generationConfig: {
+      temperature: 0.7,
+      response_mime_type: "application/json"
+    }
+  };
+
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(body),
+    muteHttpExceptions: true
+  };
+
+  const response = UrlFetchApp.fetch(url, options);
+  const responseText = response.getContentText();
+  
+  try {
+    const json = JSON.parse(responseText);
+    const aiText = json.candidates[0].content.parts[0].text;
+    return JSON.parse(aiText);
+  } catch (e) {
+    return { feedback: { text: "ไม่สามารถสร้างบทวิเคราะห์ได้ในขณะนี้: " + responseText } };
+  }
 }
 
 /**

@@ -71,17 +71,11 @@ function DebriefContent() {
     setWhatIfResponse(null);
     
     try {
-      const systemPrompt = `
-        You are a negotiation coach. The user is looking at a "What If" scenario.
-        They previously said: "${originalContent}"
-        Analyze this and describe how a more empathetic or more logical approach (depending on what was missing) would have changed the mood of the stakeholders.
-        CRITICAL RULE: YOUR ANALYSIS MUST BE IN THAI LANGUAGE.
-        Keep it brief and insightful.
-        Format as plain text, or valid JSON containing a {"feedback": {"text": "..."}} structure if required.
-      `;
+      // Use backend to generate what-if analysis (bypasses frontend proxy/API key issues)
+      const result = await gasPost('generate_what_if', 'sessions', { originalContent });
       
-      const history = [{ role: 'user', parts: [{ text: "What if I said something else?" }] }];
-      const result = await getGeminiResponse(systemPrompt, history);
+      if (result.error) throw new Error(result.error);
+      
       setWhatIfResponse(result.feedback?.text || result.text || JSON.stringify(result));
     } catch (err) {
       console.error(err);
@@ -96,29 +90,11 @@ function DebriefContent() {
     try {
       const transcript = messages.map(m => `[ID: ${m.id}] [${m.sender === 'user' ? 'คุณ' : (m.character_name || 'AI')}]: ${m.content}`).join('\n');
       
-      const systemPrompt = `
-        You are an expert negotiation coach. Review this entire conversation transcript and evaluate the user's (คุณ) performance.
-        Return the result strictly as a JSON object with this exact structure (no markdown):
-        {
-          "overall_score": 8.5,
-          "feedback_text": "Overall feedback in THAI (use markdown like **bold**)",
-          "history_summary": "Concise summary of the negotiation events in THAI",
-          "key_strengths": ["strength1 in THAI", "strength2 in THAI"],
-          "areas_for_improvement": ["area1 in THAI", "area2 in THAI"],
-          "line_analysis": [
-            {
-              "message_id": "MUST exactly match the ID from transcript (e.g. 550e8400...)",
-              "feedback_text": "UNIQUE and SPECIFIC feedback for this exact line in THAI. Do not repeat the same feedback for all lines.",
-              "score": 8,
-              "dimension": { "length": "Good", "coverage": "Excellent", "logic": "Clear" }
-            }
-          ]
-        }
-        CRITICAL RULE: Make sure to provide a line_analysis item for EVERY SINGLE message sent by 'คุณ'. Each feedback_text MUST be unique and directly address what was said in that specific message.
-      `;
+      // Use backend to generate evaluation (bypasses frontend proxy/API key issues)
+      const result = await gasPost('generate_evaluation', 'sessions', { transcript });
       
-      const history = [{ role: 'user', parts: [{ text: `Transcript:\n${transcript}\n\nPlease evaluate my performance.` }] }];
-      const result = await getGeminiResponse(systemPrompt, history);
+      if (result.error) throw new Error(result.error);
+      
       setAiEvaluation(result);
       
       if (result.line_analysis && Array.isArray(result.line_analysis)) {
