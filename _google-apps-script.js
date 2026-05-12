@@ -124,7 +124,27 @@ function getSpreadsheet() {
   return cachedSS;
 }
 
+/**
+ * CACHE HELPERS
+ */
+function clearGlobalCache() {
+  const cache = CacheService.getScriptCache();
+  cache.remove('all_tables_data');
+}
+
+function clearTableCache(tableName) {
+  const cache = CacheService.getScriptCache();
+  cache.remove('table_data_' + tableName);
+  cache.remove('all_tables_data');
+}
+
 function readTable(tableName) {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('table_data_' + tableName);
+  if (cached) {
+    try { return JSON.parse(cached); } catch (e) {}
+  }
+
   const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(tableName);
   if (!sheet) throw new Error('Table ' + tableName + ' not found');
@@ -135,7 +155,7 @@ function readTable(tableName) {
   const headers = values[0];
   const rows = values.slice(1);
 
-  return rows.map(row => {
+  const result = rows.map(row => {
     const obj = {};
     headers.forEach((header, i) => {
       let val = row[i];
@@ -147,6 +167,14 @@ function readTable(tableName) {
     });
     return obj;
   });
+
+  // Cache for 5 minutes (300 seconds). Only cache if data is small enough (<100KB)
+  const jsonResult = JSON.stringify(result);
+  if (jsonResult.length < 90000) {
+    cache.put('table_data_' + tableName, jsonResult, 300);
+  }
+  
+  return result;
 }
 
 function readRowById(tableName, id) {
@@ -225,6 +253,12 @@ function readMessagesBySessionId(sessionId) {
 }
 
 function readAllTables() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('all_tables_data');
+  if (cached) {
+    try { return JSON.parse(cached); } catch (e) {}
+  }
+
   const ss = getSpreadsheet();
   const sheets = ss.getSheets();
   const result = {};
@@ -253,6 +287,12 @@ function readAllTables() {
     });
   });
 
+  // Cache for 3 minutes (180 seconds). Only cache if data is small enough (<100KB)
+  const jsonResult = JSON.stringify(result);
+  if (jsonResult.length < 90000) {
+    cache.put('all_tables_data', jsonResult, 180);
+  }
+
   return result;
 }
 
@@ -275,6 +315,7 @@ function createRow(tableName, data) {
   });
 
   sheet.appendRow(newRow);
+  clearTableCache(tableName);
   return { success: true, data: data };
 }
 
@@ -301,6 +342,7 @@ function createRows(tableName, dataArray) {
   });
 
   sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, headers.length).setValues(newRows);
+  clearTableCache(tableName);
   return { success: true, count: newRows.length };
 }
 
@@ -329,6 +371,7 @@ function updateRow(tableName, id, data) {
         sheet.getRange(targetRow, j + 1).setValue(val);
       }
     });
+    clearTableCache(tableName);
     return { success: true };
   }
   
@@ -573,21 +616,28 @@ function handleChatAction(data) {
   const sessionId = data.sessionId;
   const userText = data.text;
   
-  // 1. Load Session & Scenario using fast TextFinder lookups
-  const sessionRow = readRowById('sessions', sessionId);
-  if (!sessionRow) throw new Error('Session not found');
-  
-  const scenario = readRowById('scenarios', sessionRow.scenario_id);
+  // OPTIMIZATION: Use injected scenario/state if provided to skip expensive Sheet reads
+  let scenario = data.scenario;
+  let state = data.state;
+  let historySummary = data.history_summary;
+  let sessionRow = null;
+
+  if (!scenario || !state) {
+    sessionRow = readRowById('sessions', sessionId);
+    if (!sessionRow) throw new Error('Session not found');
+    
+    if (!scenario) scenario = readRowById('scenarios', sessionRow.scenario_id);
+    if (!state) state = sessionRow.state;
+    if (!historySummary) historySummary = sessionRow.history_summary;
+  }
+
   if (!scenario) throw new Error('Scenario not found');
 
   // 2. Initialize State if needed
-  let state = sessionRow.state;
   if (!state || typeof state !== 'object') {
     if (scenario.initial_state) {
-      // Use advanced initial state if provided by the JSON
       state = JSON.parse(JSON.stringify(scenario.initial_state));
     } else {
-      // Fallback to basic state initialization
       const firstPhase = scenario.phase_rules?.phases?.[0];
       state = {
         current_phase: typeof firstPhase === 'object' ? firstPhase.id : (firstPhase || 'opening'),
@@ -601,7 +651,6 @@ function handleChatAction(data) {
         agreements: {},
         score: 50
       };
-      // Initialize character relationships
       scenario.characters.forEach(c => {
         state.relationships[c.id || c.name] = { trust: 5, anger: 0, concessions_made: [] };
       });
@@ -609,13 +658,10 @@ function handleChatAction(data) {
   }
 
   // 3. Phase Guard
-  const winCondition = scenario.phase_rules?.win_condition;
-  const failCondition = scenario.phase_rules?.fail_condition; // e.g. "turn > 20"
-  
   state.phase_turn_count++;
   state.turn_total = (state.turn_total || 0) + 1;
   
-  let currentTurnLimit = 20; // Default
+  let currentTurnLimit = 20; 
   const phases = scenario.phase_rules?.phases || [];
   if (phases.length > 0 && typeof phases[0] === 'object') {
     const currentPhaseObj = phases.find(p => p.id === state.current_phase || p.name === state.current_phase);
@@ -632,15 +678,15 @@ function handleChatAction(data) {
     };
   }
 
-  // 4. Get History using fast TextFinder lookup
-  const messages = readMessagesBySessionId(sessionId);
+  // 4. Get History (Optimized: only if not provided by frontend)
+  const messages = data.recent_messages || readMessagesBySessionId(sessionId);
   
   // 5. Call LLM
   const aiResponse = getAntigravityResponse({
     scenario: scenario,
     state: state,
-    history_summary: sessionRow.history_summary,
-    messages: messages.slice(-10), // Send last 10 for context
+    history_summary: historySummary,
+    messages: messages.slice(-10), 
     text: userText,
     vibe: data.vibe,
     intensity: data.intensity
@@ -685,10 +731,9 @@ function handleChatAction(data) {
     outcome = 'fail';
   }
 
-  // 7. Rolling Summary Logic (Simplified)
-  let historySummary = sessionRow.history_summary || '';
+  // 7. Rolling Summary Logic
   if (messages.length > 15 && messages.length % 5 === 0) {
-    historySummary += ` | Turn ${messages.length}: User said "${userText}"`;
+    historySummary = (historySummary || '') + ` | Turn ${messages.length}: User said "${userText}"`;
   }
 
   // 8. Save State
@@ -950,7 +995,7 @@ function handleGenerateEvaluation(data) {
   const apiKey = props.getProperty('GEMINI_API_KEY');
   if (!apiKey) throw new Error('GEMINI_API_KEY not found');
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
   
   const systemPrompt = `
     You are an expert negotiation coach. Review this entire conversation transcript and evaluate the user's (คุณ) performance.
@@ -1022,7 +1067,7 @@ function handleGenerateWhatIf(data) {
   const apiKey = props.getProperty('GEMINI_API_KEY');
   if (!apiKey) throw new Error('GEMINI_API_KEY not found');
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
   
   const systemPrompt = `
     You are a negotiation coach. The user is looking at a "What If" scenario.

@@ -154,3 +154,16 @@ export async function gasFetchWithSWR(action: string, table: string, options: { 
 export async function gasFetchAll() {
   return gasFetch('read_all');
 }
+
+/**
+ * Optimized: Fetch multiple tables in parallel
+ */
+export async function gasFetchParallel(tables: string[]) {
+  const results = await Promise.all(
+    tables.map(table => gasFetch('read', table))
+  );
+  return tables.reduce((acc, table, i) => {
+    acc[table] = results[i];
+    return acc;
+  }, {} as any);
+}

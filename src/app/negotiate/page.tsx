@@ -256,7 +256,12 @@ function NegotiateContent(): React.ReactElement {
         sessionId: sessionId,
         text: userMessageContent,
         vibe: vibe,
-        intensity: intensity
+        intensity: intensity,
+        // FAST PATH: Send current state to avoid Sheet reads
+        scenario: scenario,
+        state: runtimeState,
+        history_summary: session?.history_summary,
+        recent_messages: newMessagesList.slice(-10)
       });
 
       if (result.error) throw new Error(result.error);
