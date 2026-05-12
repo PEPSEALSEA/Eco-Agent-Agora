@@ -874,7 +874,7 @@ function handleProcessChatResultAction(data) {
   const sessionUpdateData = {
     state: JSON.stringify(state),
     status: gameOver ? 'completed' : 'ongoing',
-    outcome_score: gameOver ? (outcome === 'win' ? 100 : 0) : null
+    outcome_score: gameOver ? (outcome === 'win' ? calculateScore(state, scenario) : Math.floor(calculateScore(state, scenario) / 2)) : null
   };
   updateRow('sessions', sessionId, sessionUpdateData);
 
@@ -910,7 +910,7 @@ function handleSaveEvaluation(data) {
     console.log('Updating session with evaluation data');
     upsertRow('sessions', 'id', sessionId, {
       ai_evaluation: JSON.stringify(evaluation),
-      outcome_score: evaluation.overall_score,
+      outcome_score: evaluation.overall_score * 10,
       history_summary: evaluation.history_summary
     });
   }

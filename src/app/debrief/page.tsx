@@ -168,12 +168,12 @@ function DebriefContent() {
   }
 
   const averageScore = session?.outcome_score 
-    ? session.outcome_score 
+    ? session.outcome_score / 10
     : (feedback.length > 0 ? feedback.reduce((acc, f) => acc + f.score, 0) / feedback.length : 0);
 
   const totalSkillPoints = session?.outcome_score 
-    ? session.outcome_score * 10 
-    : feedback.reduce((acc, f) => acc + f.score * 10, 0);
+    ? session.outcome_score 
+    : (feedback.length > 0 ? (feedback.reduce((acc, f) => acc + f.score, 0) / feedback.length) * 10 : 0);
 
   const finalScoreToShow = aiEvaluation ? aiEvaluation.overall_score : averageScore;
   const finalPointsToShow = aiEvaluation ? Math.round(aiEvaluation.overall_score * 10) : totalSkillPoints;
