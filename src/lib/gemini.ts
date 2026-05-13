@@ -16,7 +16,6 @@ export const getGeminiResponse = async (
     generationConfig: {
       responseMimeType: "application/json",
     },
-    apiKey: apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY,
   };
 
   try {
