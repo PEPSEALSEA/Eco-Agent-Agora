@@ -17,7 +17,7 @@ export const getGeminiResponse = async (
 
     const genAI = new GoogleGenerativeAI(effectiveKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite",
+      model: "gemini-2.5-flash",
       systemInstruction: systemInstruction,
     });
 
