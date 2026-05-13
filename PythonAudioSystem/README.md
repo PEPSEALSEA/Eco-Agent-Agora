@@ -30,5 +30,7 @@ Output Format (JSON):
 ```
 
 ## Setup
-1. Install dependencies: `pip install -r requirements.txt`
-2. Run analysis: `python audio_engine.py`
+1. **Install Python dependencies**: `pip install -r requirements.txt`
+2. **Run analysis server**: `python main.py`
+
+*Note: This system now uses a custom WAV-recording method in the frontend and `soundfile` in the backend to bypass the need for FFmpeg.*

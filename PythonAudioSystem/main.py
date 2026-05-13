@@ -44,8 +44,9 @@ async def analyze_audio(file: UploadFile = File(...)):
         return result
     
     except Exception as e:
-        print(f"Error during analysis: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        print(f"Error during analysis: {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
     
     finally:
         # Cleanup temp file

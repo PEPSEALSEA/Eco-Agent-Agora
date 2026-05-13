@@ -2,7 +2,9 @@ import json
 import os
 import numpy as np
 import librosa
+import soundfile as sf
 import whisper
+import scipy.signal
 import warnings
 
 # Suppress potential warnings from librosa/whisper
@@ -98,13 +100,30 @@ class AudioEngine:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Audio file not found: {file_path}")
 
-        # 1. Load and Normalize
-        y, sr = librosa.load(file_path, sr=16000)
+        # 1. Load using soundfile (No FFmpeg needed for WAV)
+        data, samplerate = sf.read(file_path)
+        
+        # If stereo, convert to mono
+        if len(data.shape) > 1:
+            data = np.mean(data, axis=1)
+            
+        # Resample to 16000 for Whisper (No FFmpeg needed)
+        if samplerate != 16000:
+            # Calculate number of samples after resampling
+            num_samples = int(len(data) * 16000 / samplerate)
+            y = scipy.signal.resample(data, num_samples)
+            sr = 16000
+        else:
+            y = data
+            sr = samplerate
+            
         y = self.normalize_audio(y)
 
-        # 2. Transcription
+        # 2. Transcription (Pass numpy array directly to avoid FFmpeg)
         print("Transcribing...")
-        result = self.model.transcribe(file_path)
+        # whisper.transcribe can take a numpy array if we ensure it's float32 and normalized
+        y_float32 = y.astype(np.float32)
+        result = self.model.transcribe(y_float32)
         transcript = result['text'].strip()
 
         # 3. Audio Metrics

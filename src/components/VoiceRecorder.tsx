@@ -15,8 +15,11 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const inputRef = useRef<AudioNode | null>(null);
+  const leftChannelRef = useRef<Float32Array[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -28,24 +31,29 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
+      streamRef.current = stream;
+      
+      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContextClass();
+      audioContextRef.current = audioContext;
+      
+      const input = audioContext.createMediaStreamSource(stream);
+      inputRef.current = input;
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
+      // Use a ScriptProcessorNode (deprecated but simple for this purpose) 
+      // or AudioWorklet for better performance.
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processor;
+      leftChannelRef.current = [];
+
+      processor.onaudioprocess = (e: any) => {
+        const left = e.inputBuffer.getChannelData(0);
+        leftChannelRef.current.push(new Float32Array(left));
       };
 
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const url = URL.createObjectURL(audioBlob);
-        setAudioUrl(url);
-        processAudio(audioBlob);
-      };
+      input.connect(processor);
+      processor.connect(audioContext.destination);
 
-      mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
       timerRef.current = setInterval(() => {
@@ -53,17 +61,76 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
       }, 1000);
     } catch (err) {
       console.error('Error accessing microphone:', err);
-      alert('ไม่สามารถเข้าถึงไมโครโฟนได้ กรุณาตรวจสอบสิทธิ์การใช้งาน');
+      alert('ไม่สามารถเข้าถึงไมโครโฟนได้');
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    if (isRecording) {
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
+
+      // Stop nodes
+      if (processorRef.current) {
+        processorRef.current.disconnect();
+        processorRef.current.onaudioprocess = null;
+      }
+      if (inputRef.current) inputRef.current.disconnect();
+      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+      
+      // Flatten buffers
+      const data = flattenArray(leftChannelRef.current);
+      const wavBlob = createWavBlob(data, audioContextRef.current?.sampleRate || 44100);
+      
+      const url = URL.createObjectURL(wavBlob);
+      setAudioUrl(url);
+      processAudio(wavBlob);
+      
+      if (audioContextRef.current) audioContextRef.current.close();
     }
+  };
+
+  const flattenArray = (channelBuffer: Float32Array[]) => {
+    const result = new Float32Array(channelBuffer.reduce((acc, b) => acc + b.length, 0));
+    let offset = 0;
+    for (const b of channelBuffer) {
+      result.set(b, offset);
+      offset += b.length;
+    }
+    return result;
+  };
+
+  const createWavBlob = (samples: Float32Array, sampleRate: number) => {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 32 + samples.length * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++, offset += 2) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+
+    return new Blob([view], { type: 'audio/wav' });
   };
 
   const processAudio = async (blob: Blob) => {
@@ -79,14 +146,15 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
       });
 
       if (!response.ok) {
-        throw new Error('Analysis server error');
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown server error' }));
+        throw new Error(errorData.detail || 'Analysis server error');
       }
 
       const result = await response.json();
       onTranscription(result);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error analyzing audio:', err);
-      alert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์วิเคราะห์เสียงได้ (ตรวจสอบว่ารัน Python server หรือยัง?)');
+      alert(`ไม่สามารถวิเคราะห์เสียงได้: ${err.message}\n\n(หากเป็นข้อผิดพลาด 500 หรือ FFmpeg not found กรุณาตรวจสอบว่าติดตั้ง FFmpeg ในเครื่องแล้ว)`);
     } finally {
       setIsProcessing(false);
     }
