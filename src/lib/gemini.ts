@@ -20,16 +20,28 @@ export const getGeminiResponse = async (
 
   try {
     const finalUrl = new URL(proxyUrl);
-    const effectiveKey = (apiKey && apiKey !== "undefined" && apiKey !== "null") 
-      ? apiKey 
-      : process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const isValidKey = (k: any) => typeof k === 'string' && k.startsWith('AIza') && k.length > 20;
+    
+    const contextKey = (apiKey && apiKey !== "undefined" && apiKey !== "null") ? apiKey : null;
+    const envKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    
+    let effectiveKey = "";
+    let keySource = "";
+
+    if (isValidKey(contextKey)) {
+      effectiveKey = contextKey as string;
+      keySource = "GAS Context";
+    } else if (isValidKey(envKey)) {
+      effectiveKey = envKey as string;
+      keySource = "GitHub/Env";
+    }
 
     if (effectiveKey) {
       finalUrl.searchParams.append('key', effectiveKey);
       // Debug log (masked)
-      console.log(`Using Gemini key: ${effectiveKey.substring(0, 4)}...${effectiveKey.substring(effectiveKey.length - 4)}`);
+      console.log(`Using Gemini key from ${keySource}: ${effectiveKey.substring(0, 4)}...${effectiveKey.substring(effectiveKey.length - 4)}`);
     } else {
-      console.warn("No Gemini API key found in either context or environment variables");
+      console.warn("No valid Gemini API key found (GAS Context or Env). Ensure key starts with 'AIza'");
     }
 
     const response = await fetch(finalUrl.toString(), {
