@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
+import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
 import { Send, User as UserIcon, Bot, ArrowLeft, MessageSquare, Info, Users, ScrollText, X, Mic } from 'lucide-react';
 import { CharacterAvatar } from '@/components/CharacterAvatar';
@@ -58,6 +59,7 @@ function NegotiateContent(): React.ReactElement {
   const [narrator, setNarrator] = useState<string | null>(null);
   const [isGameOver, setIsGameOver] = useState(false);
   const [outcome, setOutcome] = useState<'win' | 'fail' | null>(null);
+  const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const kidGameplayActive =
@@ -154,16 +156,37 @@ function NegotiateContent(): React.ReactElement {
     setSending(true);
 
     try {
-      const result = await gasPost('chat', 'logs', {
+      // 1. Get Context from GAS
+      const context = await gasPost('get_chat_context', 'logs', {
         sessionId: sessionId,
         text: "[System: เริ่มต้นสถานการณ์ อ้างอิงจาก opening_scene และ phase_rules. กรุณาเริ่มบทสนทนาได้เลย]",
-        vibe: "Neutral",
-        intensity: 0.5
       });
 
-      if (result.error) throw new Error(result.error);
+      if (context.error) throw new Error(context.error);
 
-      const aiMessages: Message[] = (result.dialogue || [])
+      // 2. Stream from Gemini
+      let accumulatedText = "";
+      const aiResponse = await getGeminiResponse(
+        context.systemPrompt,
+        context.history,
+        (text) => {
+          accumulatedText = text;
+          // Extract partial line content for UI
+          const match = text.match(/"line":\s*"([^"]*)"/);
+          const partialMatch = text.match(/"line":\s*"([^"]*)$/);
+          const displayContent = match ? match[1] : (partialMatch ? partialMatch[1] : "");
+          if (displayContent) setStreamingMessage(displayContent);
+        }
+      );
+
+      // 3. Process Result in GAS (Background)
+      const processResult = await gasPost('process_chat_result', 'logs', {
+        sessionId: sessionId,
+        aiResponse: aiResponse,
+        state: context.state
+      });
+
+      const aiMessages: Message[] = (aiResponse.dialogue || [])
         .filter((line: any) => {
           if (useFreeTextInput) {
             const char = line.char?.toLowerCase();
@@ -180,21 +203,18 @@ function NegotiateContent(): React.ReactElement {
           created_at: new Date().toISOString()
         }));
       
-      // Save AI messages to database individually for correct formatting
-      if (aiMessages.length > 0) {
-        await Promise.all(aiMessages.map(msg => gasPost('create', 'messages', msg)));
-      }
-
       setMessages(aiMessages);
       setCurrentMessageIndex(0);
-      setNarrator(result.narrator);
+      setNarrator(aiResponse.narrator);
+      setStreamingMessage(null);
       
-      if (result.state) {
-        setRuntimeState(result.state);
-        if (result.state.current_phase) setPhase(result.state.current_phase);
+      if (processResult.state) {
+        const finalState = processResult.state;
+        setRuntimeState(finalState);
+        if (finalState.current_phase) setPhase(finalState.current_phase);
         
         setCharacters(prev => prev.map(c => {
-          const rel = result.state.relationships?.[c.id] || result.state.relationships?.[c.name];
+          const rel = finalState.relationships?.[c.id] || finalState.relationships?.[c.name];
           if (rel) {
             return {
               ...c,
@@ -211,6 +231,7 @@ function NegotiateContent(): React.ReactElement {
     } finally {
       setSending(false);
       setLoading(false);
+      setStreamingMessage(null);
     }
   };
 
@@ -224,7 +245,6 @@ function NegotiateContent(): React.ReactElement {
     const vibe = audioResult ? audioResult.vibe : "Neutral";
     const intensity = audioResult ? audioResult.intensity : 0.5;
     
-    // Clear input and show user message immediately
     if (!audioResult) setInput('');
     setError(null);
 
@@ -239,34 +259,47 @@ function NegotiateContent(): React.ReactElement {
     const newMessagesList = [...messages, userMsg];
     setMessages(newMessagesList);
     setCurrentMessageIndex(newMessagesList.length - 1);
-
-    // Now start the loading state for AI processing
     setSending(true);
 
     try {
-      // Save to background
-      const saveResult = await gasPost('create', 'messages', userMsg);
-      if (saveResult.error) {
-        setError('ไม่สามารถบันทึกข้อความได้');
-        setSending(false);
-        return;
-      }
+      // Background save user message
+      gasPost('create', 'messages', userMsg);
 
-      const result = await gasPost('chat', 'logs', {
+      // 1. Get Context from GAS
+      const context = await gasPost('get_chat_context', 'logs', {
         sessionId: sessionId,
         text: userMessageContent,
         vibe: vibe,
-        intensity: intensity,
-        // FAST PATH: Send current state to avoid Sheet reads
-        scenario: scenario,
-        state: runtimeState,
-        history_summary: session?.history_summary,
-        recent_messages: newMessagesList.slice(-10)
+        intensity: intensity
       });
 
-      if (result.error) throw new Error(result.error);
+      if (context.error) throw new Error(context.error);
 
-      const aiMessages: Message[] = (result.dialogue || [])
+      // 2. Stream from Gemini (Directly from frontend for speed)
+      const aiResponse = await getGeminiResponse(
+        context.systemPrompt,
+        context.history,
+        (text) => {
+          // Extract partial line content for UI
+          const match = text.match(/"line":\s*"([^"]*)"/);
+          const partialMatch = text.match(/"line":\s*"([^"]*)$/);
+          const displayContent = match ? match[1] : (partialMatch ? partialMatch[1] : "");
+          if (displayContent) {
+            setStreamingMessage(displayContent);
+          }
+        }
+      );
+
+      // 3. Process Result in GAS
+      const processResult = await gasPost('process_chat_result', 'logs', {
+        sessionId: sessionId,
+        aiResponse: aiResponse,
+        state: context.state
+      });
+
+      if (processResult.error) throw new Error(processResult.error);
+
+      const aiMessages: Message[] = (aiResponse.dialogue || [])
         .filter((line: any) => {
           if (useFreeTextInput) {
             const char = line.char?.toLowerCase();
@@ -283,26 +316,27 @@ function NegotiateContent(): React.ReactElement {
           created_at: new Date().toISOString()
         }));
 
-      // Save AI messages to database individually for correct formatting
+      // Background save AI messages
       if (aiMessages.length > 0) {
-        // Use Promise.all to save messages in parallel
-        await Promise.all(aiMessages.map(msg => gasPost('create', 'messages', msg)));
+        Promise.all(aiMessages.map(msg => gasPost('create', 'messages', msg)));
       }
 
       setMessages(prev => [...prev, ...aiMessages]);
-      setNarrator(result.narrator);
+      setNarrator(aiResponse.narrator);
+      setStreamingMessage(null);
       
-      if (result.game_over) {
+      if (processResult.game_over) {
         setIsGameOver(true);
-        setOutcome(result.outcome);
+        setOutcome(processResult.outcome);
       }
       
-      if (result.state) {
-        setRuntimeState(result.state);
-        if (result.state.current_phase) setPhase(result.state.current_phase);
+      if (processResult.state) {
+        const finalState = processResult.state;
+        setRuntimeState(finalState);
+        if (finalState.current_phase) setPhase(finalState.current_phase);
         
         setCharacters(prev => prev.map(c => {
-          const rel = result.state.relationships?.[c.id] || result.state.relationships?.[c.name];
+          const rel = finalState.relationships?.[c.id] || finalState.relationships?.[c.name];
           if (rel) {
             return {
               ...c,
@@ -319,6 +353,7 @@ function NegotiateContent(): React.ReactElement {
       setError(err.message || 'AI ไม่พร้อมใช้งานในขณะนี้');
     } finally {
       setSending(false);
+      setStreamingMessage(null);
     }
   };
 
@@ -631,18 +666,20 @@ function NegotiateContent(): React.ReactElement {
             )}
 
             {/* Dialogue Box */}
-            {messages.length > 0 && currentMessageIndex >= 0 && (
+            {(messages.length > 0 || streamingMessage) && (
               <DialogueBox 
-                sender={messages[currentMessageIndex]?.sender || 'ai'}
+                sender={streamingMessage ? 'ai' : (messages[currentMessageIndex]?.sender || 'ai')}
                 characterName={
-                  messages[currentMessageIndex]?.sender === 'ai' 
-                    ? (characters.find(c => c.id === messages[currentMessageIndex]?.character_name)?.name || messages[currentMessageIndex]?.character_name)
-                    : 'คุณ'
+                  streamingMessage 
+                    ? (characters[0]?.name || 'AI') 
+                    : (messages[currentMessageIndex]?.sender === 'ai' 
+                        ? (characters.find(c => c.id === messages[currentMessageIndex]?.character_name)?.name || messages[currentMessageIndex]?.character_name)
+                        : 'คุณ')
                 }
-                content={messages[currentMessageIndex]?.content || ''}
-                isTyping={isTyping}
+                content={streamingMessage || (messages[currentMessageIndex]?.content || '')}
+                isTyping={streamingMessage ? false : isTyping}
                 onTypingComplete={() => setIsTyping(false)}
-                isLastMessage={currentMessageIndex === messages.length - 1}
+                isLastMessage={streamingMessage ? true : currentMessageIndex === messages.length - 1}
                 isKidMode={kidGameplayActive}
               />
             )}

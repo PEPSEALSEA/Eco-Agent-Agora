@@ -22,7 +22,7 @@ function doGet(e) {
       const data = readTable(table);
       return jsonResponse(data);
     }
-    
+
     if (action === 'read_all') {
       const data = readAllTables();
       return jsonResponse(data);
@@ -32,7 +32,7 @@ function doGet(e) {
       const result = setupDatabase();
       return jsonResponse(result);
     }
-    
+
     if (action === 'get_config') {
       return jsonResponse({ google_client_id: GOOGLE_CONFIG.clientId });
     }
@@ -142,7 +142,7 @@ function readTable(tableName) {
   const cache = CacheService.getScriptCache();
   const cached = cache.get('table_data_' + tableName);
   if (cached) {
-    try { return JSON.parse(cached); } catch (e) {}
+    try { return JSON.parse(cached); } catch (e) { }
   }
 
   const ss = getSpreadsheet();
@@ -161,7 +161,7 @@ function readTable(tableName) {
       let val = row[i];
       // Try to parse JSON if it looks like a JSON string
       if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
-        try { val = JSON.parse(val); } catch (e) {}
+        try { val = JSON.parse(val); } catch (e) { }
       }
       obj[header] = val;
     });
@@ -173,7 +173,7 @@ function readTable(tableName) {
   if (jsonResult.length < 90000) {
     cache.put('table_data_' + tableName, jsonResult, 300);
   }
-  
+
   return result;
 }
 
@@ -204,7 +204,7 @@ function readRowById(tableName, id) {
   headers.forEach((header, i) => {
     let val = rowData[i];
     if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
-      try { val = JSON.parse(val); } catch (e) {}
+      try { val = JSON.parse(val); } catch (e) { }
     }
     obj[header] = val;
   });
@@ -232,9 +232,9 @@ function readMessagesBySessionId(sessionId) {
 
   const minRow = rowIndices[0];
   const maxRow = rowIndices[rowIndices.length - 1];
-  
+
   const blockValues = sheet.getRange(minRow, 1, maxRow - minRow + 1, headers.length).getValues();
-  
+
   const results = [];
   rowIndices.forEach(r => {
     const rowData = blockValues[r - minRow];
@@ -242,13 +242,13 @@ function readMessagesBySessionId(sessionId) {
     headers.forEach((header, i) => {
       let val = rowData[i];
       if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
-        try { val = JSON.parse(val); } catch (e) {}
+        try { val = JSON.parse(val); } catch (e) { }
       }
       obj[header] = val;
     });
     results.push(obj);
   });
-  
+
   return results;
 }
 
@@ -256,7 +256,7 @@ function readAllTables() {
   const cache = CacheService.getScriptCache();
   const cached = cache.get('all_tables_data');
   if (cached) {
-    try { return JSON.parse(cached); } catch (e) {}
+    try { return JSON.parse(cached); } catch (e) { }
   }
 
   const ss = getSpreadsheet();
@@ -279,7 +279,7 @@ function readAllTables() {
       headers.forEach((header, i) => {
         let val = row[i];
         if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
-          try { val = JSON.parse(val); } catch (e) {}
+          try { val = JSON.parse(val); } catch (e) { }
         }
         obj[header] = val;
       });
@@ -299,7 +299,7 @@ function readAllTables() {
 function createRow(tableName, data) {
   const ss = getSpreadsheet();
   let sheet = ss.getSheetByName(tableName);
-  
+
   // Create sheet if it doesn't exist
   if (!sheet) {
     sheet = ss.insertSheet(tableName);
@@ -323,7 +323,7 @@ function createRows(tableName, dataArray) {
   if (!dataArray || dataArray.length === 0) return { success: true, count: 0 };
   const ss = getSpreadsheet();
   let sheet = ss.getSheetByName(tableName);
-  
+
   if (!sheet) {
     sheet = ss.insertSheet(tableName);
     const headers = Object.keys(dataArray[0]);
@@ -332,7 +332,7 @@ function createRows(tableName, dataArray) {
 
   const lastCol = Math.max(1, sheet.getLastColumn());
   const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  
+
   const newRows = dataArray.map(data => {
     return headers.map(h => {
       let val = data[h] || '';
@@ -349,7 +349,7 @@ function createRows(tableName, dataArray) {
 function updateRow(tableName, id, data) {
   const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(tableName);
-  
+
   const finder = sheet.createTextFinder(id.toString()).matchEntireCell(true).findAll();
   const lastCol = Math.max(1, sheet.getLastColumn());
   const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
@@ -374,14 +374,14 @@ function updateRow(tableName, id, data) {
     clearTableCache(tableName);
     return { success: true };
   }
-  
+
   throw new Error('ID not found');
 }
 
 function upsertRow(tableName, queryField, queryValue, data) {
   const ss = getSpreadsheet();
   const sheet = ss.getSheetByName(tableName);
-  
+
   const finder = sheet.createTextFinder(queryValue.toString()).matchEntireCell(true).findAll();
   const lastCol = Math.max(1, sheet.getLastColumn());
   const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
@@ -400,7 +400,7 @@ function upsertRow(tableName, queryField, queryValue, data) {
     const existingId = sheet.getRange(targetRow, headers.indexOf('id') + 1).getValue();
     return updateRow(tableName, existingId, data);
   }
-  
+
   return createRow(tableName, data);
 }
 
@@ -452,7 +452,7 @@ function setupDatabase() {
     } else {
       const lastCol = Math.max(1, sheet.getLastColumn());
       const existingHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-      
+
       // 1. Add missing headers
       targetHeaders.forEach(h => {
         if (!existingHeaders.includes(h)) {
@@ -466,7 +466,7 @@ function setupDatabase() {
       // Re-fetch existing headers to get updated positions
       const updatedLastCol = sheet.getLastColumn();
       const updatedHeaders = sheet.getRange(1, 1, 1, updatedLastCol).getValues()[0];
-      
+
       for (let i = updatedHeaders.length - 1; i >= 0; i--) {
         const h = updatedHeaders[i];
         if (h && !targetHeaders.includes(h)) {
@@ -474,7 +474,7 @@ function setupDatabase() {
           results.push(`Removed extra column [${h}] from ${tableName}`);
         }
       }
-      
+
       if (results.filter(r => r.includes(tableName)).length === 0) {
         results.push(`Table ${tableName} is already up to date`);
       }
@@ -538,7 +538,7 @@ function getAntigravityResponse(payload) {
   if (!apiKey) throw new Error('GEMINI_API_KEY not found');
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-  
+
   const scenarioConfig = JSON.stringify(payload.scenario, null, 2);
   const runtimeState = JSON.stringify(payload.state, null, 2);
   const messages = payload.messages || [];
@@ -551,10 +551,10 @@ function getAntigravityResponse(payload) {
   // Convert messages to Gemini format
   const contents = messages.map(m => {
     // Prefix character name to model responses to maintain identity in history
-    const textContext = (m.sender === 'ai' || m.sender === 'model') && m.character_name 
-      ? `[${m.character_name}]: ${m.content}` 
+    const textContext = (m.sender === 'ai' || m.sender === 'model') && m.character_name
+      ? `[${m.character_name}]: ${m.content}`
       : m.content;
-      
+
     return {
       role: m.sender === 'user' ? 'user' : 'model',
       parts: [{ text: textContext }]
@@ -615,7 +615,7 @@ function getAntigravityResponse(payload) {
 function handleChatAction(data) {
   const sessionId = data.sessionId;
   const userText = data.text;
-  
+
   // OPTIMIZATION: Use injected scenario/state if provided to skip expensive Sheet reads
   let scenario = data.scenario;
   let state = data.state;
@@ -625,7 +625,7 @@ function handleChatAction(data) {
   if (!scenario || !state) {
     sessionRow = readRowById('sessions', sessionId);
     if (!sessionRow) throw new Error('Session not found');
-    
+
     if (!scenario) scenario = readRowById('scenarios', sessionRow.scenario_id);
     if (!state) state = sessionRow.state;
     if (!historySummary) historySummary = sessionRow.history_summary;
@@ -660,8 +660,8 @@ function handleChatAction(data) {
   // 3. Phase Guard
   state.phase_turn_count++;
   state.turn_total = (state.turn_total || 0) + 1;
-  
-  let currentTurnLimit = 20; 
+
+  let currentTurnLimit = 20;
   const phases = scenario.phase_rules?.phases || [];
   if (phases.length > 0 && typeof phases[0] === 'object') {
     const currentPhaseObj = phases.find(p => p.id === state.current_phase || p.name === state.current_phase);
@@ -671,22 +671,22 @@ function handleChatAction(data) {
   }
 
   if (state.phase_turn_count > currentTurnLimit) {
-    return { 
-      game_over: true, 
-      outcome: 'fail', 
-      narrator: `หมดเวลาในเฟส ${state.current_phase} แล้ว การเจรจาล้มเหลว` 
+    return {
+      game_over: true,
+      outcome: 'fail',
+      narrator: `หมดเวลาในเฟส ${state.current_phase} แล้ว การเจรจาล้มเหลว`
     };
   }
 
   // 4. Get History (Optimized: only if not provided by frontend)
   const messages = data.recent_messages || readMessagesBySessionId(sessionId);
-  
+
   // 5. Call LLM
   const aiResponse = getAntigravityResponse({
     scenario: scenario,
     state: state,
     history_summary: historySummary,
-    messages: messages.slice(-10), 
+    messages: messages.slice(-10),
     text: userText,
     vibe: data.vibe,
     intensity: data.intensity
@@ -706,7 +706,7 @@ function handleChatAction(data) {
   if (aiResponse.phase_event === 'advance_to_next_phase') {
     const phases = scenario.phase_rules?.phases || [];
     let currentIndex = -1;
-    
+
     // Support both string array and object array for phases
     if (phases.length > 0 && typeof phases[0] === 'object') {
       currentIndex = phases.findIndex(p => p.id === state.current_phase || p.name === state.current_phase);
@@ -741,7 +741,7 @@ function handleChatAction(data) {
     state: JSON.stringify(state),
     history_summary: historySummary
   };
-  
+
   if (gameOver) {
     sessionUpdateData.status = 'completed';
     sessionUpdateData.outcome_score = outcome === 'win' ? calculateScore(state, scenario) : Math.floor(calculateScore(state, scenario) / 2);
@@ -778,7 +778,7 @@ function handleChatAction(data) {
 function handleEndSession(sessionId) {
   const sessionRow = readRowById('sessions', sessionId);
   if (!sessionRow) throw new Error('Session not found');
-  
+
   const scenario = readRowById('scenarios', sessionRow.scenario_id);
   if (!scenario) throw new Error('Scenario not found');
 
@@ -803,10 +803,10 @@ function handleEndSession(sessionId) {
 function handleGetContextAction(data) {
   const sessionId = data.sessionId;
   const userText = data.text;
-  
+
   const sessionRow = readRowById('sessions', sessionId);
   if (!sessionRow) throw new Error('Session not found');
-  
+
   const scenario = readRowById('scenarios', sessionRow.scenario_id);
   if (!scenario) throw new Error('Scenario not found');
 
@@ -865,10 +865,10 @@ function handleGetContextAction(data) {
  */
 function handleProcessChatResultAction(data) {
   const { sessionId, aiResponse, state } = data;
-  
+
   const sessionRow = readRowById('sessions', sessionId);
   if (!sessionRow) throw new Error('Session not found');
-  
+
   const scenario = readRowById('scenarios', sessionRow.scenario_id);
   if (!scenario) throw new Error('Scenario not found');
 
@@ -954,7 +954,7 @@ function handleSaveEvaluation(data) {
   const ss = getSpreadsheet();
   const sessionSheet = ss.getSheetByName('sessions');
   const headers = sessionSheet.getRange(1, 1, 1, sessionSheet.getLastColumn()).getValues()[0];
-  
+
   // Auto-heal: If ai_evaluation column is missing, run setup
   if (!headers.includes('ai_evaluation')) {
     console.log('ai_evaluation column missing, running setup...');
@@ -996,7 +996,7 @@ function handleGenerateEvaluation(data) {
   if (!apiKey) throw new Error('GEMINI_API_KEY not found');
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-  
+
   const systemPrompt = `
     You are an expert negotiation coach. Review this entire conversation transcript and evaluate the user's (คุณ) performance.
     Return the result strictly as a JSON object with this exact structure (no markdown):
@@ -1068,7 +1068,7 @@ function handleGenerateWhatIf(data) {
   if (!apiKey) throw new Error('GEMINI_API_KEY not found');
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-  
+
   const systemPrompt = `
     You are a negotiation coach. The user is looking at a "What If" scenario.
     They previously said: "${originalContent}"
@@ -1098,7 +1098,7 @@ function handleGenerateWhatIf(data) {
 
   const response = UrlFetchApp.fetch(url, options);
   const responseText = response.getContentText();
-  
+
   try {
     const json = JSON.parse(responseText);
     const aiText = json.candidates[0].content.parts[0].text;
@@ -1113,7 +1113,7 @@ function handleGenerateWhatIf(data) {
  */
 function calculateScore(state, scenario) {
   let score = 0;
-  
+
   // 1. Phase Progression (40 points max)
   const phases = scenario.phase_rules?.phases || [];
   let currentPhaseIndex = 0;
@@ -1123,7 +1123,7 @@ function calculateScore(state, scenario) {
     currentPhaseIndex = phases.indexOf(state.current_phase);
   }
   if (currentPhaseIndex === -1) currentPhaseIndex = 0;
-  
+
   const phaseProgress = (currentPhaseIndex / Math.max(1, phases.length - 1)) * 40;
   score += phaseProgress;
 
@@ -1140,11 +1140,11 @@ function calculateScore(state, scenario) {
       // Normalize anger to 0-10
       totalAnger += Math.min(10, Math.max(0, parseInt(rels[id].anger || 0, 10)));
     });
-    
+
     // Trust contributes up to 20 points
     const avgTrust = totalTrust / charIds.length;
     relationshipScore += (avgTrust / 10) * 20;
-    
+
     // Anger contributes up to 20 points (less anger = more points)
     const avgAnger = totalAnger / charIds.length;
     relationshipScore += ((10 - avgAnger) / 10) * 20;
@@ -1178,7 +1178,7 @@ function applyPath(obj, path, value) {
     if (!current[parts[i]]) current[parts[i]] = {};
     current = current[parts[i]];
   }
-  
+
   const lastPart = parts[parts.length - 1];
   if (typeof value === 'string' && (value.startsWith('+') || value.startsWith('-'))) {
     const delta = parseInt(value, 10);

@@ -2,7 +2,8 @@ const proxyUrl = process.env.NEXT_PUBLIC_GEMINI_PROXY_URL || "https://gemini-pro
 
 export const getGeminiResponse = async (
   systemInstruction: string,
-  history: { role: string; parts: { text: string }[] }[]
+  history: { role: string; parts: { text: string }[] }[],
+  onStream?: (text: string) => void
 ) => {
   const payload = {
     contents: history.length === 0 
@@ -57,7 +58,15 @@ export const getGeminiResponse = async (
           const parts = data.candidates?.[0]?.content?.parts;
           if (parts && parts.length > 0) {
             for (const part of parts) {
-              if (part.text) fullText += part.text;
+              if (part.text) {
+                fullText += part.text;
+                if (onStream) {
+                  // Try to extract current dialogue from partial JSON if possible
+                  // For now, just pass the full text and let the caller handle it
+                  // Since we use responseMimeType: "application/json", the text is JSON
+                  onStream(fullText);
+                }
+              }
             }
           }
         } catch (e) {

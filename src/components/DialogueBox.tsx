@@ -33,7 +33,19 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
   const currentSentence = sentences[paragraphIndex] || '';
 
   useEffect(() => {
+    // If we're not in kid mode and not streaming (or finished streaming), run typing animation
     if (isKidMode) {
+      setDisplayedText(currentSentence);
+      if (paragraphIndex === sentences.length - 1) {
+        onTypingCompleteRef.current?.();
+      }
+      return;
+    }
+
+    // If content is changing rapidly (streaming), just show it
+    // We can detect this if the content doesn't end with a sentence-ending punctuation 
+    // or if the length change is small. But a simpler way is to check if isTyping is false.
+    if (!isTyping) {
       setDisplayedText(currentSentence);
       if (paragraphIndex === sentences.length - 1) {
         onTypingCompleteRef.current?.();
@@ -55,7 +67,7 @@ export const DialogueBox = ({ sender, characterName, content, isTyping, onTyping
     }, 15);
     
     return () => clearInterval(interval);
-  }, [paragraphIndex, currentSentence, sentences.length, isKidMode]);
+  }, [paragraphIndex, currentSentence, sentences.length, isKidMode, isTyping]);
 
   const hasMoreParagraphs = paragraphIndex < sentences.length - 1;
   const isFinishedTyping = displayedText.length === currentSentence.length;
