@@ -1,4 +1,4 @@
-const proxyUrl = process.env.NEXT_PUBLIC_GEMINI_PROXY_URL || "https://gemini-proxy.sealseapep.workers.dev/";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const getGeminiResponse = async (
   systemInstruction: string,
@@ -6,119 +6,41 @@ export const getGeminiResponse = async (
   onStream?: (text: string) => void,
   apiKey?: string
 ) => {
-  const payload = {
-    contents: history.length === 0 
-      ? [{ role: "user", parts: [{ text: "Please start the negotiation with an opening statement." }] }]
-      : history,
-    systemInstruction: {
-      parts: [{ text: systemInstruction }]
-    },
-    generationConfig: {
-      responseMimeType: "application/json",
-    },
-    model: "models/gemini-3.1-flash-lite",
-  };
-
   try {
-    const finalUrl = new URL(proxyUrl);
-    const isValidKey = (k: any) => typeof k === 'string' && k.startsWith('AIza') && k.length > 20;
-    
     const contextKey = (apiKey && apiKey !== "undefined" && apiKey !== "null") ? apiKey : null;
     const envKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    
-    let effectiveKey = "";
-    let keySource = "";
+    const effectiveKey = (contextKey || envKey || "").trim();
 
-    if (isValidKey(contextKey)) {
-      effectiveKey = contextKey as string;
-      keySource = "GAS Context";
-    } else if (isValidKey(envKey)) {
-      effectiveKey = envKey as string;
-      keySource = "GitHub/Env";
+    if (!effectiveKey) {
+      throw new Error("No Gemini API key found. Please check your configuration.");
     }
 
-    if (effectiveKey) {
-      finalUrl.searchParams.append('key', effectiveKey);
-      // Debug log (masked)
-      console.log(`Using Gemini key from ${keySource}: ${effectiveKey.substring(0, 4)}...${effectiveKey.substring(effectiveKey.length - 4)}`);
-    } else {
-      console.warn("No valid Gemini API key found (GAS Context or Env). Ensure key starts with 'AIza'");
-    }
-
-    const response = await fetch(finalUrl.toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    const genAI = new GoogleGenerativeAI(effectiveKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-3.1-flash-lite",
+      systemInstruction: systemInstruction,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorMessage = `Proxy error: ${response.status}`;
-      try {
-        const errorJson = JSON.parse(errorText);
-        if (errorJson.error?.message) {
-          errorMessage = errorJson.error.message;
-          if (errorMessage.includes("API key not valid")) {
-            errorMessage += " (Check GEMINI_API_KEY in Google Apps Script properties or .env)";
-          }
-        } else {
-          errorMessage += ` ${errorText}`;
-        }
-      } catch (e) {
-        errorMessage += ` ${errorText}`;
-      }
-      throw new Error(errorMessage);
-    }
+    const chat = model.startChat({
+      history: history.length > 0 ? history.slice(0, -1) : [],
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
 
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error("Response body is not readable");
+    const lastMessage = history.length > 0 
+      ? history[history.length - 1].parts[0].text 
+      : "Please start the negotiation with an opening statement.";
 
-    const decoder = new TextDecoder();
+    const result = await chat.sendMessageStream(lastMessage);
+    
     let fullText = "";
-    let accumulatedText = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      accumulatedText += chunk;
-
-      const lines = accumulatedText.split('\n');
-      accumulatedText = lines.pop() || "";
-
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
-        
-        const dataStr = trimmedLine.substring(6).trim();
-        if (dataStr === '[DONE]') break;
-        
-        try {
-          const data = JSON.parse(dataStr);
-          const parts = data.candidates?.[0]?.content?.parts;
-          if (parts && parts.length > 0) {
-            for (const part of parts) {
-              if (part.text) {
-                fullText += part.text;
-                if (onStream) {
-                  // Try to extract current dialogue from partial JSON if possible
-                  // For now, just pass the full text and let the caller handle it
-                  // Since we use responseMimeType: "application/json", the text is JSON
-                  onStream(fullText);
-                }
-              }
-            }
-          }
-        } catch (e) {
-          // Log parsing errors for debugging but don't crash the loop
-          console.warn("Error parsing SSE chunk:", e, "Line:", trimmedLine);
-        }
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      fullText += chunkText;
+      if (onStream) {
+        onStream(fullText);
       }
-    }
-
-    if (!fullText) {
-      throw new Error("No response content received from Gemini");
     }
 
     // Process the final accumulated text
@@ -133,8 +55,6 @@ export const getGeminiResponse = async (
     
     if (startIdx !== Infinity && endIdx !== -1) {
       cleanText = cleanText.substring(startIdx, endIdx + 1);
-    } else {
-      console.error("Failed to find JSON boundaries in response:", cleanText);
     }
 
     try {
@@ -144,8 +64,11 @@ export const getGeminiResponse = async (
       throw new Error(`Invalid JSON response: ${e.message}`);
     }
 
-  } catch (error) {
-    console.error("Gemini Proxy API error:", error);
+  } catch (error: any) {
+    console.error("Gemini API error:", error);
+    if (error.message?.includes("fetch failed")) {
+      throw new Error("Network error: Could not reach Gemini API. This might be a CORS issue if calling directly from the browser without a proxy.");
+    }
     throw error;
   }
 };
