@@ -20,9 +20,16 @@ export const getGeminiResponse = async (
 
   try {
     const finalUrl = new URL(proxyUrl);
-    const effectiveKey = apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const effectiveKey = (apiKey && apiKey !== "undefined" && apiKey !== "null") 
+      ? apiKey 
+      : process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
     if (effectiveKey) {
       finalUrl.searchParams.append('key', effectiveKey);
+      // Debug log (masked)
+      console.log(`Using Gemini key: ${effectiveKey.substring(0, 4)}...${effectiveKey.substring(effectiveKey.length - 4)}`);
+    } else {
+      console.warn("No Gemini API key found in either context or environment variables");
     }
 
     const response = await fetch(finalUrl.toString(), {
