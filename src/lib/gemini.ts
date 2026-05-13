@@ -16,7 +16,7 @@ export const getGeminiResponse = async (
     generationConfig: {
       responseMimeType: "application/json",
     },
-    model: "models/gemini-2.5-flash",
+    model: "models/gemini-3.1-flash-lite",
   };
 
   try {
@@ -53,7 +53,21 @@ export const getGeminiResponse = async (
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Proxy error: ${response.status} ${errorText}`);
+      let errorMessage = `Proxy error: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.error?.message) {
+          errorMessage = errorJson.error.message;
+          if (errorMessage.includes("API key not valid")) {
+            errorMessage += " (Check GEMINI_API_KEY in Google Apps Script properties or .env)";
+          }
+        } else {
+          errorMessage += ` ${errorText}`;
+        }
+      } catch (e) {
+        errorMessage += ` ${errorText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const reader = response.body?.getReader();

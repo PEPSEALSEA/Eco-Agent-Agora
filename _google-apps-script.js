@@ -558,7 +558,7 @@ function getAntigravityResponse(payload) {
   const apiKey = props.getProperty('GEMINI_API_KEY');
   if (!apiKey) throw new Error('GEMINI_API_KEY not found');
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
 
   const scenarioConfig = JSON.stringify(payload.scenario, null, 2);
   const runtimeState = JSON.stringify(payload.state, null, 2);
@@ -608,7 +608,7 @@ function getAntigravityResponse(payload) {
     contents: mergedContents,
     generationConfig: {
       temperature: 0.7, // Higher temperature for more natural/human-like responses
-      response_mime_type: "application/json"
+      responseMimeType: "application/json"
     }
   };
 
@@ -1017,7 +1017,7 @@ function handleGenerateEvaluation(data) {
   const apiKey = props.getProperty('GEMINI_API_KEY');
   if (!apiKey) throw new Error('GEMINI_API_KEY not found');
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
 
   const systemPrompt = `
     You are an expert negotiation coach. Review this entire conversation transcript and evaluate the user's (คุณ) performance.
@@ -1052,7 +1052,7 @@ function handleGenerateEvaluation(data) {
     ],
     generationConfig: {
       temperature: 0.2, // Lower temperature for more consistent JSON
-      response_mime_type: "application/json"
+      responseMimeType: "application/json"
     }
   };
 
@@ -1089,7 +1089,7 @@ function handleGenerateWhatIf(data) {
   const apiKey = props.getProperty('GEMINI_API_KEY');
   if (!apiKey) throw new Error('GEMINI_API_KEY not found');
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
 
   const systemPrompt = `
     You are a negotiation coach. The user is looking at a "What If" scenario.
@@ -1107,7 +1107,7 @@ function handleGenerateWhatIf(data) {
     contents: [{ role: 'user', parts: [{ text: "What if I said something else?" }] }],
     generationConfig: {
       temperature: 0.7,
-      response_mime_type: "application/json"
+      responseMimeType: "application/json"
     }
   };
 
