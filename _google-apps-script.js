@@ -2,6 +2,13 @@ const props = PropertiesService.getScriptProperties();
 const SHEET_ID = props.getProperty('SHEET_ID');
 const SECRET_KEY = props.getProperty('SECRET_KEY');
 
+if (!SHEET_ID) {
+  console.error("CRITICAL: SHEET_ID is not set in Script Properties. Please go to Project Settings > Script Properties and add it.");
+}
+if (!SECRET_KEY) {
+  console.error("CRITICAL: SECRET_KEY is not set in Script Properties.");
+}
+
 // Google Auth Config (Stored here for accessibility via API if needed)
 const GOOGLE_CONFIG = {
   clientId: props.getProperty('GOOGLE_CLIENT_ID'),
@@ -123,8 +130,13 @@ function doPost(e) {
 
 let cachedSS = null;
 function getSpreadsheet() {
+  if (!SHEET_ID) throw new Error('SHEET_ID not found in Script Properties. Please check Project Settings.');
   if (!cachedSS) {
-    cachedSS = SpreadsheetApp.openById(SHEET_ID);
+    try {
+      cachedSS = SpreadsheetApp.openById(SHEET_ID);
+    } catch (e) {
+      throw new Error('Could not open Spreadsheet. Ensure SHEET_ID is correct and script has permission: ' + e.message);
+    }
   }
   return cachedSS;
 }

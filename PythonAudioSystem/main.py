@@ -30,7 +30,7 @@ async def analyze_audio(file: UploadFile = File(...)):
     """
     file_id = str(uuid.uuid4())
     # Ensure correct extension (usually webm or wav from browser)
-    ext = os.path.splitext(file.filename)[1] or ".webm"
+    ext = os.path.splitext(file.filename)[1] or ".wav"
     temp_path = os.path.join(TEMP_DIR, f"{file_id}{ext}")
     
     try:

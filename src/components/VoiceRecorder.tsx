@@ -136,7 +136,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
   const processAudio = async (blob: Blob) => {
     setIsProcessing(true);
     const formData = new FormData();
-    formData.append('file', blob, 'recording.webm');
+    formData.append('file', blob, 'recording.wav');
 
     try {
       // Connect to the local Python server
