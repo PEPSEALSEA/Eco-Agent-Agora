@@ -16,6 +16,7 @@ export const getGeminiResponse = async (
     generationConfig: {
       responseMimeType: "application/json",
     },
+    model: "models/gemini-2.5-flash",
   };
 
   try {
