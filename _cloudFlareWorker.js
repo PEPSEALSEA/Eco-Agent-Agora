@@ -233,8 +233,7 @@ async function readTable(sheetId, tableName, token) {
     });
     const data = await response.json();
     if (data.error) {
-      console.error(`Sheets API Error for ${tableName}:`, data.error.message);
-      return [];
+      return { error: `Google Sheets API Error: ${data.error.message} (Status: ${data.error.status})`, tableName };
     }
     if (!data.values) return [];
 
