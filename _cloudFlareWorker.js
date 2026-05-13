@@ -82,10 +82,9 @@ export default {
 
         if (action === "read_all") {
           const tables = ["users", "scenarios", "sessions", "messages", "feedback_logs", "skill_progress"];
+          const results = await Promise.all(tables.map(t => readTable(env.SHEET_ID, t, token)));
           const result = {};
-          for (const t of tables) {
-            result[t] = await readTable(env.SHEET_ID, t, token);
-          }
+          tables.forEach((t, i) => { result[t] = results[i]; });
           return jsonResponse(result);
         }
 
@@ -149,7 +148,11 @@ export default {
 
 function authenticate(url, body, env) {
   const key = url.searchParams.get("key") || body.key;
-  return env.SECRET_KEY && key === env.SECRET_KEY;
+  if (!env.SECRET_KEY) {
+    console.error("Worker Error: SECRET_KEY is not set in environment/secrets.");
+    return false;
+  }
+  return key === env.SECRET_KEY;
 }
 
 /**
@@ -195,21 +198,28 @@ function b64(str) {
 }
 
 async function sign(data, key) {
-  const pemHeader = "-----BEGIN PRIVATE KEY-----";
-  const pemFooter = "-----END PRIVATE KEY-----";
-  const pemContents = key.substring(pemHeader.length, key.length - pemFooter.length).replace(/\s/g, "");
-  const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+  // Extract only the base64 part, ignoring header, footer, and any whitespace
+  const pemContents = key
+    .replace("-----BEGIN PRIVATE KEY-----", "")
+    .replace("-----END PRIVATE KEY-----", "")
+    .replace(/\\n/g, "")
+    .replace(/\s/g, "");
   
-  const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    binaryKey,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
+  try {
+    const binaryKey = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+    const cryptoKey = await crypto.subtle.importKey(
+      "pkcs8",
+      binaryKey,
+      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
 
-  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, new TextEncoder().encode(data));
-  return btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+    const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, new TextEncoder().encode(data));
+    return btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  } catch (e) {
+    throw new Error("Base64 Key Error: " + e.message + " (Check your GOOGLE_PRIVATE_KEY secret)");
+  }
 }
 
 /**
@@ -217,26 +227,35 @@ async function sign(data, key) {
  */
 
 async function readTable(sheetId, tableName, token) {
-  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${tableName}!A1:Z1000`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const data = await response.json();
-  if (!data.values) return [];
-
-  const headers = data.values[0];
-  const rows = data.values.slice(1);
-
-  return rows.map(row => {
-    const obj = {};
-    headers.forEach((h, i) => {
-      let val = row[i];
-      if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
-        try { val = JSON.parse(val); } catch (e) {}
-      }
-      obj[h] = val;
+  try {
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${tableName}!A1:Z1000`, {
+      headers: { Authorization: `Bearer ${token}` }
     });
-    return obj;
-  });
+    const data = await response.json();
+    if (data.error) {
+      console.error(`Sheets API Error for ${tableName}:`, data.error.message);
+      return [];
+    }
+    if (!data.values) return [];
+
+    const headers = data.values[0];
+    const rows = data.values.slice(1);
+
+    return rows.map(row => {
+      const obj = {};
+      headers.forEach((h, i) => {
+        let val = row[i];
+        if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
+          try { val = JSON.parse(val); } catch (e) {}
+        }
+        obj[h] = val;
+      });
+      return obj;
+    });
+  } catch (err) {
+    console.error(`Fetch Error for ${tableName}:`, err.message);
+    return [];
+  }
 }
 
 async function createRow(sheetId, tableName, data, token) {

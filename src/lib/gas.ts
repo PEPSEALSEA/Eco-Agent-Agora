@@ -31,9 +31,19 @@ export function uuid() {
 
 export async function gasFetch(action: string, table?: string, id?: string, extraParams: Record<string, string> = {}) {
   const { url: GAS_URL, key: SECRET_KEY } = getGasConfig();
-  if (!GAS_URL) return { error: 'GAS URL not configured' };
+  if (!GAS_URL || GAS_URL === 'undefined') {
+    console.error('CRITICAL: NEXT_PUBLIC_GAS_URL is not set. Check your .env or GitHub Secrets.');
+    return { error: 'Backend URL not configured' };
+  }
   
-  const url = new URL(GAS_URL);
+  let url;
+  try {
+    url = new URL(GAS_URL);
+  } catch (e) {
+    console.error('CRITICAL: NEXT_PUBLIC_GAS_URL is an invalid URL:', GAS_URL);
+    return { error: 'Invalid Backend URL' };
+  }
+  
   url.searchParams.append('action', action);
   if (table) url.searchParams.append('table', table);
   if (id) url.searchParams.append('id', id);
@@ -65,7 +75,17 @@ export async function gasFetch(action: string, table?: string, id?: string, extr
  */
 export async function gasPost(action: 'create' | 'update' | 'upsert' | 'chat' | 'end_session' | 'save_evaluation' | 'get_chat_context' | 'process_chat_result' | 'generate_evaluation' | 'generate_what_if', table: string, data: any, options: { id?: string, queryField?: string, queryValue?: any } = {}) {
   const { url: GAS_URL, key: SECRET_KEY } = getGasConfig();
-  if (!GAS_URL) return { error: 'GAS URL not configured' };
+  if (!GAS_URL || GAS_URL === 'undefined') {
+    console.error('CRITICAL: NEXT_PUBLIC_GAS_URL is not set. Check your .env or GitHub Secrets.');
+    return { error: 'Backend URL not configured' };
+  }
+
+  try {
+    const url = new URL(GAS_URL); // Just to validate
+  } catch (e) {
+    console.error('CRITICAL: NEXT_PUBLIC_GAS_URL is an invalid URL:', GAS_URL);
+    return { error: 'Invalid Backend URL' };
+  }
 
   try {
     const response = await fetch(GAS_URL, {
