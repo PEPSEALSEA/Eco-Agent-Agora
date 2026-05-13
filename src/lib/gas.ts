@@ -29,7 +29,7 @@ export function uuid() {
   });
 }
 
-export async function gasFetch(action: string, table?: string, id?: string) {
+export async function gasFetch(action: string, table?: string, id?: string, extraParams: Record<string, string> = {}) {
   const { url: GAS_URL, key: SECRET_KEY } = getGasConfig();
   if (!GAS_URL) return { error: 'GAS URL not configured' };
   
@@ -38,6 +38,12 @@ export async function gasFetch(action: string, table?: string, id?: string) {
   if (table) url.searchParams.append('table', table);
   if (id) url.searchParams.append('id', id);
   url.searchParams.append('key', SECRET_KEY || '');
+  
+  Object.entries(extraParams).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) {
+      url.searchParams.append(k, v);
+    }
+  });
 
   try {
     const response = await fetch(url.toString());

@@ -84,17 +84,17 @@ function NegotiateContent(): React.ReactElement {
     const fetchData = async () => {
       setLoadingMessage('กำลังดึงข้อมูลเซสชัน...');
       try {
-        // Fetch session
-        const allData = await gasFetch('read_all');
-        if (allData.error) throw new Error(allData.error);
+        // Fetch optimized session data
+        const result = await gasFetch('get_negotiation_data', undefined, undefined, { sessionId });
+        if (result.error) throw new Error(result.error);
 
-        const sessionData = allData.sessions.find((s: any) => s.id === sessionId);
+        const { session: sessionData, scenario: scenarioData, messages: messagesData } = result;
+
         if (!sessionData) {
           router.push('/scenarios');
           return;
         }
 
-        const scenarioData = allData.scenarios.find((s: any) => s.id === sessionData.scenario_id);
         if (!scenarioData) {
           router.push('/scenarios');
           return;
@@ -104,13 +104,13 @@ function NegotiateContent(): React.ReactElement {
         setScenario(scenarioData);
         setCharacters(scenarioData.characters.map((c: any) => ({ ...c, mood: 'neutral' })));
 
-        // Fetch messages
-        const messagesData = allData.messages.filter((m: any) => m.session_id === sessionId)
+        // Sort messages by time
+        const sortedMessages = (messagesData || [])
           .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-        setMessages(messagesData);
-        if (messagesData.length > 0) {
-          setCurrentMessageIndex(messagesData.length - 1);
+        setMessages(sortedMessages);
+        if (sortedMessages.length > 0) {
+          setCurrentMessageIndex(sortedMessages.length - 1);
           setIsStarted(true);
         }
         
@@ -176,7 +176,8 @@ function NegotiateContent(): React.ReactElement {
           const partialMatch = text.match(/"line":\s*"([^"]*)$/);
           const displayContent = match ? match[1] : (partialMatch ? partialMatch[1] : "");
           if (displayContent) setStreamingMessage(displayContent);
-        }
+        },
+        context.geminiApiKey
       );
 
       // 3. Process Result in GAS (Background)
@@ -287,7 +288,8 @@ function NegotiateContent(): React.ReactElement {
           if (displayContent) {
             setStreamingMessage(displayContent);
           }
-        }
+        },
+        context.geminiApiKey
       );
 
       // 3. Process Result in GAS

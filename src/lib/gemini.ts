@@ -3,7 +3,8 @@ const proxyUrl = process.env.NEXT_PUBLIC_GEMINI_PROXY_URL || "https://gemini-pro
 export const getGeminiResponse = async (
   systemInstruction: string,
   history: { role: string; parts: { text: string }[] }[],
-  onStream?: (text: string) => void
+  onStream?: (text: string) => void,
+  apiKey?: string
 ) => {
   const payload = {
     contents: history.length === 0 
@@ -15,10 +16,17 @@ export const getGeminiResponse = async (
     generationConfig: {
       responseMimeType: "application/json",
     },
+    apiKey: apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY,
   };
 
   try {
-    const response = await fetch(proxyUrl, {
+    const finalUrl = new URL(proxyUrl);
+    const effectiveKey = apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (effectiveKey) {
+      finalUrl.searchParams.append('key', effectiveKey);
+    }
+
+    const response = await fetch(finalUrl.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

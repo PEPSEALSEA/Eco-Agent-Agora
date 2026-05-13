@@ -23,6 +23,11 @@ function doGet(e) {
       return jsonResponse(data);
     }
 
+    if (action === 'get_negotiation_data') {
+      const data = handleGetNegotiationData(e.parameter.sessionId);
+      return jsonResponse(data);
+    }
+
     if (action === 'read_all') {
       const data = readAllTables();
       return jsonResponse(data);
@@ -250,6 +255,22 @@ function readMessagesBySessionId(sessionId) {
   });
 
   return results;
+}
+
+function handleGetNegotiationData(sessionId) {
+  if (!sessionId) throw new Error('Session ID is required');
+
+  const session = readRowById('sessions', sessionId);
+  if (!session) return { error: 'Session not found' };
+
+  const scenario = readRowById('scenarios', session.scenario_id);
+  const messages = readMessagesBySessionId(sessionId);
+
+  return {
+    session: session,
+    scenario: scenario,
+    messages: messages
+  };
 }
 
 function readAllTables() {
@@ -855,8 +876,9 @@ function handleGetContextAction(data) {
     systemPrompt: systemPrompt,
     history: history,
     state: state,
-    scenario: scenario, // Pass back to frontend for local use
-    historySummary: historySummary
+    scenario: scenario,
+    historySummary: historySummary,
+    geminiApiKey: props.getProperty('GEMINI_API_KEY')
   };
 }
 
