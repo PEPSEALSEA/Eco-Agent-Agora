@@ -175,7 +175,7 @@ export default function ScenariosPage() {
             className="flex items-center space-x-4 bg-white border-4 border-gray-900 px-6 py-3 rounded-[2rem] hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group self-end md:self-auto"
           >
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-nintendo-yellow border-4 border-gray-900 flex items-center justify-center text-gray-900">
-              <User size={20} md:size={24} strokeWidth={3} />
+              <User className="w-5 h-5 md:w-6 md:h-6" strokeWidth={3} />
             </div>
             <div className="text-left">
               <p className="text-[10px] text-gray-400 font-black uppercase leading-tight mb-1">โปรไฟล์</p>
