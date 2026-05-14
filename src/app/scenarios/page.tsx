@@ -158,27 +158,28 @@ export default function ScenariosPage() {
   };
 
   return (
-    <div className="min-h-screen cartoon-bg-blue p-8 relative overflow-x-hidden">
+    <div className="min-h-screen cartoon-bg-blue p-4 sm:p-8 relative overflow-x-hidden">
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       <SyncStatus status={syncStatus} />
 
       <div className="max-w-6xl mx-auto relative z-10">
-        <header className="flex justify-between items-center mb-16">
-          <div className="bg-white border-[6px] border-gray-900 p-8 rounded-[3rem] shadow-[0_12px_0_rgba(0,0,0,1)] -rotate-1">
-            <h1 className="text-6xl font-black text-gray-900 mb-2 uppercase tracking-normal leading-normal">เลือกภารกิจของคุณ!</h1>
-            <p className="text-gray-500 font-bold text-xl uppercase tracking-normal leading-relaxed">เลือกสถานการณ์เพื่อฝึกฝนทักษะการเจรจาต่อรองของคุณ</p>
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-16 space-y-6 md:space-y-0">
+          <div className="bg-white border-[4px] md:border-[6px] border-gray-900 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-[0_8px_0_rgba(0,0,0,1)] md:shadow-[0_12px_0_rgba(0,0,0,1)] -rotate-1 w-full md:w-auto">
+            <h1 className="text-4xl md:text-6xl font-black text-gray-900 mb-2 uppercase tracking-tight md:tracking-normal leading-tight md:leading-normal">ภารกิจของคุณ</h1>
+            <p className="text-gray-500 font-bold text-sm md:text-xl uppercase tracking-normal leading-relaxed">เลือกสถานการณ์เพื่อฝึกฝนทักษะการเจรจา</p>
           </div>
+          
           <Link 
             href="/profile"
             prefetch={false}
-            className="flex items-center space-x-4 bg-white border-4 border-gray-900 px-6 py-3 rounded-[2rem] hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group"
+            className="flex items-center space-x-4 bg-white border-4 border-gray-900 px-6 py-3 rounded-[2rem] hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group self-end md:self-auto"
           >
-            <div className="w-12 h-12 rounded-2xl bg-nintendo-yellow border-4 border-gray-900 flex items-center justify-center text-gray-900">
-              <User size={24} strokeWidth={3} />
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-nintendo-yellow border-4 border-gray-900 flex items-center justify-center text-gray-900">
+              <User size={20} md:size={24} strokeWidth={3} />
             </div>
             <div className="text-left">
-              <p className="text-xs text-gray-400 font-black uppercase leading-normal mb-1">ผู้ฝึกสอน</p>
-              <p className="text-xl text-gray-900 font-black uppercase tracking-normal leading-normal">{user?.name || user?.email?.split('@')[0]}</p>
+              <p className="text-[10px] text-gray-400 font-black uppercase leading-tight mb-1">โปรไฟล์</p>
+              <p className="text-base md:text-xl text-gray-900 font-black uppercase tracking-tight md:tracking-normal leading-tight md:leading-normal">{user?.name || user?.email?.split('@')[0]}</p>
             </div>
           </Link>
         </header>

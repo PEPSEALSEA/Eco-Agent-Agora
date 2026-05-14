@@ -64,6 +64,7 @@ function NegotiateContent(): React.ReactElement {
   const [streamingChar, setStreamingChar] = useState<string | null>(null);
   const [currentVibe, setCurrentVibe] = useState<'Happy' | 'Calm' | 'Serious' | string>('Calm');
   const [showPulse, setShowPulse] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const kidGameplayActive =
@@ -395,8 +396,16 @@ function NegotiateContent(): React.ReactElement {
   }
 
   return (
-    <div className="flex h-screen bg-slate-950 text-white overflow-hidden relative">
+    <div className="flex h-screen bg-slate-950 text-white overflow-hidden relative flex-col lg:flex-row">
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
+      
+      {/* Mobile Header (Only on small screens) */}
+      <div className="lg:hidden flex items-center justify-between p-4 border-b border-white/10 bg-black/40 z-40">
+        <button onClick={() => router.push('/scenarios')} className="p-2"><ArrowLeft size={20}/></button>
+        <h1 className="font-bold text-sm truncate px-4">{scenario?.title}</h1>
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-cyan-400"><Users size={20}/></button>
+      </div>
+
       {/* Start Overlay */}
       {!isStarted && scenario && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md transition-all duration-700">
@@ -445,14 +454,21 @@ function NegotiateContent(): React.ReactElement {
         </div>
       )}
 
-      {/* Sidebar */}
-      <aside className="w-80 border-r border-white/10 bg-black/40 flex flex-col p-6 z-10">
-        <button 
-          onClick={() => router.push('/scenarios')}
-          className="flex items-center text-gray-400 hover:text-white mb-8 transition-colors text-sm"
-        >
-          <ArrowLeft size={16} className="mr-2" /> ลานฝึกซ้อม
-        </button>
+      {/* Sidebar (Responsive) */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-[60] w-72 border-r border-white/10 bg-slate-900/95 backdrop-blur-xl transition-transform duration-300 transform lg:relative lg:translate-x-0 lg:flex
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        flex-col p-6
+      `}>
+        <div className="flex justify-between items-center mb-8">
+          <button 
+            onClick={() => router.push('/scenarios')}
+            className="flex items-center text-gray-400 hover:text-white transition-colors text-sm"
+          >
+            <ArrowLeft size={16} className="mr-2" /> ลานฝึกซ้อม
+          </button>
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-gray-500"><X size={20}/></button>
+        </div>
 
         <section className="mb-8">
           <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center">
@@ -509,7 +525,7 @@ function NegotiateContent(): React.ReactElement {
 
       {/* Main Stage Area */}
       <main 
-        className={`flex-1 flex flex-col items-center relative overflow-hidden cursor-pointer transition-all duration-1000 ${
+        className={`flex-1 flex flex-col items-center relative overflow-hidden cursor-pointer transition-all duration-1000 mx-auto w-full max-w-[1440px] ${
           kidGameplayActive
             ? (currentVibe === 'Serious' ? 'bg-red-500/20' : currentVibe === 'Happy' ? 'bg-nintendo-yellow/20' : 'bg-blue-500/10')
             : (currentVibe === 'Serious' ? 'bg-red-950/40' : currentVibe === 'Happy' ? 'bg-amber-950/20' : 'bg-slate-900/40')
