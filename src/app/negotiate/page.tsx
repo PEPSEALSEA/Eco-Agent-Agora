@@ -60,6 +60,7 @@ function NegotiateContent(): React.ReactElement {
   const [isGameOver, setIsGameOver] = useState(false);
   const [outcome, setOutcome] = useState<'win' | 'fail' | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
+  const [streamingChar, setStreamingChar] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const kidGameplayActive =
@@ -184,7 +185,8 @@ function NegotiateContent(): React.ReactElement {
       const processResult = await gasPost('process_chat_result', 'logs', {
         sessionId: sessionId,
         aiResponse: aiResponse,
-        state: context.state
+        state: context.state,
+        userText: "[System: เริ่มต้นสถานการณ์]"
       });
 
       const aiMessages: Message[] = (aiResponse.dialogue || [])
@@ -205,9 +207,13 @@ function NegotiateContent(): React.ReactElement {
         }));
       
       setMessages(aiMessages);
-      setCurrentMessageIndex(0);
       setNarrator(aiResponse.narrator);
       setStreamingMessage(null);
+      setStreamingChar(null);
+      
+      if (aiMessages.length > 0) {
+        setCurrentMessageIndex(0);
+      }
       
       if (processResult.state) {
         const finalState = processResult.state;
@@ -281,7 +287,10 @@ function NegotiateContent(): React.ReactElement {
         context.systemPrompt,
         context.history,
         (text) => {
-          // Extract partial line content for UI
+          // Extract partial character name and line content for UI
+          const charMatch = text.match(/"char":\s*"([^"]*)"/);
+          if (charMatch) setStreamingChar(charMatch[1]);
+          
           const match = text.match(/"line":\s*"([^"]*)"/);
           const partialMatch = text.match(/"line":\s*"([^"]*)$/);
           const displayContent = match ? match[1] : (partialMatch ? partialMatch[1] : "");
@@ -296,7 +305,8 @@ function NegotiateContent(): React.ReactElement {
       const processResult = await gasPost('process_chat_result', 'logs', {
         sessionId: sessionId,
         aiResponse: aiResponse,
-        state: context.state
+        state: context.state,
+        userText: userMessageContent
       });
 
       if (processResult.error) throw new Error(processResult.error);
@@ -323,9 +333,15 @@ function NegotiateContent(): React.ReactElement {
         Promise.all(aiMessages.map(msg => gasPost('create', 'messages', msg)));
       }
 
+      const startIndex = messages.length;
       setMessages(prev => [...prev, ...aiMessages]);
       setNarrator(aiResponse.narrator);
       setStreamingMessage(null);
+      setStreamingChar(null);
+      
+      if (aiMessages.length > 0) {
+        setCurrentMessageIndex(startIndex);
+      }
       
       if (processResult.game_over) {
         setIsGameOver(true);
@@ -673,9 +689,9 @@ function NegotiateContent(): React.ReactElement {
                 sender={streamingMessage ? 'ai' : (messages[currentMessageIndex]?.sender || 'ai')}
                 characterName={
                   streamingMessage 
-                    ? (characters[0]?.name || 'AI') 
+                    ? (characters.find(c => c.id === streamingChar || c.name === streamingChar)?.name || streamingChar || 'AI') 
                     : (messages[currentMessageIndex]?.sender === 'ai' 
-                        ? (characters.find(c => c.id === messages[currentMessageIndex]?.character_name)?.name || messages[currentMessageIndex]?.character_name)
+                        ? (characters.find(c => c.id === messages[currentMessageIndex]?.character_name || c.name === messages[currentMessageIndex]?.character_name)?.name || messages[currentMessageIndex]?.character_name)
                         : 'คุณ')
                 }
                 content={streamingMessage || (messages[currentMessageIndex]?.content || '')}

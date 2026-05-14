@@ -21,75 +21,62 @@ const splitIntoSentences = (text: string) => {
 export const DialogueBox = ({ sender, characterName, content, isTyping, onTypingComplete, isLastMessage, isKidMode }: DialogueBoxProps) => {
   const sentences = splitIntoSentences(content);
   const [paragraphIndex, setParagraphIndex] = useState(0);
-  const [displayedText, setDisplayedText] = useState('');
+  const [charIndex, setCharIndex] = useState(0);
   const onTypingCompleteRef = useRef(onTypingComplete);
   onTypingCompleteRef.current = onTypingComplete;
   
   useEffect(() => {
     setParagraphIndex(0);
-    setDisplayedText('');
+    setCharIndex(0);
   }, [content]);
 
   const currentSentence = sentences[paragraphIndex] || '';
 
   useEffect(() => {
-    // If we're not in kid mode and not streaming (or finished streaming), run typing animation
-    if (isKidMode) {
-      setDisplayedText(currentSentence);
+    if (isKidMode || !isTyping) {
+      setCharIndex(currentSentence.length);
       if (paragraphIndex === sentences.length - 1) {
         onTypingCompleteRef.current?.();
       }
       return;
     }
 
-    // If content is changing rapidly (streaming), just show it
-    // We can detect this if the content doesn't end with a sentence-ending punctuation 
-    // or if the length change is small. But a simpler way is to check if isTyping is false.
-    if (!isTyping) {
-      setDisplayedText(currentSentence);
-      if (paragraphIndex === sentences.length - 1) {
-        onTypingCompleteRef.current?.();
-      }
-      return;
-    }
-
-    let i = 0;
-    setDisplayedText('');
+    setCharIndex(0);
     const interval = setInterval(() => {
-      setDisplayedText(currentSentence.slice(0, i + 1));
-      i++;
-      if (i >= currentSentence.length) {
-        clearInterval(interval);
-        if (paragraphIndex === sentences.length - 1) {
-          onTypingCompleteRef.current?.();
+      setCharIndex(prev => {
+        if (prev >= currentSentence.length) {
+          clearInterval(interval);
+          if (paragraphIndex === sentences.length - 1) {
+            onTypingCompleteRef.current?.();
+          }
+          return prev;
         }
-      }
+        return prev + 1;
+      });
     }, 15);
     
     return () => clearInterval(interval);
-  }, [paragraphIndex, currentSentence, sentences.length, isKidMode, isTyping]);
+  }, [paragraphIndex, currentSentence, isKidMode, isTyping]);
 
+  const displayedText = currentSentence.slice(0, charIndex);
   const hasMoreParagraphs = paragraphIndex < sentences.length - 1;
-  const isFinishedTyping = displayedText.length === currentSentence.length;
+  const isFinishedTyping = charIndex >= currentSentence.length;
 
   const handleBoxClick = (e: React.MouseEvent) => {
-    if (hasMoreParagraphs) {
-      e.stopPropagation(); // Prevent page from navigating to next character message
-      if (!isFinishedTyping) {
-        // Fast forward typing
-        setDisplayedText(currentSentence);
-      } else {
-        // Next paragraph
-        setParagraphIndex(p => p + 1);
-      }
-    } else {
-      if (!isFinishedTyping) {
-        e.stopPropagation();
-        setDisplayedText(currentSentence);
+    if (!isFinishedTyping) {
+      // Skip typing animation
+      e.stopPropagation();
+      setCharIndex(currentSentence.length);
+      if (paragraphIndex === sentences.length - 1) {
         onTypingCompleteRef.current?.();
       }
-      // If it is finished and no more paras, event bubbles up to page
+    } else if (hasMoreParagraphs) {
+      // Next paragraph within this message
+      e.stopPropagation();
+      setParagraphIndex(p => p + 1);
+      setCharIndex(0);
     }
+    // If finished and no more paras, let it bubble to advanceMessage in page.tsx
   };
 
   const isAiSpeaking = sender === 'ai';

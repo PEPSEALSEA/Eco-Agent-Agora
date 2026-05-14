@@ -101,22 +101,40 @@ export default {
       if (request.method === "POST") {
         const payload = await request.json();
         const action = payload.action;
+        const data = payload.data;
 
         if (action === "chat") {
-          const result = await handleChatAction(env, payload, token);
+          const result = await handleChatAction(env, data, token);
+          return jsonResponse(result);
+        }
+
+        if (action === "get_chat_context") {
+          const result = await handleGetChatContext(env, data, token);
+          return jsonResponse(result);
+        }
+
+        if (action === "process_chat_result") {
+          const result = await handleProcessChatResult(env, data, token);
           return jsonResponse(result);
         }
 
         if (action === "end_session") {
-          const result = await updateRow(env.SHEET_ID, "sessions", payload.data.sessionId, { 
-            status: 'completed', 
-            ended_at: new Date().toISOString() 
-          }, token);
+          const result = await handleEndSession(env, data, token);
           return jsonResponse(result);
         }
 
         if (action === "save_evaluation") {
-          const result = await createRow(env.SHEET_ID, "feedback_logs", payload.data, token);
+          await handleSaveEvaluation(env, data, token);
+          return jsonResponse({ success: true });
+        }
+
+        if (action === "generate_evaluation") {
+          const result = await handleGenerateEvaluation(env, data);
+          return jsonResponse(result);
+        }
+
+        if (action === "generate_what_if") {
+          const result = await handleGenerateWhatIf(env, data);
           return jsonResponse(result);
         }
 
@@ -160,15 +178,10 @@ function authenticate(url, body, env) {
  */
 
 async function getGoogleAccessToken(env) {
-  // We use a simplified JWT approach for Workers
-  // In a real environment, you'd use 'google-auth-library' but that requires bundling.
-  // This helper assumes you've set GOOGLE_CLIENT_EMAIL and GOOGLE_PRIVATE_KEY in secrets.
-  
   const clientEmail = env.GOOGLE_CLIENT_EMAIL;
   const privateKey = env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
   const scope = "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/generative-language";
   
-  // Minimal JWT implementation for Cloudflare Workers
   const header = b64(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const now = Math.floor(Date.now() / 1000);
   const claim = b64(JSON.stringify({
@@ -198,7 +211,6 @@ function b64(str) {
 }
 
 async function sign(data, key) {
-  // Extract only the base64 part, ignoring header, footer, and any whitespace
   const pemContents = key
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
@@ -218,7 +230,7 @@ async function sign(data, key) {
     const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, new TextEncoder().encode(data));
     return btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
   } catch (e) {
-    throw new Error("Base64 Key Error: " + e.message + " (Check your GOOGLE_PRIVATE_KEY secret)");
+    throw new Error("Base64 Key Error: " + e.message);
   }
 }
 
@@ -232,9 +244,7 @@ async function readTable(sheetId, tableName, token) {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await response.json();
-    if (data.error) {
-      return { error: `Google Sheets API Error: ${data.error.message} (Status: ${data.error.status})`, tableName };
-    }
+    if (data.error) return { error: data.error.message };
     if (!data.values) return [];
 
     const headers = data.values[0];
@@ -244,21 +254,23 @@ async function readTable(sheetId, tableName, token) {
       const obj = {};
       headers.forEach((h, i) => {
         let val = row[i];
-        if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
-          try { val = JSON.parse(val); } catch (e) {}
+        // Only parse if it's a string that looks like JSON
+        if (typeof val === 'string' && (val.trim().startsWith('{') || val.trim().startsWith('['))) {
+          try { 
+            const parsed = JSON.parse(val); 
+            val = parsed;
+          } catch (e) {}
         }
         obj[h] = val;
       });
       return obj;
     });
   } catch (err) {
-    console.error(`Fetch Error for ${tableName}:`, err.message);
     return [];
   }
 }
 
 async function createRow(sheetId, tableName, data, token) {
-  // First, get headers to ensure alignment
   const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${tableName}!A1:Z1`, {
     headers: { Authorization: `Bearer ${token}` }
   });
@@ -280,25 +292,21 @@ async function createRow(sheetId, tableName, data, token) {
 }
 
 async function updateRow(sheetId, tableName, id, data, token) {
-  // 1. Find the row index
   const tableData = await readTable(sheetId, tableName, token);
-  const rowIndex = tableData.findIndex(r => r.id == id);
+  const rowIndex = tableData.findIndex(r => String(r.id) === String(id));
   if (rowIndex === -1) throw new Error("ID not found: " + id);
 
-  // 2. Get headers
   const headResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${tableName}!A1:Z1`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   const headers = (await headResponse.json()).values[0];
 
-  // 3. Prepare updated row
   const currentRow = tableData[rowIndex];
   const updatedRow = headers.map(h => {
     let val = data[h] !== undefined ? data[h] : currentRow[h];
     return typeof val === 'object' ? JSON.stringify(val) : val;
   });
 
-  // 4. Update (Row is 1-indexed, headers are row 1, so row 2 is index 0)
   const range = `${tableName}!A${rowIndex + 2}`;
   await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?valueInputOption=USER_ENTERED`, {
     method: "PUT",
@@ -311,7 +319,7 @@ async function updateRow(sheetId, tableName, id, data, token) {
 
 async function upsertRow(sheetId, tableName, queryField, queryValue, data, token) {
   const tableData = await readTable(sheetId, tableName, token);
-  const existing = tableData.find(r => r[queryField] == queryValue);
+  const existing = tableData.find(r => String(r[queryField]) === String(queryValue));
   
   if (existing) {
     return await updateRow(sheetId, tableName, existing.id, data, token);
@@ -322,14 +330,15 @@ async function upsertRow(sheetId, tableName, queryField, queryValue, data, token
 
 async function handleGetNegotiationData(sheetId, sessionId, token) {
   const sessions = await readTable(sheetId, "sessions", token);
-  const session = sessions.find(s => s.id == sessionId);
-  if (!session) return { error: "Session not found" };
+  const session = sessions.find(s => String(s.id) === String(sessionId));
+  if (!session) return { error: `Session ${sessionId} not found` };
 
   const scenarios = await readTable(sheetId, "scenarios", token);
-  const scenario = scenarios.find(s => s.id == session.scenario_id);
+  const scenario = scenarios.find(s => String(s.id) === String(session.scenario_id));
+  if (!scenario) return { error: "Scenario not found" };
 
   const allMessages = await readTable(sheetId, "messages", token);
-  const messages = allMessages.filter(m => m.session_id == sessionId);
+  const messages = allMessages.filter(m => String(m.session_id) === String(sessionId));
 
   return { session, scenario, messages };
 }
@@ -340,18 +349,13 @@ async function handleGetNegotiationData(sheetId, sessionId, token) {
 
 async function handleChatAction(env, data, token) {
   const { sessionId, text, vibe, intensity } = data;
-  
-  // 1. Get Context
   const context = await handleGetNegotiationData(env.SHEET_ID, sessionId, token);
+  if (context.error) throw new Error(context.error);
   const { scenario, session, messages } = context;
 
-  // 2. Call Gemini
-  const geminiApiKey = env.GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
-
-  const state = JSON.parse(session.state || "{}");
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+  const state = typeof session.state === 'string' ? JSON.parse(session.state || "{}") : (session.state || {});
   
-  // Build Prompt
   const systemPrompt = SYSTEM_INSTRUCTION_TEMPLATE
     .replace('{{scenario_config}}', JSON.stringify(scenario, null, 2))
     .replace('{{runtime_state}}', JSON.stringify(state, null, 2))
@@ -362,29 +366,26 @@ async function handleChatAction(env, data, token) {
     parts: [{ text: (m.sender === 'ai' && m.character_name ? `[${m.character_name}]: ${m.content}` : m.content) }]
   }));
 
-  // Add current input
   contents.push({
     role: 'user',
     parts: [{ text: `[Detected Vibe: ${vibe || 'Neutral'}, Intensity: ${intensity || '0.5'}]\nUser: ${text}` }]
   });
 
-  const body = {
-    systemInstruction: { parts: [{ text: systemPrompt }] },
-    contents: contents,
-    generationConfig: { responseMimeType: "application/json", temperature: 0.7 }
-  };
-
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: contents,
+      generationConfig: { responseMimeType: "application/json", temperature: 0.7 }
+    })
   });
 
   const aiResult = await response.json();
   const rawResponseText = aiResult.candidates[0].content.parts[0].text;
   const content = JSON.parse(rawResponseText);
 
-  // 3. Save AI Message
+  // Background save AI message
   if (content.dialogue) {
     for (const d of content.dialogue) {
       await createRow(env.SHEET_ID, "messages", {
@@ -398,25 +399,61 @@ async function handleChatAction(env, data, token) {
     }
   }
 
-  // 4. Update Session State & Phase Logic
+  // Update session state
   if (content.state_delta) {
     Object.keys(content.state_delta).forEach(path => {
       applyPath(state, path, content.state_delta[path]);
     });
   }
 
+  await updateRow(env.SHEET_ID, "sessions", sessionId, {
+    state: JSON.stringify(state),
+    history_summary: (session.history_summary || "") + ` | User: ${text}` + (content.dialogue ? ` | AI: ${content.dialogue.map(d => d.line).join(" ")}` : "")
+  }, token);
+  
+  return content;
+}
+
+async function handleGetChatContext(env, data, token) {
+  const { sessionId, text, vibe, intensity } = data;
+  const context = await handleGetNegotiationData(env.SHEET_ID, sessionId, token);
+  if (context.error) return context;
+  const { scenario, session, messages } = context;
+
+  const state = typeof session.state === 'string' ? JSON.parse(session.state || "{}") : (session.state || {});
+  const systemPrompt = SYSTEM_INSTRUCTION_TEMPLATE
+    .replace('{{scenario_config}}', JSON.stringify(scenario, null, 2))
+    .replace('{{runtime_state}}', JSON.stringify(state, null, 2))
+    .replace('{{history_summary}}', session.history_summary || 'None yet.');
+
+  const history = messages.slice(-10).map(m => ({
+    role: m.sender === 'user' ? 'user' : 'model',
+    parts: [{ text: (m.sender === 'ai' && m.character_name ? `[${m.character_name}]: ${m.content}` : m.content) }]
+  }));
+
+  // Append current user message if provided
+  if (text) {
+    history.push({
+      role: 'user',
+      parts: [{ text: `[Detected Vibe: ${vibe || 'Neutral'}, Intensity: ${intensity || '0.5'}]\nUser: ${text}` }]
+    });
+  }
+
+  return { systemPrompt, history, state, geminiApiKey: env.GEMINI_API_KEY };
+}
+
+async function handleProcessChatResult(env, data, token) {
+  const { sessionId, aiResponse, state, userText } = data;
+  const context = await handleGetNegotiationData(env.SHEET_ID, sessionId, token);
+  if (context.error) return context;
+  const { scenario, session } = context;
+
   let gameOver = false;
   let outcome = null;
-  let sessionStatus = session.status || 'active';
 
-  if (content.phase_event === 'advance_to_next_phase') {
+  if (aiResponse.phase_event === 'advance_to_next_phase') {
     const phases = scenario.phase_rules?.phases || [];
-    let currentIndex = -1;
-    if (phases.length > 0 && typeof phases[0] === 'object') {
-      currentIndex = phases.findIndex(p => p.id === state.current_phase || p.name === state.current_phase);
-    } else {
-      currentIndex = phases.indexOf(state.current_phase);
-    }
+    let currentIndex = phases.findIndex(p => String(p.id || p.name) === String(state.current_phase));
 
     if (currentIndex !== -1 && currentIndex < phases.length - 1) {
       const nextPhase = phases[currentIndex + 1];
@@ -426,33 +463,118 @@ async function handleChatAction(env, data, token) {
       gameOver = true;
       outcome = 'win';
     }
-  } else if (content.phase_event === 'game_over_win') {
+  } else if (aiResponse.phase_event === 'game_over_win') {
     gameOver = true;
     outcome = 'win';
-  } else if (content.phase_event === 'game_over_fail') {
+  } else if (aiResponse.phase_event === 'game_over_fail') {
     gameOver = true;
     outcome = 'fail';
   }
 
   const sessionUpdateData = {
     state: JSON.stringify(state),
-    history_summary: (session.history_summary || "") + ` | User: ${text}`
+    status: gameOver ? 'completed' : 'ongoing',
+    history_summary: (session.history_summary || "") + (userText ? ` | User: ${userText}` : "") + (aiResponse.dialogue ? ` | AI: ${aiResponse.dialogue.map(d => d.line).join(" ")}` : "")
   };
 
   if (gameOver) {
-    sessionUpdateData.status = 'completed';
-    sessionUpdateData.outcome_score = outcome === 'win' ? 100 : 0; // Simplified scoring
+    sessionUpdateData.outcome_score = outcome === 'win' ? 100 : 0;
     sessionUpdateData.ended_at = new Date().toISOString();
   }
 
   await updateRow(env.SHEET_ID, "sessions", sessionId, sessionUpdateData, token);
-  
-  return content;
+
+  return { success: true, state, game_over: gameOver, outcome, narrator: aiResponse.narrator };
 }
 
-/**
- * Helper to update nested objects via path string (e.g., "relationships.char_1.trust")
- */
+async function handleEndSession(env, data, token) {
+  const { sessionId } = data;
+  await updateRow(env.SHEET_ID, "sessions", sessionId, {
+    status: 'completed',
+    ended_at: new Date().toISOString()
+  }, token);
+  return { success: true };
+}
+
+async function handleSaveEvaluation(env, data, token) {
+  const { sessionId, evaluation, lineAnalysis } = data;
+  await updateRow(env.SHEET_ID, "sessions", sessionId, {
+    ai_evaluation: JSON.stringify(evaluation),
+    outcome_score: evaluation.overall_score * 10,
+    history_summary: evaluation.history_summary
+  }, token);
+
+  if (lineAnalysis) {
+    for (const line of lineAnalysis) {
+      await createRow(env.SHEET_ID, "feedback_logs", {
+        id: sessionId + '_' + line.message_id,
+        session_id: sessionId,
+        message_id: line.message_id,
+        feedback_text: line.feedback_text,
+        score: line.score,
+        dimension: JSON.stringify(line.dimension),
+        created_at: new Date().toISOString()
+      }, token);
+    }
+  }
+}
+
+async function handleGenerateEvaluation(env, data) {
+  const { transcript } = data;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+  
+  const systemPrompt = `
+    You are an expert negotiation coach. Review this transcript and evaluate performance in THAI. 
+    Return strictly JSON: 
+    {
+      "overall_score": 0-10, 
+      "feedback_text": "...", 
+      "history_summary": "...", 
+      "key_strengths": [], 
+      "areas_for_improvement": [], 
+      "line_analysis": [
+        {
+          "message_id": "...", 
+          "feedback_text": "...", 
+          "score": 0-10, 
+          "dimension": { "Logic": "คะแนน/คำอธิบาย", "Trust": "คะแนน/คำอธิบาย" }
+        }
+      ]
+    }
+    CRITICAL: "dimension" MUST be an object, not a string.
+  `;
+  
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: transcript }] }],
+      generationConfig: { responseMimeType: "application/json", temperature: 0.2 }
+    })
+  });
+  const res = await response.json();
+  return JSON.parse(res.candidates[0].content.parts[0].text);
+}
+
+async function handleGenerateWhatIf(env, data) {
+  const { originalContent } = data;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+  const systemPrompt = `Analyze: "${originalContent}". Return JSON in THAI: {"feedback": {"text": "..."}}`;
+  
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: "What if?" }] }],
+      generationConfig: { responseMimeType: "application/json" }
+    })
+  });
+  const res = await response.json();
+  return JSON.parse(res.candidates[0].content.parts[0].text);
+}
+
 function applyPath(obj, path, value) {
   const parts = path.split('.');
   let current = obj;
@@ -460,35 +582,23 @@ function applyPath(obj, path, value) {
     if (!current[parts[i]]) current[parts[i]] = {};
     current = current[parts[i]];
   }
-  
   const lastPart = parts[parts.length - 1];
   if (typeof value === 'string' && (value.startsWith('+') || value.startsWith('-'))) {
-    const num = parseInt(value);
-    current[lastPart] = (current[lastPart] || 0) + num;
+    current[lastPart] = (parseInt(current[lastPart] || 0)) + parseInt(value);
   } else {
     current[lastPart] = value;
   }
 }
 
-/**
- * --- UTILS ---
- */
-
 function jsonResponse(data) {
   return new Response(JSON.stringify(data), {
-    headers: { 
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*" 
-    },
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
 }
 
 function errorResponse(msg, status = 500) {
   return new Response(JSON.stringify({ error: msg }), {
     status,
-    headers: { 
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*" 
-    },
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
   });
 }
