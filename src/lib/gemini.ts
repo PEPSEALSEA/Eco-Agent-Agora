@@ -17,7 +17,7 @@ export const getGeminiResponse = async (
 
     const genAI = new GoogleGenerativeAI(effectiveKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash", // Reverting to user's preferred version
       systemInstruction: systemInstruction,
     });
 
@@ -43,23 +43,64 @@ export const getGeminiResponse = async (
       }
     }
 
-    // Process the final accumulated text
-    let cleanText = fullText.replace(/^```(json)?|```$/gm, '').trim();
+    // --- ROBUST JSON REPAIR LOGIC ---
+    let cleanText = fullText.trim();
     
-    // Find the first { or [ and the last } or ] to isolate the JSON object
-    const startIdx = Math.min(
-      cleanText.indexOf('{') !== -1 ? cleanText.indexOf('{') : Infinity,
-      cleanText.indexOf('[') !== -1 ? cleanText.indexOf('[') : Infinity
-    );
-    const endIdx = Math.max(cleanText.lastIndexOf('}'), cleanText.lastIndexOf(']'));
+    // 1. Remove Markdown code blocks
+    cleanText = cleanText.replace(/^```(json)?|```$/gm, '').trim();
     
-    if (startIdx !== Infinity && endIdx !== -1) {
-      cleanText = cleanText.substring(startIdx, endIdx + 1);
+    // 2. Isolate the JSON object (find first { and last })
+    const firstBrace = cleanText.indexOf('{');
+    const lastBrace = cleanText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      cleanText = cleanText.substring(firstBrace, lastBrace + 1);
+    }
+
+    // 3. Fix specific AI hallucinations/errors
+    // Fix: } ", "state_delta" -> }], "state_delta"
+    cleanText = cleanText.replace(/\}\s*",\s*"state_delta"/g, '}], "state_delta"');
+    // Fix: Trailing commas in arrays or objects
+    cleanText = cleanText.replace(/,\s*([\]\}])/g, '$1');
+    // Fix: Missing quotes around keys (basic)
+    cleanText = cleanText.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+    
+    // 4. Emergency Bracket Closure
+    // If the JSON is cut off or missing closing brackets, try to append them
+    let openBraces = (cleanText.match(/\{/g) || []).length;
+    let closeBraces = (cleanText.match(/\}/g) || []).length;
+    let openBrackets = (cleanText.match(/\[/g) || []).length;
+    let closeBrackets = (cleanText.match(/\]/g) || []).length;
+
+    while (openBrackets > closeBrackets) {
+      cleanText += ']';
+      closeBrackets++;
+    }
+    while (openBraces > closeBraces) {
+      cleanText += '}';
+      closeBraces++;
     }
 
     try {
       return JSON.parse(cleanText);
     } catch (e: any) {
+      // Last resort: If still failing, try to extract just the dialogue part via regex
+      console.warn("Standard JSON parse failed, attempting emergency extraction...");
+      try {
+        const dialogueMatch = fullText.match(/"dialogue":\s*(\[[\s\S]*?\])/);
+        const stateMatch = fullText.match(/"state_delta":\s*(\{[\s\S]*?\})/);
+        const narratorMatch = fullText.match(/"narrator":\s*"([^"]*)"/);
+        
+        if (dialogueMatch) {
+          return {
+            dialogue: JSON.parse(dialogueMatch[1].replace(/,\s*\]/, ']')),
+            state_delta: stateMatch ? JSON.parse(stateMatch[1].replace(/,\s*\}/, '}')) : {},
+            narrator: narratorMatch ? narratorMatch[1] : ""
+          };
+        }
+      } catch (innerE) {
+        console.error("Emergency extraction failed too");
+      }
+
       console.error("Final JSON parse error:", e, "Cleaned text:", cleanText);
       throw new Error(`Invalid JSON response: ${e.message}`);
     }
