@@ -13,6 +13,7 @@ import { ReignsSystem } from '@/components/ReignsSystem';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Baby, Briefcase, GraduationCap } from 'lucide-react';
 import { CartoonLoading } from '@/components/CartoonLoading';
+import { KidGameplay } from '@/components/KidGameplay';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 
 type Character = {
@@ -621,10 +622,10 @@ function NegotiateContent(): React.ReactElement {
               {kidGameplayActive ? (
                 <div className="w-full flex flex-col items-center">
                   <div className="bg-white border-4 border-gray-900 px-6 py-2 rounded-full mb-4 text-sm font-black text-gray-900 flex items-center shadow-[0_6px_0_rgba(0,0,0,1)] uppercase tracking-normal">
-                    <Sparkles size={16} className="mr-2 text-nintendo-yellow" /> ปัดเพื่อตัดสินใจ!
+                    <Sparkles size={16} className="mr-2 text-nintendo-yellow" /> เลือกการ์ดการกระทำ!
                   </div>
-                  <ReignsSystem 
-                    onSelect={(s) => handleSend(s)} 
+                  <KidGameplay 
+                    onSelect={(s, res) => handleSend(s, res)} 
                     dynamicDecisions={currentDynamicDecisions}
                     disabled={sending || currentMessageIndex < messages.length - 1 || isTyping}
                   />
