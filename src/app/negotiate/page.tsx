@@ -62,6 +62,8 @@ function NegotiateContent(): React.ReactElement {
   const [outcome, setOutcome] = useState<'win' | 'fail' | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
   const [streamingChar, setStreamingChar] = useState<string | null>(null);
+  const [currentVibe, setCurrentVibe] = useState<'Happy' | 'Calm' | 'Serious' | string>('Calm');
+  const [showPulse, setShowPulse] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const kidGameplayActive =
@@ -354,6 +356,10 @@ function NegotiateContent(): React.ReactElement {
         setRuntimeState(finalState);
         if (finalState.current_phase) setPhase(finalState.current_phase);
         
+        // Trigger UI Pulse if stats changed significantly
+        setShowPulse(true);
+        setTimeout(() => setShowPulse(false), 1000);
+
         setCharacters(prev => prev.map(c => {
           const rel = finalState.relationships?.[c.id] || finalState.relationships?.[c.name];
           if (rel) {
@@ -365,6 +371,10 @@ function NegotiateContent(): React.ReactElement {
           }
           return c;
         }));
+      }
+      
+      if (audioResult?.vibe) {
+        setCurrentVibe(audioResult.vibe);
       }
       
     } catch (err: any) {
@@ -499,13 +509,30 @@ function NegotiateContent(): React.ReactElement {
 
       {/* Main Stage Area */}
       <main 
-        className={`flex-1 flex flex-col items-center relative overflow-hidden cursor-pointer transition-colors duration-1000 ${
+        className={`flex-1 flex flex-col items-center relative overflow-hidden cursor-pointer transition-all duration-1000 ${
           kidGameplayActive
-            ? 'bg-nintendo-yellow/20 bg-[radial-gradient(#f8cc00_2px,transparent_2px)] [background-size:60px_60px]' 
-            : 'cartoon-bg-dark-blue'
-        }`}
+            ? (currentVibe === 'Serious' ? 'bg-red-500/20' : currentVibe === 'Happy' ? 'bg-nintendo-yellow/20' : 'bg-blue-500/10')
+            : (currentVibe === 'Serious' ? 'bg-red-950/40' : currentVibe === 'Happy' ? 'bg-amber-950/20' : 'bg-slate-900/40')
+        } ${showPulse ? 'scale-[1.01]' : 'scale-100'}`}
         onClick={advanceMessage}
       >
+        {/* Vibe Background Layer */}
+        <motion.div 
+          animate={{ 
+            backgroundColor: currentVibe === 'Serious' ? 'rgba(239, 68, 68, 0.1)' : 
+                             currentVibe === 'Happy' ? 'rgba(248, 204, 0, 0.1)' : 'rgba(0, 0, 0, 0)',
+            opacity: [0.3, 0.5, 0.3]
+          }}
+          transition={{ repeat: Infinity, duration: 4 }}
+          className="absolute inset-0 pointer-events-none"
+        />
+
+        {/* Dynamic Pattern Layer */}
+        <div className={`absolute inset-0 opacity-20 pointer-events-none ${
+          kidGameplayActive 
+            ? 'bg-[radial-gradient(#ffffff_2px,transparent_2px)] [background-size:40px_40px]' 
+            : 'bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:100px_100px]'
+        }`} />
         {/* Header Layer */}
         <header className="w-full max-w-6xl flex justify-between items-start p-8 z-30 absolute top-0 pointer-events-auto">
           <div>
@@ -582,13 +609,30 @@ function NegotiateContent(): React.ReactElement {
             const currentMsg = messages[currentMessageIndex];
             const isTalking = currentMsg?.sender === 'ai' && currentMsg?.character_name === char.name;
             
+            // Reactive animation props
+            const isAngry = (char.stats?.anger || 0) > 6;
+            const isHappy = (char.stats?.trust || 0) > 7;
+
             return (
-              <CharacterAvatar 
-                key={i} 
-                name={char.name} 
-                mood={char.mood || 'neutral'} 
-                isTalking={isTalking} 
-              />
+              <motion.div
+                key={i}
+                animate={{
+                  y: isTalking ? [0, -10, 0] : isHappy ? [0, -5, 0] : 0,
+                  x: isAngry ? [0, -2, 2, -2, 0] : 0,
+                  scale: isTalking ? 1.05 : 1,
+                  filter: isAngry ? 'sepia(0.3) saturate(2) hue-rotate(-30deg)' : 'none'
+                }}
+                transition={{
+                  y: { repeat: isTalking || isHappy ? Infinity : 0, duration: isTalking ? 0.4 : 2 },
+                  x: { repeat: isAngry ? Infinity : 0, duration: 0.1 }
+                }}
+              >
+                <CharacterAvatar 
+                  name={char.name} 
+                  mood={char.mood || 'neutral'} 
+                  isTalking={isTalking} 
+                />
+              </motion.div>
             );
           })}
         </div>
