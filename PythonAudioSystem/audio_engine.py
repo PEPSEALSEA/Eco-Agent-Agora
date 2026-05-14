@@ -63,9 +63,18 @@ class AudioEngine:
         if duration == 0:
             return 0
         
-        # Count words (basic approach, works well for Thai/English mix if spaces are present)
-        # For pure Thai, this might need a word segmenter, but let's stick to a general approach
-        word_count = len(transcript.split())
+        # Check if transcript contains Thai characters
+        has_thai = any('\u0e00' <= char <= '\u0e7f' for char in transcript)
+        
+        if has_thai:
+            # Thai doesn't use spaces. A rough estimate is 4 characters per word.
+            # We strip spaces first to avoid counting them if they exist.
+            clean_text = transcript.replace(" ", "")
+            word_count = len(clean_text) / 4.0
+        else:
+            # English/Other languages with spaces
+            word_count = len(transcript.split())
+            
         wpm = (word_count / duration) * 60
         return wpm
 
@@ -97,19 +106,32 @@ class AudioEngine:
         """
         Main analysis function with advanced behavioral metrics.
         """
+        print(f"\n--- New Analysis Request: {file_path} ---")
         if not os.path.exists(file_path):
+            print(f"Error: File not found at {file_path}")
             raise FileNotFoundError(f"Audio file not found: {file_path}")
 
         # 1. Load using soundfile (No FFmpeg needed for WAV)
-        data, samplerate = sf.read(file_path)
+        try:
+            data, samplerate = sf.read(file_path)
+            print(f"Loaded audio: {len(data)} samples, samplerate={samplerate}")
+            
+            # Save a debug copy to see what the server actually received
+            debug_path = os.path.join(os.path.dirname(file_path), "debug_last_received.wav")
+            sf.write(debug_path, data, samplerate)
+            print(f"Debug audio saved to: {debug_path}")
+        except Exception as e:
+            print(f"Error loading audio with soundfile: {e}")
+            raise e
         
         # If stereo, convert to mono
         if len(data.shape) > 1:
+            print(f"Converting stereo (shape {data.shape}) to mono")
             data = np.mean(data, axis=1)
             
         # Resample to 16000 for Whisper (No FFmpeg needed)
         if samplerate != 16000:
-            # Calculate number of samples after resampling
+            print(f"Resampling from {samplerate} to 16000")
             num_samples = int(len(data) * 16000 / samplerate)
             y = scipy.signal.resample(data, num_samples)
             sr = 16000
@@ -117,20 +139,46 @@ class AudioEngine:
             y = data
             sr = samplerate
             
+        duration = len(y) / sr
+        print(f"Audio duration: {duration:.2f} seconds")
+        
+        if duration < 0.1:
+            print("Warning: Audio is too short!")
+            return {
+                "text": "",
+                "vibe": "Neutral",
+                "intensity": 0,
+                "context_note": "Audio too short",
+                "raw_metrics": {"db": -100, "wpm": 0, "pitch": "Stable", "pause": "Continuous"}
+            }
+
         y = self.normalize_audio(y)
+        avg_db = self.get_volume_db(y)
+        print(f"Average volume: {avg_db:.2f} dB")
 
         # 2. Transcription (Pass numpy array directly to avoid FFmpeg)
-        print("Transcribing...")
-        # whisper.transcribe can take a numpy array if we ensure it's float32 and normalized
+        print("Starting Whisper transcription...")
         y_float32 = y.astype(np.float32)
-        result = self.model.transcribe(y_float32)
-        transcript = result['text'].strip()
+        
+        # Try transcribing with Thai language hint
+        try:
+            # We use language='th' to force Thai, as requested by user
+            # If they also speak English, Whisper is usually good at code-switching 
+            # even when forced to a specific language, or we can use 'auto' (None)
+            result = self.model.transcribe(y_float32, language='th', task='transcribe')
+            detected_lang = result.get('language', 'th')
+            print(f"Transcription completed. Detected/Forced Language: {detected_lang}")
+            transcript = result['text'].strip()
+            print(f"Transcript: '{transcript}'")
+        except Exception as e:
+            print(f"Error during transcription: {e}")
+            transcript = ""
 
         # 3. Audio Metrics
-        avg_db = self.get_volume_db(y)
         pitch_trend = self.get_pitch_trend(y, sr)
         wpm = self.get_speech_rate(y, sr, transcript)
         pause_style = self.get_pause_analysis(y, sr)
+        print(f"Metrics: WPM={wpm:.1f}, Pitch={pitch_trend}, Pause={pause_style}")
 
         # 4. Deep Vibe Analysis
         # Normalize DB to 0-1
@@ -165,6 +213,7 @@ class AudioEngine:
         if cues:
             context_note += " สังเกตเห็น: " + ", ".join(cues)
 
+        print(f"Vibe detected: {vibe}")
         return {
             "text": transcript,
             "vibe": vibe,

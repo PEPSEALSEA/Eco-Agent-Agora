@@ -19,14 +19,61 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
   const streamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const inputRef = useRef<AudioNode | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationRef = useRef<number | null>(null);
   const leftChannelRef = useRef<Float32Array[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, []);
+
+  const drawWaveform = () => {
+    if (!analyserRef.current || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const analyser = analyserRef.current;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const draw = () => {
+      animationRef.current = requestAnimationFrame(draw);
+      analyser.getByteTimeDomainData(dataArray);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#f87171'; // red-400
+      ctx.beginPath();
+
+      const sliceWidth = canvas.width / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = (v * canvas.height) / 2;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
+      }
+
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+    };
+
+    draw();
+  };
 
   const startRecording = async () => {
     try {
@@ -40,8 +87,13 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
       const input = audioContext.createMediaStreamSource(stream);
       inputRef.current = input;
 
+      // Create Analyser for visualization
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyserRef.current = analyser;
+      input.connect(analyser);
+
       // Use a ScriptProcessorNode (deprecated but simple for this purpose) 
-      // or AudioWorklet for better performance.
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
       processorRef.current = processor;
       leftChannelRef.current = [];
@@ -56,6 +108,10 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
 
       setIsRecording(true);
       setRecordingTime(0);
+      
+      // Start visualization
+      setTimeout(drawWaveform, 100);
+
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
@@ -69,12 +125,14 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
     if (isRecording) {
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
       // Stop nodes
       if (processorRef.current) {
         processorRef.current.disconnect();
         processorRef.current.onaudioprocess = null;
       }
+      if (analyserRef.current) analyserRef.current.disconnect();
       if (inputRef.current) inputRef.current.disconnect();
       if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
       
@@ -186,12 +244,21 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="flex items-center space-x-3"
+            className="flex items-center space-x-3 bg-black/40 backdrop-blur-md p-2 pl-4 rounded-3xl border border-white/10"
           >
-            <div className="flex items-center bg-red-500/20 border border-red-500/30 px-4 py-2 rounded-2xl text-red-400 font-bold">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
-              {formatTime(recordingTime)}
+            <div className="flex flex-col">
+              <div className="flex items-center text-red-400 font-mono text-sm mb-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
+                {formatTime(recordingTime)}
+              </div>
+              <canvas 
+                ref={canvasRef} 
+                width={100} 
+                height={30} 
+                className="opacity-80"
+              />
             </div>
+            
             <button
               onClick={stopRecording}
               className="p-3 bg-red-500 hover:bg-red-400 text-white rounded-full shadow-lg shadow-red-500/20 transition-all hover:scale-110 active:scale-95"
