@@ -217,7 +217,7 @@ class AudioEngine:
         return {
             "text": transcript,
             "vibe": vibe,
-            "intensity": round(intensity, 2),
+            "intensity": round(float(intensity), 2),
             "context_note": context_note,
             "raw_metrics": {
                 "db": round(float(avg_db), 2),
