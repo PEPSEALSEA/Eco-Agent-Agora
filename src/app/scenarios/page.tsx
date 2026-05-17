@@ -241,27 +241,27 @@ export default function ScenariosPage() {
             <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,black_3px,transparent_4px)] bg-[size:40px_40px] pointer-events-none"></div>
 
             {/* Scrollable Container */}
-            <div className="w-full overflow-x-auto custom-scrollbar relative py-12 px-12 md:px-24 h-[500px] flex items-center">
+            <div className="w-full overflow-x-auto overflow-y-hidden custom-scrollbar relative py-12 px-12 md:px-24 h-[600px] flex items-center">
               
-              <div className="flex flex-row items-center min-w-max relative space-x-32 md:space-x-48 h-full">
+              <div className="flex flex-row items-center min-w-max relative space-x-32 md:space-x-56 h-full px-12 md:px-24">
                 {/* Horizontal Central Path */}
-                <div className="absolute left-0 right-0 top-1/2 border-t-[8px] border-dashed border-black/40 transform -translate-y-1/2 -z-10"></div>
+                <div className="absolute left-0 right-0 top-1/2 border-t-[8px] border-dashed border-black/40 -translate-y-1/2 z-0"></div>
 
                 {scenarios.filter(s => s.mode === 'campaign' || !s.mode).map((scenario, index) => {
                   const isBoss = scenario.difficulty === 3;
                   const isTop = index % 2 === 0;
                   
                   return (
-                    <div key={scenario.id} className="relative w-32 h-full flex flex-col items-center justify-center">
+                    <div key={scenario.id} className="relative w-32 md:w-40 h-full flex flex-col items-center justify-center">
                       
                       {/* Connecting Vertical branch */}
-                      <div className={`absolute left-1/2 border-l-[8px] border-dashed border-black/40 transform -translate-x-1/2 -z-10 ${isTop ? 'bottom-[50%] h-[100px] md:h-[120px]' : 'top-[50%] h-[100px] md:h-[120px]'}`}></div>
+                      <div className={`absolute left-1/2 border-l-[8px] border-dashed border-black/40 -translate-x-1/2 z-0 ${isTop ? 'bottom-1/2 h-[80px] md:h-[100px]' : 'top-1/2 h-[80px] md:h-[100px]'}`}></div>
 
                       {/* Wrapper for Node + Tooltip shifted up/down */}
-                      <div className={`absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center ${isTop ? 'bottom-[50%] mb-[100px] md:mb-[120px]' : 'top-[50%] mt-[100px] md:mt-[120px]'}`}>
+                      <div className={`absolute left-1/2 flex flex-col items-center -translate-x-1/2 z-10 ${isTop ? 'bottom-1/2 mb-[80px] md:mb-[100px]' : 'top-1/2 mt-[80px] md:mt-[100px]'}`}>
                         
                         {/* Tooltip / Speech Bubble */}
-                        <div className={`absolute ${isTop ? 'bottom-full mb-6' : 'top-full mt-6'} w-48 md:w-56 z-30 pointer-events-none`}>
+                        <div className={`absolute ${isTop ? 'bottom-full mb-6' : 'top-full mt-6'} w-48 md:w-64 z-30 pointer-events-none`}>
                           <div 
                             className="relative bg-white p-4 rounded-2xl border-4 border-black shadow-[0_8px_0_#000] transition-transform pointer-events-auto cursor-pointer hover:scale-105"
                             onClick={() => setSelectedScenario(scenario)}
