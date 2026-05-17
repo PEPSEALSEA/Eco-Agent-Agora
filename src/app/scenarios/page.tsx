@@ -241,9 +241,9 @@ export default function ScenariosPage() {
             <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,black_3px,transparent_4px)] bg-[size:40px_40px] pointer-events-none"></div>
 
             {/* Scrollable Container */}
-            <div className="w-full overflow-x-auto custom-scrollbar relative py-32 md:py-48 px-12 md:px-24">
+            <div className="w-full overflow-x-auto custom-scrollbar relative py-12 px-12 md:px-24 h-[500px] flex items-center">
               
-              <div className="flex flex-row items-center min-w-max relative space-x-24 md:space-x-40">
+              <div className="flex flex-row items-center min-w-max relative space-x-32 md:space-x-48 h-full">
                 {/* Horizontal Central Path */}
                 <div className="absolute left-0 right-0 top-1/2 border-t-[8px] border-dashed border-black/40 transform -translate-y-1/2 -z-10"></div>
 
@@ -252,46 +252,49 @@ export default function ScenariosPage() {
                   const isTop = index % 2 === 0;
                   
                   return (
-                    <div key={scenario.id} className="relative flex flex-col items-center justify-center">
+                    <div key={scenario.id} className="relative w-32 h-full flex flex-col items-center justify-center">
                       
                       {/* Connecting Vertical branch */}
-                      <div className={`absolute ${isTop ? 'top-full h-12 md:h-16' : 'bottom-full h-12 md:h-16'} left-1/2 border-l-[8px] border-dashed border-black/40 transform -translate-x-1/2 -z-10`}></div>
+                      <div className={`absolute left-1/2 border-l-[8px] border-dashed border-black/40 transform -translate-x-1/2 -z-10 ${isTop ? 'bottom-[50%] h-[100px] md:h-[120px]' : 'top-[50%] h-[100px] md:h-[120px]'}`}></div>
 
-                      {/* Node Button */}
-                      <button 
-                        onClick={() => setSelectedScenario(scenario)}
-                        className={`relative z-20 w-24 h-24 md:w-32 md:h-32 rounded-full border-[6px] border-black flex items-center justify-center font-black text-4xl md:text-6xl text-white shadow-[0_8px_0_#000] hover:scale-110 hover:-translate-y-2 active:scale-95 active:shadow-[0_4px_0_#000] transition-all duration-300 ${isBoss ? 'bg-gradient-to-br from-red-500 to-orange-500 animate-pulse' : 'bg-gradient-to-br from-yellow-400 to-orange-500'} ${isTop ? '-mt-24 md:-mt-32' : 'mt-24 md:mt-32'}`}
-                      >
-                        <span className="drop-shadow-[0_4px_0_rgba(0,0,0,0.4)]">{index + 1}</span>
+                      {/* Wrapper for Node + Tooltip shifted up/down */}
+                      <div className={`absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center ${isTop ? 'bottom-[50%] mb-[100px] md:mb-[120px]' : 'top-[50%] mt-[100px] md:mt-[120px]'}`}>
                         
-                        {/* Crown/Star for Boss */}
-                        {isBoss && (
-                          <div className="absolute -top-4 -right-4 w-10 h-10 md:w-12 md:h-12 bg-yellow-300 border-4 border-black rounded-full flex items-center justify-center text-xl md:text-2xl shadow-[0_4px_0_#000] transform rotate-12">
-                            👑
+                        {/* Tooltip / Speech Bubble */}
+                        <div className={`absolute ${isTop ? 'bottom-full mb-6' : 'top-full mt-6'} w-48 md:w-56 z-30 pointer-events-none`}>
+                          <div 
+                            className="relative bg-white p-4 rounded-2xl border-4 border-black shadow-[0_8px_0_#000] transition-transform pointer-events-auto cursor-pointer hover:scale-105"
+                            onClick={() => setSelectedScenario(scenario)}
+                          >
+                            {/* Speech Bubble Arrow */}
+                            <div className={`absolute left-1/2 transform -translate-x-1/2 w-5 h-5 bg-white ${isTop ? '-bottom-[12px] border-b-4 border-r-4 border-black rotate-45' : '-top-[12px] border-t-4 border-l-4 border-black rotate-45'}`}></div>
+
+                            <h4 className="font-black text-sm md:text-base text-black leading-tight text-center">
+                               {scenario.title}
+                            </h4>
+                            {isBoss && (
+                              <div className="mt-2 text-white font-black uppercase tracking-widest text-[10px] md:text-xs bg-red-600 px-2 py-1 rounded-lg border-2 border-black shadow-[0_2px_0_#000] text-center mx-auto w-fit">
+                                🔥 Final Exam
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </button>
+                        </div>
 
-                      {/* Tooltip / Speech Bubble */}
-                      <div className={`absolute ${isTop ? 'bottom-full mb-4 md:mb-6' : 'top-full mt-4 md:mt-6'} left-1/2 transform -translate-x-1/2 w-48 md:w-56 z-30`}>
-                        <div 
-                          className="relative bg-white p-4 rounded-2xl border-4 border-black shadow-[0_8px_0_#000] cursor-pointer hover:scale-105 transition-transform"
+                        {/* Node Button */}
+                        <button 
                           onClick={() => setSelectedScenario(scenario)}
+                          className={`relative z-20 w-24 h-24 md:w-32 md:h-32 rounded-full border-[6px] border-black flex items-center justify-center font-black text-4xl md:text-6xl text-white shadow-[0_8px_0_#000] hover:scale-110 hover:-translate-y-2 active:scale-95 active:shadow-[0_4px_0_#000] transition-all duration-300 ${isBoss ? 'bg-gradient-to-br from-red-500 to-orange-500 animate-pulse' : 'bg-gradient-to-br from-yellow-400 to-orange-500'}`}
                         >
-                          {/* Speech Bubble Arrow */}
-                          <div className={`absolute left-1/2 transform -translate-x-1/2 w-5 h-5 bg-white ${isTop ? '-bottom-[12px] border-b-4 border-r-4 border-black rotate-45' : '-top-[12px] border-t-4 border-l-4 border-black rotate-45'}`}></div>
-
-                          <h4 className="font-black text-sm md:text-lg text-black leading-tight text-center">
-                             {scenario.title}
-                          </h4>
+                          <span className="drop-shadow-[0_4px_0_rgba(0,0,0,0.4)]">{index + 1}</span>
+                          
+                          {/* Crown/Star for Boss */}
                           {isBoss && (
-                            <div className="mt-2 text-white font-black uppercase tracking-widest text-[10px] md:text-xs bg-red-600 px-2 py-1 rounded-lg border-2 border-black shadow-[0_2px_0_#000] text-center mx-auto w-fit">
-                              🔥 Final Exam
+                            <div className="absolute -top-4 -right-4 w-10 h-10 md:w-12 md:h-12 bg-yellow-300 border-4 border-black rounded-full flex items-center justify-center text-xl md:text-2xl shadow-[0_4px_0_#000] transform rotate-12">
+                              👑
                             </div>
                           )}
-                        </div>
+                        </button>
                       </div>
-
                     </div>
                   );
                 })}
