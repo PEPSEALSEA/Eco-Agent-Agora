@@ -81,7 +81,7 @@ export default {
         }
 
         if (action === "read_all") {
-          const tables = ["users", "scenarios", "sessions", "messages", "feedback_logs", "skill_progress"];
+          const tables = ["users", "scenarios", "sessions", "messages", "feedback_logs", "skill_progress", "real_world_journals"];
           const results = await Promise.all(tables.map(t => readTable(env.SHEET_ID, t, token)));
           const result = {};
           tables.forEach((t, i) => { result[t] = results[i]; });
@@ -92,6 +92,11 @@ export default {
           const sessionId = params.get("sessionId");
           const data = await handleGetNegotiationData(env.SHEET_ID, sessionId, token);
           return jsonResponse(data);
+        }
+
+        if (action === "setup") {
+          const result = await handleSetupSheets(env.SHEET_ID, token);
+          return jsonResponse(result);
         }
         
         return errorResponse("Invalid GET action", 400);
@@ -601,4 +606,82 @@ function errorResponse(msg, status = 500) {
     status,
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
   });
+}
+
+async function handleSetupSheets(sheetId, token) {
+  const schema = {
+    "users": ["id", "email", "created_at", "streak_count", "last_active_date"],
+    "scenarios": ["id", "title", "description", "target_group", "characters"],
+    "sessions": ["id", "user_id", "scenario_id", "started_at", "ended_at", "outcome_score", "status", "state", "history_summary", "ai_evaluation"],
+    "messages": ["id", "session_id", "sender", "character_name", "content", "created_at"],
+    "feedback_logs": ["id", "session_id", "message_id", "feedback_text", "score", "dimension", "created_at"],
+    "skill_progress": ["id", "user_id", "skill_name", "level", "xp", "updated_at"],
+    "real_world_journals": ["id", "user_id", "title", "situation_description", "outcome", "success_rate", "skills_applied", "created_at"]
+  };
+
+  const spreadsheetResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const spreadsheet = await spreadsheetResponse.json();
+  if (spreadsheet.error) return { success: false, error: spreadsheet.error.message };
+
+  const existingSheets = spreadsheet.sheets.map(s => s.properties.title);
+  const details = [];
+  
+  const addSheetRequests = [];
+  for (const tableName of Object.keys(schema)) {
+    if (!existingSheets.includes(tableName)) {
+      addSheetRequests.push({
+        addSheet: { properties: { title: tableName } }
+      });
+      details.push(`Created sheet: ${tableName}`);
+    }
+  }
+
+  if (addSheetRequests.length > 0) {
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}:batchUpdate`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ requests: addSheetRequests })
+    });
+  }
+
+  for (const tableName of Object.keys(schema)) {
+    const requiredHeaders = schema[tableName];
+    
+    let currentHeaders = [];
+    try {
+      const resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${tableName}!A1:Z1`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await resp.json();
+      if (data.values && data.values.length > 0) {
+        currentHeaders = data.values[0];
+      }
+    } catch(e) {}
+
+    const newHeaders = [...currentHeaders];
+    let changed = false;
+
+    for (const h of requiredHeaders) {
+      if (!newHeaders.includes(h)) {
+        newHeaders.push(h);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      // Use PUT to overwrite row 1 with the merged headers
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${tableName}!A1:ZZ1?valueInputOption=USER_ENTERED`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ values: [newHeaders] })
+      });
+      details.push(currentHeaders.length === 0 ? `Set headers for: ${tableName}` : `Added missing headers to: ${tableName}`);
+    }
+  }
+
+  if (details.length === 0) details.push("All sheets and headers are already up to date.");
+
+  return { success: true, details };
 }

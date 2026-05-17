@@ -128,3 +128,20 @@ WITH CHECK (EXISTS (SELECT 1 FROM public.sessions WHERE id = session_id AND user
 
 -- Skill Progress policies
 CREATE POLICY "Users can view their own progress" ON public.skill_progress FOR SELECT USING (auth.uid() = user_id);
+
+-- Real-world Journals table
+CREATE TABLE public.real_world_journals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.users(id),
+  title TEXT NOT NULL,
+  situation_description TEXT NOT NULL,
+  outcome TEXT,
+  success_rate INTEGER, -- 0-100%
+  skills_applied JSONB, -- Array of skills applied
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.real_world_journals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their own journals" ON public.real_world_journals FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own journals" ON public.real_world_journals FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own journals" ON public.real_world_journals FOR UPDATE USING (auth.uid() = user_id);
