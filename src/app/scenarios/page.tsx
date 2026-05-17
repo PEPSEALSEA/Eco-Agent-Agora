@@ -210,86 +210,93 @@ export default function ScenariosPage() {
         </header>
 
         <div className="flex justify-center mb-12">
-          <div className="bg-white border-[6px] border-gray-900 rounded-[2rem] p-2 flex shadow-[0_8px_0_rgba(0,0,0,1)]">
+          <div className="bg-white border-[4px] border-black rounded-full p-2 flex shadow-[0_8px_0_#000]">
             <button
               onClick={() => setActiveTab('campaign')}
-              className={`px-8 py-4 rounded-[1.5rem] font-black uppercase tracking-tighter text-lg transition-all ${
+              className={`flex items-center px-6 md:px-8 py-3 md:py-4 rounded-full font-black uppercase tracking-tighter text-sm md:text-lg transition-all ${
                 activeTab === 'campaign' 
-                  ? 'bg-nintendo-red text-white shadow-[0_4px_0_rgba(0,0,0,0.2)]' 
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                  ? 'bg-red-500 text-white shadow-[0_4px_0_#000]' 
+                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
               }`}
             >
-              🏆 โหมดผ่านด่าน (Campaign)
+              <span className="mr-2 text-xl">🏆</span> โหมดผ่านด่าน (CAMPAIGN)
             </button>
             <button
               onClick={() => setActiveTab('freeplay')}
-              className={`px-8 py-4 rounded-[1.5rem] font-black uppercase tracking-tighter text-lg transition-all ${
+              className={`flex items-center px-6 md:px-8 py-3 md:py-4 rounded-full font-black uppercase tracking-tighter text-sm md:text-lg transition-all ${
                 activeTab === 'freeplay' 
-                  ? 'bg-nintendo-blue text-white shadow-[0_4px_0_rgba(0,0,0,0.2)]' 
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                  ? 'bg-purple-500 text-white shadow-[0_4px_0_#000]' 
+                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
               }`}
             >
-              🎮 โหมดเล่นอิสระ (Freeplay)
+              <span className="mr-2 text-xl">🎮</span> โหมดเล่นอิสระ (FREEPLAY)
             </button>
           </div>
         </div>
 
         {activeTab === 'campaign' ? (
-          <div className="relative py-32 max-w-2xl mx-auto flex flex-col-reverse items-center mt-10 rounded-[4rem] bg-gradient-to-t from-emerald-400 via-cyan-400 to-blue-500 border-[8px] border-gray-900 shadow-[0_25px_0_rgba(0,0,0,1)] overflow-hidden">
+          <div className="relative w-full max-w-6xl mx-auto rounded-[3rem] bg-gradient-to-r from-teal-400 to-blue-500 border-4 border-black shadow-[0_12px_0_#000] overflow-hidden mb-12">
             
-            {/* Background Details */}
-            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,white_3px,transparent_4px)] bg-[size:60px_60px]"></div>
-            <div className="absolute top-20 left-10 w-40 h-16 bg-white rounded-full opacity-60 blur-md"></div>
-            <div className="absolute top-60 right-10 w-32 h-12 bg-white rounded-full opacity-50 blur-md"></div>
-            <div className="absolute bottom-40 left-20 w-48 h-20 bg-white rounded-full opacity-40 blur-md"></div>
+            {/* Subtle dot-grid background pattern */}
+            <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,black_3px,transparent_4px)] bg-[size:40px_40px] pointer-events-none"></div>
 
-            {/* Central Path */}
-            <div className="absolute top-0 bottom-0 left-1/2 border-l-[12px] border-dashed border-white/60 transform -translate-x-1/2"></div>
-
-            {scenarios.filter(s => s.mode === 'campaign' || !s.mode).map((scenario, index) => {
-              const isBoss = scenario.difficulty === 3;
-              const isLeft = index % 2 === 0;
+            {/* Scrollable Container */}
+            <div className="w-full overflow-x-auto custom-scrollbar relative py-32 md:py-48 px-12 md:px-24">
               
-              return (
-                <div key={scenario.id} className={`relative w-full flex justify-center my-16 md:my-20 ${isLeft ? 'pr-40 md:pr-64' : 'pl-40 md:pl-64'} z-10`}>
+              <div className="flex flex-row items-center min-w-max relative space-x-24 md:space-x-40">
+                {/* Horizontal Central Path */}
+                <div className="absolute left-0 right-0 top-1/2 border-t-[8px] border-dashed border-black/40 transform -translate-y-1/2 -z-10"></div>
+
+                {scenarios.filter(s => s.mode === 'campaign' || !s.mode).map((scenario, index) => {
+                  const isBoss = scenario.difficulty === 3;
+                  const isTop = index % 2 === 0;
                   
-                  {/* Connecting Horizontal Line to Node */}
-                  <div className="absolute top-1/2 left-1/2 w-20 md:w-32 border-t-[12px] border-dashed border-white/60 transform -translate-y-1/2" style={{ [isLeft ? 'right' : 'left']: '50%', transformOrigin: isLeft ? 'right center' : 'left center' }}></div>
+                  return (
+                    <div key={scenario.id} className="relative flex flex-col items-center justify-center">
+                      
+                      {/* Connecting Vertical branch */}
+                      <div className={`absolute ${isTop ? 'top-full h-12 md:h-16' : 'bottom-full h-12 md:h-16'} left-1/2 border-l-[8px] border-dashed border-black/40 transform -translate-x-1/2 -z-10`}></div>
 
-                  {/* Node Button */}
-                  <button 
-                    onClick={() => setSelectedScenario(scenario)}
-                    className={`relative z-20 w-28 h-28 md:w-36 md:h-36 rounded-full border-[8px] border-white flex items-center justify-center font-black text-5xl md:text-6xl text-white shadow-[0_15px_0_rgba(0,0,0,0.4),inset_0_-10px_0_rgba(0,0,0,0.3)] hover:scale-110 hover:-translate-y-2 active:scale-95 active:shadow-[0_5px_0_rgba(0,0,0,0.4),inset_0_-4px_0_rgba(0,0,0,0.3)] transition-all duration-300 ${isBoss ? 'bg-gradient-to-b from-red-400 to-red-600 animate-pulse' : 'bg-gradient-to-b from-yellow-300 to-orange-500'}`}
-                  >
-                    <span className="drop-shadow-md">{index + 1}</span>
-                    
-                    {/* Crown/Star for Boss */}
-                    {isBoss && (
-                      <div className="absolute -top-6 -right-6 w-16 h-16 bg-gradient-to-b from-yellow-200 to-yellow-500 border-[4px] border-white rounded-full flex items-center justify-center text-3xl shadow-lg transform rotate-12">
-                        👑
-                      </div>
-                    )}
-                  </button>
+                      {/* Node Button */}
+                      <button 
+                        onClick={() => setSelectedScenario(scenario)}
+                        className={`relative z-20 w-24 h-24 md:w-32 md:h-32 rounded-full border-[6px] border-black flex items-center justify-center font-black text-4xl md:text-6xl text-white shadow-[0_8px_0_#000] hover:scale-110 hover:-translate-y-2 active:scale-95 active:shadow-[0_4px_0_#000] transition-all duration-300 ${isBoss ? 'bg-gradient-to-br from-red-500 to-orange-500 animate-pulse' : 'bg-gradient-to-br from-yellow-400 to-orange-500'} ${isTop ? '-mt-24 md:-mt-32' : 'mt-24 md:mt-32'}`}
+                      >
+                        <span className="drop-shadow-[0_4px_0_rgba(0,0,0,0.4)]">{index + 1}</span>
+                        
+                        {/* Crown/Star for Boss */}
+                        {isBoss && (
+                          <div className="absolute -top-4 -right-4 w-10 h-10 md:w-12 md:h-12 bg-yellow-300 border-4 border-black rounded-full flex items-center justify-center text-xl md:text-2xl shadow-[0_4px_0_#000] transform rotate-12">
+                            👑
+                          </div>
+                        )}
+                      </button>
 
-                  {/* Floating Title Tag */}
-                  <div className={`absolute top-1/2 -translate-y-1/2 ${isLeft ? 'left-1/2 ml-20 md:ml-32' : 'right-1/2 mr-20 md:mr-32'} w-56 md:w-64 text-${isLeft ? 'left' : 'right'} z-30`}>
-                    <div 
-                      className={`inline-block cursor-pointer hover:scale-105 transition-transform ${isLeft ? '-rotate-3' : 'rotate-3'}`}
-                      onClick={() => setSelectedScenario(scenario)}
-                    >
-                      <h4 className="font-black text-xl md:text-2xl text-gray-900 leading-tight bg-white px-5 py-3 rounded-2xl border-[6px] border-gray-900 shadow-[0_8px_0_rgba(0,0,0,1)]">
-                         {scenario.title}
-                      </h4>
-                      {isBoss && (
-                        <div className="mt-2 text-white font-black uppercase tracking-widest text-sm md:text-base bg-red-600 inline-block px-3 py-1 rounded-xl border-4 border-gray-900 shadow-[0_4px_0_rgba(0,0,0,1)]">
-                          🔥 Final Exam
+                      {/* Tooltip / Speech Bubble */}
+                      <div className={`absolute ${isTop ? 'bottom-full mb-4 md:mb-6' : 'top-full mt-4 md:mt-6'} left-1/2 transform -translate-x-1/2 w-48 md:w-56 z-30`}>
+                        <div 
+                          className="relative bg-white p-4 rounded-2xl border-4 border-black shadow-[0_8px_0_#000] cursor-pointer hover:scale-105 transition-transform"
+                          onClick={() => setSelectedScenario(scenario)}
+                        >
+                          {/* Speech Bubble Arrow */}
+                          <div className={`absolute left-1/2 transform -translate-x-1/2 w-5 h-5 bg-white ${isTop ? '-bottom-[12px] border-b-4 border-r-4 border-black rotate-45' : '-top-[12px] border-t-4 border-l-4 border-black rotate-45'}`}></div>
+
+                          <h4 className="font-black text-sm md:text-lg text-black leading-tight text-center">
+                             {scenario.title}
+                          </h4>
+                          {isBoss && (
+                            <div className="mt-2 text-white font-black uppercase tracking-widest text-[10px] md:text-xs bg-red-600 px-2 py-1 rounded-lg border-2 border-black shadow-[0_2px_0_#000] text-center mx-auto w-fit">
+                              🔥 Final Exam
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+
                     </div>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
