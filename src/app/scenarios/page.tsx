@@ -235,39 +235,57 @@ export default function ScenariosPage() {
         </div>
 
         {activeTab === 'campaign' ? (
-          <div className="relative py-10 max-w-3xl mx-auto flex flex-col items-center mt-10">
-            {/* The winding path line */}
-            <div className="absolute top-0 bottom-0 left-1/2 w-4 md:w-6 bg-gray-900 rounded-full transform -translate-x-1/2 opacity-10"></div>
+          <div className="relative py-32 max-w-2xl mx-auto flex flex-col-reverse items-center mt-10 rounded-[4rem] bg-gradient-to-t from-emerald-400 via-cyan-400 to-blue-500 border-[8px] border-gray-900 shadow-[0_25px_0_rgba(0,0,0,1)] overflow-hidden">
+            
+            {/* Background Details */}
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,white_3px,transparent_4px)] bg-[size:60px_60px]"></div>
+            <div className="absolute top-20 left-10 w-40 h-16 bg-white rounded-full opacity-60 blur-md"></div>
+            <div className="absolute top-60 right-10 w-32 h-12 bg-white rounded-full opacity-50 blur-md"></div>
+            <div className="absolute bottom-40 left-20 w-48 h-20 bg-white rounded-full opacity-40 blur-md"></div>
+
+            {/* Central Path */}
+            <div className="absolute top-0 bottom-0 left-1/2 border-l-[12px] border-dashed border-white/60 transform -translate-x-1/2"></div>
 
             {scenarios.filter(s => s.mode === 'campaign' || !s.mode).map((scenario, index) => {
               const isBoss = scenario.difficulty === 3;
               const isLeft = index % 2 === 0;
               
               return (
-                <div key={scenario.id} className={`relative w-full flex justify-center mb-24 md:mb-32 ${isLeft ? 'pr-32 md:pr-48' : 'pl-32 md:pl-48'}`}>
-                  {/* Connecting curve */}
-                  <div className="absolute top-1/2 left-1/2 w-16 md:w-24 h-4 bg-gray-900 opacity-10 transform -translate-y-1/2" style={{ [isLeft ? 'right' : 'left']: '50%', transformOrigin: isLeft ? 'right center' : 'left center' }}></div>
+                <div key={scenario.id} className={`relative w-full flex justify-center my-16 md:my-20 ${isLeft ? 'pr-40 md:pr-64' : 'pl-40 md:pl-64'} z-10`}>
+                  
+                  {/* Connecting Horizontal Line to Node */}
+                  <div className="absolute top-1/2 left-1/2 w-20 md:w-32 border-t-[12px] border-dashed border-white/60 transform -translate-y-1/2" style={{ [isLeft ? 'right' : 'left']: '50%', transformOrigin: isLeft ? 'right center' : 'left center' }}></div>
 
+                  {/* Node Button */}
                   <button 
                     onClick={() => setSelectedScenario(scenario)}
-                    className={`relative z-10 w-24 h-24 md:w-32 md:h-32 rounded-full border-[6px] md:border-[8px] border-gray-900 flex items-center justify-center font-black text-4xl md:text-5xl shadow-[0_10px_0_rgba(0,0,0,1)] hover:translate-y-2 hover:shadow-[0_5px_0_rgba(0,0,0,1)] active:translate-y-4 active:shadow-none transition-all ${isBoss ? 'bg-nintendo-red text-white scale-110' : 'bg-nintendo-yellow text-gray-900'} group`}
+                    className={`relative z-20 w-28 h-28 md:w-36 md:h-36 rounded-full border-[8px] border-white flex items-center justify-center font-black text-5xl md:text-6xl text-white shadow-[0_15px_0_rgba(0,0,0,0.4),inset_0_-10px_0_rgba(0,0,0,0.3)] hover:scale-110 hover:-translate-y-2 active:scale-95 active:shadow-[0_5px_0_rgba(0,0,0,0.4),inset_0_-4px_0_rgba(0,0,0,0.3)] transition-all duration-300 ${isBoss ? 'bg-gradient-to-b from-red-400 to-red-600 animate-pulse' : 'bg-gradient-to-b from-yellow-300 to-orange-500'}`}
                   >
-                    {index + 1}
+                    <span className="drop-shadow-md">{index + 1}</span>
                     
-                    {/* Star icon for boss */}
+                    {/* Crown/Star for Boss */}
                     {isBoss && (
-                      <div className="absolute -top-4 -right-4 w-12 h-12 bg-nintendo-yellow border-4 border-gray-900 rounded-full flex items-center justify-center text-xl animate-bounce">
-                        ⭐
+                      <div className="absolute -top-6 -right-6 w-16 h-16 bg-gradient-to-b from-yellow-200 to-yellow-500 border-[4px] border-white rounded-full flex items-center justify-center text-3xl shadow-lg transform rotate-12">
+                        👑
                       </div>
                     )}
                   </button>
 
-                  {/* Floating label */}
-                  <div className={`absolute top-1/2 -translate-y-1/2 ${isLeft ? 'left-1/2 ml-16 md:ml-24' : 'right-1/2 mr-16 md:mr-24'} w-48 md:w-64 text-${isLeft ? 'left' : 'right'}`}>
-                    <h4 className={`font-black text-lg md:text-2xl text-gray-900 leading-tight bg-white px-4 py-2 rounded-2xl border-[4px] md:border-[6px] border-gray-900 inline-block shadow-[0_6px_0_rgba(0,0,0,1)] cursor-pointer hover:-translate-y-1 transition-all ${isLeft ? '-rotate-2' : 'rotate-2'}`} onClick={() => setSelectedScenario(scenario)}>
-                       {scenario.title}
-                    </h4>
-                    {isBoss && <span className="block mt-3 text-nintendo-red font-black uppercase tracking-tighter text-sm md:text-base bg-white/80 inline-block px-2 py-1 rounded-lg border-2 border-nintendo-red ml-2">🔥 Final Exam</span>}
+                  {/* Floating Title Tag */}
+                  <div className={`absolute top-1/2 -translate-y-1/2 ${isLeft ? 'left-1/2 ml-20 md:ml-32' : 'right-1/2 mr-20 md:mr-32'} w-56 md:w-64 text-${isLeft ? 'left' : 'right'} z-30`}>
+                    <div 
+                      className={`inline-block cursor-pointer hover:scale-105 transition-transform ${isLeft ? '-rotate-3' : 'rotate-3'}`}
+                      onClick={() => setSelectedScenario(scenario)}
+                    >
+                      <h4 className="font-black text-xl md:text-2xl text-gray-900 leading-tight bg-white px-5 py-3 rounded-2xl border-[6px] border-gray-900 shadow-[0_8px_0_rgba(0,0,0,1)]">
+                         {scenario.title}
+                      </h4>
+                      {isBoss && (
+                        <div className="mt-2 text-white font-black uppercase tracking-widest text-sm md:text-base bg-red-600 inline-block px-3 py-1 rounded-xl border-4 border-gray-900 shadow-[0_4px_0_rgba(0,0,0,1)]">
+                          🔥 Final Exam
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
