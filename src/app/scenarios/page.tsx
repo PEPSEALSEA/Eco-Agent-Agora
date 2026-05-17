@@ -235,15 +235,15 @@ export default function ScenariosPage() {
         </div>
 
         {activeTab === 'campaign' ? (
-          <div className="relative w-full max-w-6xl mx-auto rounded-[3rem] bg-gradient-to-r from-teal-400 to-blue-500 border-4 border-black shadow-[0_12px_0_#000] overflow-hidden mb-12">
+          <div className="relative w-full max-w-7xl mx-auto rounded-[3rem] bg-gradient-to-r from-teal-400 to-blue-500 border-4 border-black shadow-[0_12px_0_#000] overflow-hidden mb-12">
             
             {/* Subtle dot-grid background pattern */}
             <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,black_3px,transparent_4px)] bg-[size:40px_40px] pointer-events-none"></div>
 
             {/* Scrollable Container */}
-            <div className="w-full overflow-x-auto overflow-y-hidden custom-scrollbar relative py-12 px-12 md:px-24 h-[600px] flex items-center">
+            <div className="w-full overflow-x-auto overflow-y-hidden custom-scrollbar relative py-12 px-12 md:px-24 h-[650px] flex items-center">
               
-              <div className="flex flex-row items-center min-w-max relative space-x-32 md:space-x-56 h-full px-12 md:px-24">
+              <div className="flex flex-row items-center min-w-max relative space-x-48 md:space-x-80 h-full px-12 md:px-32">
                 {/* Horizontal Central Path */}
                 <div className="absolute left-0 right-0 top-1/2 border-t-[8px] border-dashed border-black/40 -translate-y-1/2 z-0"></div>
 
