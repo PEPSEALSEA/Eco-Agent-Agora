@@ -535,6 +535,17 @@ async function handleGenerateEvaluation(env, data) {
       "overall_score": 0-10, 
       "feedback_text": "...", 
       "history_summary": "...", 
+      "skills_assessment": {
+        "empathy": 0-10,
+        "value_creation": 0-10,
+        "assertiveness": 0-10,
+        "emotional_control": 0-10
+      },
+      "aar": {
+        "what_went_well": "อะไรทำได้ดี...",
+        "what_made_it_worse": "ประโยคไหนทำให้แย่ลง...",
+        "how_to_improve": "ครั้งหน้าควรปรับกลยุทธ์อย่างไร..."
+      },
       "key_strengths": [], 
       "areas_for_improvement": [], 
       "line_analysis": [

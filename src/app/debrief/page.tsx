@@ -110,7 +110,9 @@ function DebriefContent() {
           feedback_text: result.feedback_text,
           history_summary: result.history_summary,
           key_strengths: result.key_strengths,
-          areas_for_improvement: result.areas_for_improvement
+          areas_for_improvement: result.areas_for_improvement,
+          skills_assessment: result.skills_assessment,
+          aar: result.aar
         },
         lineAnalysis: result.line_analysis
       }).catch(err => console.error('Failed to save evaluation to backend', err));
@@ -247,7 +249,7 @@ function DebriefContent() {
                  </div>
               ) : aiEvaluation ? (
                  <div className="space-y-6 slide-in-bottom">
-                   <div className="bg-nintendo-blue/10 border-4 border-nintendo-blue p-6 rounded-2xl">
+                   <div className="bg-nintendo-blue/10 border-4 border-nintendo-blue p-6 rounded-2xl mb-6">
                       <h3 className="font-black text-nintendo-blue uppercase tracking-tighter mb-3 flex items-center">
                         <MessageSquare size={20} className="mr-2" /> สรุปเหตุการณ์สำคัญ
                       </h3>
@@ -258,6 +260,50 @@ function DebriefContent() {
                       </h3>
                       <div className="text-gray-800 font-bold leading-relaxed" dangerouslySetInnerHTML={formatMarkdown(aiEvaluation.feedback_text)} />
                    </div>
+
+                   {aiEvaluation.aar && (
+                     <div className="bg-nintendo-yellow/10 border-4 border-nintendo-yellow p-6 rounded-2xl mb-6">
+                       <h3 className="font-black text-gray-900 uppercase tracking-tighter mb-4 text-xl border-b-2 border-nintendo-yellow pb-2">After Action Review (AAR)</h3>
+                       <div className="space-y-4">
+                         <div>
+                           <span className="font-black text-nintendo-green uppercase">✅ สิ่งที่ทำได้ดี:</span>
+                           <p className="text-gray-800 font-bold mt-1 ml-4" dangerouslySetInnerHTML={formatMarkdown(aiEvaluation.aar.what_went_well)} />
+                         </div>
+                         <div>
+                           <span className="font-black text-nintendo-red uppercase">❌ สิ่งที่ทำให้สถานการณ์แย่ลง:</span>
+                           <p className="text-gray-800 font-bold mt-1 ml-4" dangerouslySetInnerHTML={formatMarkdown(aiEvaluation.aar.what_made_it_worse)} />
+                         </div>
+                         <div>
+                           <span className="font-black text-nintendo-blue uppercase">💡 ครั้งหน้าควรปรับกลยุทธ์อย่างไร:</span>
+                           <p className="text-gray-800 font-bold mt-1 ml-4" dangerouslySetInnerHTML={formatMarkdown(aiEvaluation.aar.how_to_improve)} />
+                         </div>
+                       </div>
+                     </div>
+                   )}
+
+                   {aiEvaluation.skills_assessment && (
+                     <div className="bg-white border-4 border-gray-900 p-6 rounded-2xl mb-6">
+                        <h3 className="font-black text-gray-900 uppercase tracking-tighter mb-4">การประเมินทักษะย่อย (เต็ม 10)</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl">
+                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">ความเห็นอกเห็นใจ (Empathy)</span>
+                            <span className="text-2xl font-black text-nintendo-blue">{aiEvaluation.skills_assessment.empathy}/10</span>
+                          </div>
+                          <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl">
+                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">การสร้างทางออก (Win-Win)</span>
+                            <span className="text-2xl font-black text-nintendo-green">{aiEvaluation.skills_assessment.value_creation}/10</span>
+                          </div>
+                          <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl">
+                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">ความหนักแน่น (Assertiveness)</span>
+                            <span className="text-2xl font-black text-nintendo-yellow">{aiEvaluation.skills_assessment.assertiveness}/10</span>
+                          </div>
+                          <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl">
+                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">การควบคุมอารมณ์</span>
+                            <span className="text-2xl font-black text-nintendo-pink">{aiEvaluation.skills_assessment.emotional_control}/10</span>
+                          </div>
+                        </div>
+                     </div>
+                   )}
                    
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                      <div className="bg-nintendo-green/10 border-4 border-nintendo-green p-6 rounded-2xl">

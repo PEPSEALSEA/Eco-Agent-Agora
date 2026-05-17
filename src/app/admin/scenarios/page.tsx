@@ -20,6 +20,8 @@ type Scenario = {
   phase_rules?: any;
   initial_state?: any;
   opening_scene?: string;
+  mode?: 'campaign' | 'freeplay';
+  difficulty?: number;
 };
 
 export default function AdminScenariosPage() {
@@ -73,7 +75,9 @@ export default function AdminScenariosPage() {
         phases: ['opening', 'conflict', 'negotiation', 'resolution'],
         win_condition: 'ทั้งสองฝ่ายตกลงกันได้',
         fail_condition: 'turn > 20'
-      }
+      },
+      mode: 'freeplay',
+      difficulty: 1
     };
     setEditForm(newScenario);
     setEditingId('new');
@@ -366,6 +370,28 @@ export default function AdminScenariosPage() {
                       <option value="kids">🧒 Kids (โหมดเด็ก)</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 ml-2">รูปแบบการเล่น (Mode)</label>
+                    <select 
+                      value={editForm.mode || 'freeplay'}
+                      onChange={(e) => setEditForm({ ...editForm, mode: e.target.value as any })}
+                      className="w-full bg-gray-50 border-4 border-gray-900 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white outline-none transition-all shadow-[inset_0_4px_0_rgba(0,0,0,0.05)] appearance-none"
+                    >
+                      <option value="campaign">🏆 Campaign (โหมดผ่านด่าน)</option>
+                      <option value="freeplay">🎮 Freeplay (โหมดเล่นอิสระ)</option>
+                    </select>
+                  </div>
+                  {editForm.mode === 'campaign' && (
+                  <div>
+                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 ml-2">ระดับด่าน (Stage/Difficulty)</label>
+                    <input 
+                      type="number"
+                      value={editForm.difficulty || 1}
+                      onChange={(e) => setEditForm({ ...editForm, difficulty: parseInt(e.target.value) || 1 })}
+                      className="w-full bg-gray-50 border-4 border-gray-900 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white outline-none transition-all shadow-[inset_0_4px_0_rgba(0,0,0,0.05)]"
+                    />
+                  </div>
+                  )}
                 </div>
 
                 <div>
@@ -555,6 +581,9 @@ export default function AdminScenariosPage() {
                   <h3 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">{scenario.title}</h3>
                   <span className={`text-[10px] font-black px-3 py-1 rounded-full border-2 border-gray-900 uppercase tracking-widest ${scenario.target_group === 'professional' ? 'bg-nintendo-blue/10 text-nintendo-blue' : 'bg-nintendo-green/10 text-nintendo-green'}`}>
                     {scenario.target_group}
+                  </span>
+                  <span className={`text-[10px] font-black px-3 py-1 rounded-full border-2 border-gray-900 uppercase tracking-widest ${scenario.mode === 'campaign' ? 'bg-nintendo-yellow/20 text-yellow-700' : 'bg-gray-200 text-gray-600'}`}>
+                    {scenario.mode === 'campaign' ? `ด่านที่ ${scenario.difficulty || 1}` : 'FREEPLAY'}
                   </span>
                 </div>
                 <p className="text-gray-500 font-bold text-lg leading-snug line-clamp-2 italic mb-6">"{scenario.description}"</p>
