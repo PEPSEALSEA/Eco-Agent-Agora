@@ -187,7 +187,7 @@ export default function ScenariosPage() {
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       <SyncStatus status={syncStatus} />
 
-      <div className="max-w-6xl mx-auto relative z-10">
+      <div className="w-[95%] max-w-[1600px] mx-auto relative z-10">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-16 space-y-6 md:space-y-0">
           <div className="bg-white border-[4px] md:border-[6px] border-gray-900 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-[0_8px_0_rgba(0,0,0,1)] md:shadow-[0_12px_0_rgba(0,0,0,1)] -rotate-1 w-full md:w-auto">
             <h1 className="text-4xl md:text-6xl font-black text-gray-900 mb-2 uppercase tracking-tight md:tracking-normal leading-tight md:leading-normal">ภารกิจของคุณ</h1>
@@ -235,13 +235,13 @@ export default function ScenariosPage() {
         </div>
 
         {activeTab === 'campaign' ? (
-          <div className="relative w-full max-w-7xl mx-auto rounded-[3rem] bg-gradient-to-r from-teal-400 to-blue-500 border-4 border-black shadow-[0_12px_0_#000] overflow-hidden mb-12">
+          <div className="relative w-full rounded-[3rem] bg-gradient-to-r from-teal-400 to-blue-500 border-4 border-black shadow-[0_12px_0_#000] overflow-hidden mb-12">
             
             {/* Subtle dot-grid background pattern */}
             <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_center,black_3px,transparent_4px)] bg-[size:40px_40px] pointer-events-none"></div>
 
             {/* Scrollable Container */}
-            <div className="w-full overflow-x-auto overflow-y-hidden custom-scrollbar relative py-12 px-12 md:px-24 h-[650px] flex items-center">
+            <div className="w-full overflow-x-auto overflow-y-hidden custom-scrollbar relative py-12 px-12 md:px-24 h-[750px] flex items-center">
               
               <div className="flex flex-row items-center min-w-max relative space-x-48 md:space-x-80 h-full px-12 md:px-32">
                 {/* Horizontal Central Path */}
@@ -252,18 +252,18 @@ export default function ScenariosPage() {
                   const isTop = index % 2 === 0;
                   
                   return (
-                    <div key={scenario.id} className="relative w-32 md:w-40 h-full flex flex-col items-center justify-center">
+                    <div key={scenario.id} className="relative w-40 md:w-56 h-full flex flex-col items-center justify-center">
                       
                       {/* Connecting Vertical branch */}
-                      <div className={`absolute left-1/2 border-l-[8px] border-dashed border-black/40 -translate-x-1/2 z-0 ${isTop ? 'bottom-1/2 h-[80px] md:h-[100px]' : 'top-1/2 h-[80px] md:h-[100px]'}`}></div>
+                      <div className={`absolute left-1/2 border-l-[8px] border-dashed border-black/40 -translate-x-1/2 z-0 ${isTop ? 'bottom-1/2 h-[100px] md:h-[130px]' : 'top-1/2 h-[100px] md:h-[130px]'}`}></div>
 
                       {/* Wrapper for Node + Tooltip shifted up/down */}
-                      <div className={`absolute left-1/2 flex flex-col items-center -translate-x-1/2 z-10 ${isTop ? 'bottom-1/2 mb-[80px] md:mb-[100px]' : 'top-1/2 mt-[80px] md:mt-[100px]'}`}>
+                      <div className={`absolute left-1/2 flex flex-col items-center -translate-x-1/2 z-10 ${isTop ? 'bottom-1/2 mb-[100px] md:mb-[130px]' : 'top-1/2 mt-[100px] md:mt-[130px]'}`}>
                         
                         {/* Tooltip / Speech Bubble */}
-                        <div className={`absolute ${isTop ? 'bottom-full mb-6' : 'top-full mt-6'} w-48 md:w-64 z-30 pointer-events-none`}>
+                        <div className={`absolute ${isTop ? 'bottom-full mb-6 md:mb-8' : 'top-full mt-6 md:mt-8'} w-56 md:w-80 z-30 pointer-events-none`}>
                           <div 
-                            className="relative bg-white p-4 rounded-2xl border-4 border-black shadow-[0_8px_0_#000] transition-transform pointer-events-auto cursor-pointer hover:scale-105"
+                            className="relative bg-white p-5 md:p-6 rounded-3xl border-[6px] border-black shadow-[0_12px_0_#000] transition-transform pointer-events-auto cursor-pointer hover:scale-105"
                             onClick={() => setSelectedScenario(scenario)}
                           >
                             {/* Speech Bubble Arrow */}
@@ -283,7 +283,7 @@ export default function ScenariosPage() {
                         {/* Node Button */}
                         <button 
                           onClick={() => setSelectedScenario(scenario)}
-                          className={`relative z-20 w-24 h-24 md:w-32 md:h-32 rounded-full border-[6px] border-black flex items-center justify-center font-black text-4xl md:text-6xl text-white shadow-[0_8px_0_#000] hover:scale-110 hover:-translate-y-2 active:scale-95 active:shadow-[0_4px_0_#000] transition-all duration-300 ${isBoss ? 'bg-gradient-to-br from-red-500 to-orange-500 animate-pulse' : 'bg-gradient-to-br from-yellow-400 to-orange-500'}`}
+                          className={`relative z-20 w-32 h-32 md:w-48 md:h-48 rounded-full border-[8px] border-black flex items-center justify-center font-black text-5xl md:text-7xl text-white shadow-[0_12px_0_#000] hover:scale-110 hover:-translate-y-2 active:scale-95 active:shadow-[0_6px_0_#000] transition-all duration-300 ${isBoss ? 'bg-gradient-to-br from-red-500 to-orange-500 animate-pulse' : 'bg-gradient-to-br from-yellow-400 to-orange-500'}`}
                         >
                           <span className="drop-shadow-[0_4px_0_rgba(0,0,0,0.4)]">{index + 1}</span>
                           
