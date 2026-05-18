@@ -486,7 +486,7 @@ export default function ScenariosPage() {
                       
                       {/* Connection Root -> Left Branch (salary) */}
                       <path
-                        d="M 500 390 C 450 290, 280 260, 240 150"
+                        d="M 500 360 C 450 260, 280 230, 240 120"
                         fill="transparent"
                         stroke="#2b221a"
                         strokeWidth="10"
@@ -494,7 +494,7 @@ export default function ScenariosPage() {
                         className="opacity-20"
                       />
                       <path
-                        d="M 500 390 C 450 290, 280 260, 240 150"
+                        d="M 500 360 C 450 260, 280 230, 240 120"
                         fill="transparent"
                         stroke="#b45309"
                         strokeWidth="4"
@@ -504,7 +504,7 @@ export default function ScenariosPage() {
 
                       {/* Connection Root -> Right Branch (farm) */}
                       <path
-                        d="M 500 390 C 550 290, 720 260, 760 150"
+                        d="M 500 360 C 550 260, 720 230, 760 120"
                         fill="transparent"
                         stroke="#2b221a"
                         strokeWidth="10"
@@ -512,7 +512,7 @@ export default function ScenariosPage() {
                         className="opacity-20"
                       />
                       <path
-                        d="M 500 390 C 550 290, 720 260, 760 150"
+                        d="M 500 360 C 550 260, 720 230, 760 120"
                         fill="transparent"
                         stroke="#b45309"
                         strokeWidth="4"
@@ -521,8 +521,8 @@ export default function ScenariosPage() {
                       />
 
                       {/* Cute hand-drawn ink arrows at branch splits */}
-                      <text x="350" y="270" fill="#b45309" className="text-xl font-bold font-sans rotate-[-30deg]">💼</text>
-                      <text x="630" y="270" fill="#b45309" className="text-xl font-bold font-sans rotate-[30deg]">🌾</text>
+                      <text x="350" y="240" fill="#b45309" className="text-xl font-bold font-sans" transform="rotate(-30 350 240)">💼</text>
+                      <text x="630" y="240" fill="#b45309" className="text-xl font-bold font-sans" transform="rotate(30 630 240)">🌾</text>
                     </svg>
                   )}
 
@@ -537,14 +537,18 @@ export default function ScenariosPage() {
                     // Node 2: Career Branch (Salary) Left
                     // Node 3: Social Branch (Farmer) Right
                     let left = "50%";
-                    let top = "390px";
+                    let top = "360px";
                     
                     if (index === 1) {
                       left = "24%";
-                      top = "150px";
+                      top = "120px";
                     } else if (index === 2) {
                       left = "76%";
-                      top = "150px";
+                      top = "120px";
+                    } else if (index > 2) {
+                      // Fallback logic for additional nodes to prevent overlapping
+                      left = index % 2 === 1 ? "24%" : "76%";
+                      top = `${120 - (index - 2) * 80}px`;
                     }
 
                     return (
@@ -581,7 +585,7 @@ export default function ScenariosPage() {
                           {/* Node Stamp Button (Wooden Seal stamp aesthetic) */}
                           <button
                             onClick={() => handleNodeClick(scenario, index)}
-                            className={`relative w-20 h-20 sm:w-22 sm:h-22 rounded-full border-[5px] border-[#2b221a] flex flex-col items-center justify-center font-black transition-all duration-300 group
+                            className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[5px] border-[#2b221a] flex flex-col items-center justify-center font-black transition-all duration-300 group
                               ${!isUnlocked 
                                 ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-dashed' 
                                 : isBoss 
@@ -647,10 +651,16 @@ export default function ScenariosPage() {
                       exit={{ opacity: 0, x: -20 }}
                       className="flex-1 flex flex-col justify-between mt-8 h-full relative"
                     >
-                      {/* Green Masking Tape sticker at top */}
-                      <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-[#cedf9f]/90 border-2 border-black/30 px-6 py-1 rounded text-[10px] font-black uppercase tracking-wider rotate-[-2deg] shadow-sm pointer-events-none select-none z-20">
-                        📁 ACTIVE CASE Brief
-                      </div>
+                      {(() => {
+                        const selectedIndex = campaignScenarios.findIndex(s => s.id === selectedScenario.id);
+                        const displayIndex = selectedIndex >= 0 ? selectedIndex : 0;
+                        const activeLandmark = getLandmarkInfo(selectedScenario.difficulty || 1, displayIndex);
+                        return (
+                          <>
+                            {/* Green Masking Tape sticker at top */}
+                            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-[#cedf9f]/90 border-2 border-black/30 px-6 py-1 rounded text-[10px] font-black uppercase tracking-wider rotate-[-2deg] shadow-sm pointer-events-none select-none z-20">
+                              📁 ACTIVE CASE Brief
+                            </div>
 
                       <div className="space-y-6 pt-2">
                         {/* Title of Level */}
@@ -686,10 +696,10 @@ export default function ScenariosPage() {
                           
                           <div className="relative flex bg-[#fff] border-2 border-[#2b221a] p-3 rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.06)] rotate-1 group">
                             {/* Steel Paper Clip holding the Polaroid */}
-                            <div className="absolute -top-3.5 left-6 w-4.5 h-11 bg-gradient-to-b from-gray-300 via-gray-100 to-gray-500 border-2 border-black rounded-full z-20 rotate-[-10deg]"></div>
+                            <div className="absolute -top-3.5 left-6 w-[18px] h-11 bg-gradient-to-b from-gray-300 via-gray-100 to-gray-500 border-2 border-black rounded-full z-20 rotate-[-10deg]"></div>
                             
                             <div className="w-14 h-14 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center text-4xl mr-4 pointer-events-none select-none">
-                              {getLandmarkInfo(selectedScenario.difficulty || 1, 0).avatar}
+                              {activeLandmark.avatar}
                             </div>
                             
                             <div className="flex-1 min-w-0">
@@ -734,7 +744,7 @@ export default function ScenariosPage() {
                             ของรางวัลผู้สำเร็จคดี (REWARDS BRIEF)
                           </h4>
                           <p className="text-[10px] text-amber-900 font-black leading-tight">
-                            • {getLandmarkInfo(selectedScenario.difficulty || 1, 0).reward} <br />
+                            • {activeLandmark.reward} <br />
                             • คะแนนทักษะเจรจาสากลสำหรับปลดล็อกยศถัดไป
                           </p>
                         </div>
@@ -751,6 +761,9 @@ export default function ScenariosPage() {
                       >
                         <span>ปั๊มตราและประทับลุย ✉️</span> 
                       </button>
+                          </>
+                        );
+                      })()}
                     </motion.div>
                   ) : (
                     <motion.div
