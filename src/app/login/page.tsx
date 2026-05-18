@@ -58,6 +58,38 @@ export default function LoginPage() {
     }
   };
 
+  const handleGuestLogin = async () => {
+    setLoading(true);
+    setLoadingMessage('กำลังต้อนรับผู้เยี่ยมชม...');
+    setError(null);
+    try {
+      const guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
+      const guestUser = {
+        id: guestId,
+        email: `${guestId}@wongjra.guest`,
+        name: `นักเจรจานิรนาม (${guestId.substring(6, 10).toUpperCase()})`,
+        picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${guestId}`,
+        created_at: new Date().toISOString(),
+      };
+
+      // Upsert guest user to GAS so user reference keys exist
+      try {
+        await gasPost('upsert', 'users', guestUser, { queryField: 'id', queryValue: guestUser.id });
+      } catch (e) {
+        console.warn('GAS guest upsert failed, continuing locally', e);
+      }
+
+      login(guestUser);
+      setLoadingMessage('ยินดีต้อนรับเข้าสู่สนามเจรจา!');
+      router.push('/scenarios');
+    } catch (err: any) {
+      console.error('Guest login error:', err);
+      setError('การเข้าสู่ระบบผู้เยี่ยมชมล้มเหลว โปรดลองอีกครั้ง');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const googleLogin = useGoogleLogin({
     onSuccess: handleGoogleSuccess,
     onError: () => setError('การลงชื่อเข้าใช้ Google ล้มเหลว'),
@@ -110,6 +142,15 @@ export default function LoginPage() {
               </svg>
             </div>
             <span>{loading ? 'โปรดรอ...' : 'ลงชื่อเข้าใช้ด้วย Google'}</span>
+          </button>
+
+          <button
+            onClick={handleGuestLogin}
+            disabled={loading}
+            className="w-full bg-amber-400 text-gray-900 font-black py-4 rounded-2xl border-4 border-gray-900 shadow-[0_8px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none active:translate-y-2 transition-all flex items-center justify-center space-x-3 disabled:opacity-50 uppercase tracking-normal text-xl"
+          >
+            <span className="text-2xl">🎭</span>
+            <span>{loading ? 'โปรดรอ...' : 'เข้าสู่ระบบในฐานะเกสต์'}</span>
           </button>
           
           <div className="mt-10 pt-8 border-t-4 border-dashed border-gray-100 text-center">

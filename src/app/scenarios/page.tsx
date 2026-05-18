@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { 
   Lock, Unlock, Star, Play, Gift, ShieldAlert, Zap, Trophy, 
-  HelpCircle, User, Compass, Bookmark, HelpCircle as HelpIcon,
+  HelpCircle, User, Compass, Bookmark, 
   ChevronRight, X, ArrowLeft, RefreshCw, CheckSquare, Coffee
 } from 'lucide-react';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
@@ -80,6 +80,7 @@ export default function ScenariosPage() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState('กำลังเปิดสมุดบันทึกนักเจรจา...');
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'updated'>('idle');
   const [activeTab, setActiveTab] = useState<'campaign' | 'freeplay'>('campaign');
@@ -90,62 +91,64 @@ export default function ScenariosPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  const fetchAllData = async () => {
+    setSyncStatus('syncing');
+    setError(null);
+    const cacheKey = 'gas-swr-read_all';
+    
+    // 1. Try to load cached data for instant render
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed?.data) {
+            const sorted = (Array.isArray(parsed.data.scenarios) ? parsed.data.scenarios : [])
+              .sort((a: any, b: any) => (a.difficulty || 1) - (b.difficulty || 1));
+            setScenarios(sorted);
+            setSessions(Array.isArray(parsed.data.sessions) ? parsed.data.sessions : []);
+            setLoading(false);
+          }
+        } catch (e) {
+          console.error('Local cache parse error', e);
+        }
+      }
+    }
+
+    // 2. Fetch fresh data in background from backend GAS
+    try {
+      const allData = await gasFetch('read_all');
+      if (allData && !allData.error) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            data: allData,
+            timestamp: Date.now()
+          }));
+        }
+        const sorted = (Array.isArray(allData.scenarios) ? allData.scenarios : [])
+          .sort((a: any, b: any) => (a.difficulty || 1) - (b.difficulty || 1));
+        setScenarios(sorted);
+        setSessions(Array.isArray(allData.sessions) ? allData.sessions : []);
+        setSyncStatus('updated');
+      } else {
+        setError(allData?.error || 'ไม่สามารถติดต่อเซิร์ฟเวอร์ระบบเจรจาได้');
+        setSyncStatus('idle');
+      }
+    } catch (err: any) {
+      console.error('Fetch all data error:', err);
+      setError(err.message || 'ระบบขัดข้องในการเชื่อมโยงข้อมูล');
+      setSyncStatus('idle');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Custom Local Storage SWR Cache implementation
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
       return;
     }
-
-    const fetchAllData = async () => {
-      setSyncStatus('syncing');
-      
-      const cacheKey = 'gas-swr-read_all';
-      
-      // 1. Try to load cached data for instant render
-      if (typeof window !== 'undefined') {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached);
-            if (parsed?.data) {
-              const sorted = (Array.isArray(parsed.data.scenarios) ? parsed.data.scenarios : [])
-                .sort((a: any, b: any) => (a.difficulty || 1) - (b.difficulty || 1));
-              setScenarios(sorted);
-              setSessions(Array.isArray(parsed.data.sessions) ? parsed.data.sessions : []);
-              setLoading(false);
-            }
-          } catch (e) {
-            console.error('Local cache parse error', e);
-          }
-        }
-      }
-
-      // 2. Fetch fresh data in background from backend GAS
-      try {
-        const allData = await gasFetch('read_all');
-        if (allData && !allData.error) {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(cacheKey, JSON.stringify({
-              data: allData,
-              timestamp: Date.now()
-            }));
-          }
-          const sorted = (Array.isArray(allData.scenarios) ? allData.scenarios : [])
-            .sort((a: any, b: any) => (a.difficulty || 1) - (b.difficulty || 1));
-          setScenarios(sorted);
-          setSessions(Array.isArray(allData.sessions) ? allData.sessions : []);
-          setSyncStatus('updated');
-        } else {
-          setSyncStatus('idle');
-        }
-      } catch (err) {
-        console.error('Fetch all data error:', err);
-        setSyncStatus('idle');
-      } finally {
-        setLoading(false);
-      }
-    };
 
     if (user) {
       fetchAllData();
@@ -312,7 +315,7 @@ export default function ScenariosPage() {
     
     if (!isUnlocked) {
       setShakingNodeId(scenario.id);
-      setShowLockedAlert(`ช้าก่อน! ต้องพิชิตด่านที่ 1 "${campaignScenarios[0]?.title}" เพื่อปลดล็อกเส้นทางแยกเจรจา! 🔒`);
+      setShowLockedAlert(`ช้าก่อน! ต้องพิชิตด่านที่ 1 "${campaignScenarios[0]?.title || 'ด่านแรก'}" เพื่อปลดล็อกเส้นทางแยกเจรจา! 🔒`);
       
       setTimeout(() => {
         setShakingNodeId(null);
@@ -474,7 +477,7 @@ export default function ScenariosPage() {
                   
                   {/* Dynamic Curvy Ink Connections (SVG Drawing Branching Paths) */}
                   {campaignScenarios.length > 0 && (
-                    <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                    <svg viewBox="0 0 1000 520" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none z-0">
                       {/* 
                           Level 1 (index 0) = Root at center (x=50%, y=75%)
                           Level 2 (index 1) = Branch Left (x=24%, y=30%)
@@ -483,7 +486,7 @@ export default function ScenariosPage() {
                       
                       {/* Connection Root -> Left Branch (salary) */}
                       <path
-                        d="M 50% 390 C 45% 290, 28% 260, 24% 150"
+                        d="M 500 390 C 450 290, 280 260, 240 150"
                         fill="transparent"
                         stroke="#2b221a"
                         strokeWidth="10"
@@ -491,7 +494,7 @@ export default function ScenariosPage() {
                         className="opacity-20"
                       />
                       <path
-                        d="M 50% 390 C 45% 290, 28% 260, 24% 150"
+                        d="M 500 390 C 450 290, 280 260, 240 150"
                         fill="transparent"
                         stroke="#b45309"
                         strokeWidth="4"
@@ -501,7 +504,7 @@ export default function ScenariosPage() {
 
                       {/* Connection Root -> Right Branch (farm) */}
                       <path
-                        d="M 50% 390 C 55% 290, 72% 260, 76% 150"
+                        d="M 500 390 C 550 290, 720 260, 760 150"
                         fill="transparent"
                         stroke="#2b221a"
                         strokeWidth="10"
@@ -509,7 +512,7 @@ export default function ScenariosPage() {
                         className="opacity-20"
                       />
                       <path
-                        d="M 50% 390 C 55% 290, 72% 260, 76% 150"
+                        d="M 500 390 C 550 290, 720 260, 760 150"
                         fill="transparent"
                         stroke="#b45309"
                         strokeWidth="4"
@@ -518,8 +521,8 @@ export default function ScenariosPage() {
                       />
 
                       {/* Cute hand-drawn ink arrows at branch splits */}
-                      <text x="35%" y="270" fill="#b45309" className="text-xl font-bold font-sans rotate-[-30deg]">💼</text>
-                      <text x="63%" y="270" fill="#b45309" className="text-xl font-bold font-sans rotate-[30deg]">🌾</text>
+                      <text x="350" y="270" fill="#b45309" className="text-xl font-bold font-sans rotate-[-30deg]">💼</text>
+                      <text x="630" y="270" fill="#b45309" className="text-xl font-bold font-sans rotate-[30deg]">🌾</text>
                     </svg>
                   )}
 
@@ -841,11 +844,28 @@ export default function ScenariosPage() {
           </div>
         )}
 
+        {/* Error message block */}
+        {error && (
+          <div className="col-span-full py-12 text-center bg-rose-50 border-[6px] border-[#2b221a] rounded-[3rem] max-w-3xl mx-auto shadow-[0_10px_0_#2b221a] p-8 mb-8 rotate-1">
+            <ShieldAlert size={56} className="mx-auto text-rose-700 mb-4 animate-bounce" />
+            <h3 className="text-2xl font-black mb-2 text-rose-950">เกิดข้อผิดพลาดในการดึงข้อมูล</h3>
+            <p className="text-rose-700 font-bold mb-6 text-sm">
+              {error}
+            </p>
+            <button 
+              onClick={fetchAllData}
+              className="bg-amber-400 hover:bg-amber-500 text-gray-900 font-black px-6 py-3.5 rounded-xl border-[4px] border-[#2b221a] shadow-[0_6px_0_#2b221a] active:shadow-none active:translate-y-1.5 active:translate-x-0.5 transition-all text-lg"
+            >
+              ลองโหลดข้อมูลใหม่อีกครั้ง 🔄
+            </button>
+          </div>
+        )}
+
         {/* If no scenarios match tab */}
         {((activeTab === 'campaign' && campaignScenarios.length === 0) || 
-          (activeTab === 'freeplay' && freeplayScenarios.length === 0)) && !loading && (
+          (activeTab === 'freeplay' && freeplayScenarios.length === 0)) && !loading && !error && (
           <div className="col-span-full py-16 text-center bg-white border-[6px] border-[#2b221a] rounded-[3rem] max-w-3xl mx-auto shadow-[0_10px_0_#2b221a] p-8">
-            <HelpIcon size={56} className="mx-auto text-[#b45309] mb-4 animate-bounce" />
+            <HelpCircle size={56} className="mx-auto text-[#b45309] mb-4 animate-bounce" />
             <h3 className="text-2xl font-black mb-2 text-gray-900">สมุดเดินสารว่างเปล่า</h3>
             <p className="text-gray-500 font-bold mb-6 text-sm">
               ยังไม่มีแผ่นกระดาษด่านทดสอบความสามารถลงบันทึกในบทนี้
