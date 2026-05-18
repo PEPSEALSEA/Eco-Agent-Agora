@@ -1,0 +1,63 @@
+# Implementation Plan - Redesign of Campaign Mode UI
+
+We are going to perform a complete redesign of the **Campaign Mode UI** in [page.tsx](file:///e:/Github2/Eco-Agent%20Agora/src/app/scenarios/page.tsx) to make it look like a gorgeous, gamified, and highly interactive "Adventure Board" map. The design will fully respect the game's existing **Neubrutalism / Cartoon Art Style** (Mali font, thick black borders, chunky drop shadows, and vibrant Nintendo-inspired color palette).
+
+---
+
+## 🎨 Visual Redesign Concept: "The Agora Adventure Map"
+
+Instead of a plain grid or a simple horizontal bar, we will design an **interactive vertical winding progression path** (similar to modern game maps like Candy Crush, Mario, or Duolingo) styled in pure neubrutalism.
+
+```mermaid
+graph TD
+    S1["Level 1: เส้นตายโครงการ (Unlocked/Cleared) ⭐⭐⭐"]
+    --> Path1["Winding Trail"]
+    --> S2["Level 2: การต่อรองเงินเดือน (Current Active) 🔥"]
+    --> Path2["Winding Trail"]
+    --> S3["Level 3: โครงการร่วมเกษตรกร (Locked) 🔒"]
+```
+
+### 1. Game Map Progression & Nodes
+- **Vertical Winding Path**: A gorgeous custom-styled vertical path winding from the bottom (Level 1) to the top (Level 3 / Final Boss Exam) with floating clouds, badges, and interactive landmarks.
+- **Node States**:
+  - 🔒 **Locked**: Grayscale overlay with a cute heavy padlock (`Lock` icon). Cannot be selected, clicking triggers a bouncy shake animation and a friendly speech bubble: *"ช้าก่อน! ต้องผ่านด่านก่อนหน้าก่อนนะ"*
+  - ⚡ **Current/Next**: Bouncing animation, glowing pulse effect, and a cute cartoon badge: *"PLAY NOW!"*.
+  - ✅ **Cleared**: Star banner indicating 1, 2, or 3 glowing gold stars achieved, with a beautiful green checkmark.
+- **Visual Landmarks**:
+  - Under or beside each node, we will place an interactive thematic illustration badge matching the scenario (e.g. Office Building for Level 1, Bank/Coins for Level 2, Green Crops/Farmhouse for Level 3).
+
+### 2. Star Rating Logic
+Using user session data fetched from GAS:
+- **3 Stars**: `outcome_score >= 80` (Expert Negotiator!)
+- **2 Stars**: `outcome_score >= 60` (Successful Agreement)
+- **1 Star**: `outcome_score >= 40` (Minor Success)
+- **0 Stars / Uncleared**: `outcome_score < 40` or no completed sessions.
+
+### 3. "Dossier Detail Drawer" (Reward & Boss Preview)
+Instead of a simple generic popup, clicking an unlocked stage will slide open a beautiful **Dossier Card** designed like a high-stakes investigation file:
+- **Character Portrait**: An avatar placeholder showing the opponent's style with dynamic properties.
+- **Difficulty Rating**: Rated in visual skull or star icons (e.g., Difficulty 1 = Green, 2 = Yellow, 3 = Red "Final Boss").
+- **Opponent Profile**: Clear display of the character's *Role*, *Personality*, and their hidden *Agenda* (e.g., "ลุงบุญส่ง: อารมณ์ฉุนเฉียวและมีความกดดันสูง").
+- **Win/Loss Conditions**: Transparent phase layout (e.g., Rapport ➔ Conflict ➔ Resolution).
+- **Rewards Preview**: Visual chest containing rewards like `+250 XP`, `Unlock Badge`, `Unlock Custom Dialogue Card`.
+
+---
+
+## 🛠️ Step-by-Step Implementation Flow
+
+### Step 1: Update Data Fetching in `page.tsx`
+- We will fetch the all-in-one database payload using `gasFetch('read_all')`.
+- We will implement a high-speed **Stale-While-Revalidate (SWR)** caching mechanism using `localStorage` directly in `page.tsx` to keep the screen loading instantly, then updating in the background.
+- Extract the user's completed sessions and determine the highest score and star ranking for each stage.
+
+### Step 2: Build the Winding Adventure Board UI
+- Add floating cartoon background elements: clouds drifting (`framer-motion` infinite animation), small twinkling stars, and interactive path indicators.
+- Create beautiful CSS drawing classes in Tailwind for the winding dotted/dashed board lines connecting the stages.
+
+### Step 3: Implement the Dossier & Preview Panel
+- Add an interactive side-drawer or sliding center panel for selected levels, complete with rewards preview, boss statistics, and detailed gameplay guidance.
+- Include a "Freeplay Mode" card catalog styled like retro arcade cabinets for general scenarios.
+
+### Step 4: Polish & Sound FX Visualizers
+- Add bouncy spring physics to buttons and nodes using `framer-motion`.
+- Ensure responsive layouts so the adventure map flows beautifully on both wide desktops and mobile devices.
