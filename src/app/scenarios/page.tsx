@@ -294,17 +294,16 @@ export default function ScenariosPage() {
     else if (maxScore >= 65) stars = 2;
     else if (maxScore >= 40) stars = 1;
 
-    // Parallel Branching Logic:
-    // Level 1 (IT Office, index 0) is the ROOT. It is always Unlocked.
-    // Completing Level 1 unlocks BOTH Level 2 (Career Path) and Level 3 (Social Path) in parallel branching!
+    // Sequential Branching Logic:
     let isUnlocked = false;
     if (index === 0) {
       isUnlocked = true;
     } else {
-      const rootScenario = campaignScenarios[0];
-      const rootSessions = sessions.filter(s => s.scenario_id === rootScenario?.id);
-      const rootCleared = rootSessions.length > 0;
-      isUnlocked = rootCleared; // Both Level 2 & 3 unlock once the ROOT (Level 1) is cleared
+      // Node is unlocked if the PREVIOUS node is cleared
+      const prevScenario = campaignScenarios[index - 1];
+      const prevSessions = sessions.filter(s => s.scenario_id === prevScenario?.id);
+      const prevCleared = prevSessions.some(s => s.outcome_score !== undefined);
+      isUnlocked = prevCleared;
     }
 
     return { isCleared, isUnlocked, stars, maxScore };
@@ -473,149 +472,121 @@ export default function ScenariosPage() {
                   <span className="text-xl rotate-12">🧭</span>
                 </div>
 
-                <div className="relative w-full h-[520px] mt-8">
-                  
-                  {/* Dynamic Curvy Ink Connections (SVG Drawing Branching Paths) */}
-                  {campaignScenarios.length > 0 && (
-                    <svg viewBox="0 0 1000 520" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none z-0">
-                      {/* 
-                          Level 1 (index 0) = Root at center (x=50%, y=75%)
-                          Level 2 (index 1) = Branch Left (x=24%, y=30%)
-                          Level 3 (index 2) = Branch Right (x=76%, y=30%)
-                      */}
-                      
-                      {/* Connection Root -> Left Branch (salary) */}
-                      <path
-                        d="M 500 360 C 450 260, 280 230, 240 120"
-                        fill="transparent"
-                        stroke="#2b221a"
-                        strokeWidth="10"
-                        strokeLinecap="round"
-                        className="opacity-20"
-                      />
-                      <path
-                        d="M 500 360 C 450 260, 280 230, 240 120"
-                        fill="transparent"
-                        stroke="#b45309"
-                        strokeWidth="4"
-                        strokeDasharray="10, 10"
-                        strokeLinecap="round"
-                      />
-
-                      {/* Connection Root -> Right Branch (farm) */}
-                      <path
-                        d="M 500 360 C 550 260, 720 230, 760 120"
-                        fill="transparent"
-                        stroke="#2b221a"
-                        strokeWidth="10"
-                        strokeLinecap="round"
-                        className="opacity-20"
-                      />
-                      <path
-                        d="M 500 360 C 550 260, 720 230, 760 120"
-                        fill="transparent"
-                        stroke="#b45309"
-                        strokeWidth="4"
-                        strokeDasharray="10, 10"
-                        strokeLinecap="round"
-                      />
-
-                      {/* Cute hand-drawn ink arrows at branch splits */}
-                      <text x="350" y="240" fill="#b45309" className="text-xl font-bold font-sans" transform="rotate(-30 350 240)">💼</text>
-                      <text x="630" y="240" fill="#b45309" className="text-xl font-bold font-sans" transform="rotate(30 630 240)">🌾</text>
-                    </svg>
-                  )}
-
-                  {/* Level Nodes */}
-                  {campaignScenarios.map((scenario, index) => {
-                    const { isCleared, isUnlocked, stars, maxScore } = getScenarioStatus(scenario, index);
-                    const isBoss = scenario.difficulty === 3;
-                    const landmark = getLandmarkInfo(scenario.difficulty || 1, index);
+                <div className="relative w-full h-[520px] mt-8 overflow-y-auto overflow-x-hidden border-y-2 border-dashed border-[#2b221a]/20 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-amber-800/30 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent" id="campaign-map-container">
+                  <div className="relative w-full" style={{ height: `${Math.max(520, campaignScenarios.length * 160 + 100)}px` }}>
                     
-                    // Branch positions inside the vertical canvas
-                    // Node 1: Root Bottom
-                    // Node 2: Career Branch (Salary) Left
-                    // Node 3: Social Branch (Farmer) Right
-                    let left = "50%";
-                    let top = "360px";
-                    
-                    if (index === 1) {
-                      left = "24%";
-                      top = "120px";
-                    } else if (index === 2) {
-                      left = "76%";
-                      top = "120px";
-                    } else if (index > 2) {
-                      // Fallback logic for additional nodes to prevent overlapping
-                      left = index % 2 === 1 ? "24%" : "76%";
-                      top = `${120 - (index - 2) * 80}px`;
-                    }
+                    {/* Dynamic Curvy Ink Connections (SVG Drawing Branching Paths) */}
+                    {campaignScenarios.length > 0 && (
+                      <svg viewBox={`0 0 1000 ${Math.max(520, campaignScenarios.length * 160 + 100)}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                        {campaignScenarios.map((_, i) => {
+                          if (i === 0) return null;
+                          const currTop = 80 + i * 160;
+                          const prevTop = 80 + (i - 1) * 160;
+                          
+                          const currLeft = i % 2 === 1 ? "28%" : "72%";
+                          const prevLeft = (i - 1) === 0 ? "50%" : ((i - 1) % 2 === 1 ? "28%" : "72%");
+                          
+                          const currX = currLeft === "50%" ? 500 : currLeft === "28%" ? 280 : 720;
+                          const prevX = prevLeft === "50%" ? 500 : prevLeft === "28%" ? 280 : 720;
 
-                    return (
-                      <div 
-                        key={scenario.id} 
-                        className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10"
-                        style={{ left, top }}
-                      >
-                        {/* Node Label Flags */}
-                        <div className="absolute -bottom-14 w-28 text-center pointer-events-none select-none">
-                          <div className="bg-[#fffdfa] border-2 border-[#2b221a] px-2 py-0.5 rounded shadow-[0_2px_0_#2b221a] text-[10px] font-black truncate rotate-1">
-                            {landmark.landmarkName}
-                          </div>
-                        </div>
-
-                        {/* Interactive Node Wrapper */}
-                        <motion.div
-                          animate={shakingNodeId === scenario.id ? { x: [-10, 10, -10, 10, -5, 5, 0] } : {}}
-                          transition={{ duration: 0.4 }}
-                          className="relative"
-                        >
-                          {/* Stars Banner (Gold stars stamped on paper) */}
-                          <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 flex space-x-0.5 bg-gray-900/90 border border-black px-1.5 py-0.5 rounded-full shadow-[0_1.5px_0_#000] z-20">
-                            {[1, 2, 3].map((s) => (
-                              <Star 
-                                key={s} 
-                                size={9} 
-                                className={s <= stars ? "text-amber-400 fill-amber-400 animate-pulse" : "text-gray-600"} 
-                                strokeWidth={2.5}
+                          return (
+                            <g key={`path-${i}`}>
+                              <path
+                                d={`M ${prevX} ${prevTop} C ${prevX} ${prevTop + 80}, ${currX} ${currTop - 80}, ${currX} ${currTop}`}
+                                fill="transparent"
+                                stroke="#2b221a"
+                                strokeWidth="10"
+                                strokeLinecap="round"
+                                className="opacity-20"
                               />
-                            ))}
+                              <path
+                                d={`M ${prevX} ${prevTop} C ${prevX} ${prevTop + 80}, ${currX} ${currTop - 80}, ${currX} ${currTop}`}
+                                fill="transparent"
+                                stroke="#b45309"
+                                strokeWidth="4"
+                                strokeDasharray="10, 10"
+                                strokeLinecap="round"
+                              />
+                            </g>
+                          );
+                        })}
+                      </svg>
+                    )}
+
+                    {/* Level Nodes */}
+                    {campaignScenarios.map((scenario, index) => {
+                      const { isCleared, isUnlocked, stars, maxScore } = getScenarioStatus(scenario, index);
+                      const isBoss = scenario.difficulty === 3;
+                      const landmark = getLandmarkInfo(scenario.difficulty || 1, index);
+                      
+                      const top = `${80 + index * 160}px`;
+                      const left = index === 0 ? "50%" : (index % 2 === 1 ? "28%" : "72%");
+
+                      return (
+                        <div 
+                          key={scenario.id} 
+                          className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10"
+                          style={{ left, top }}
+                        >
+                          {/* Node Label Flags */}
+                          <div className="absolute -bottom-14 w-28 text-center pointer-events-none select-none">
+                            <div className="bg-[#fffdfa] border-2 border-[#2b221a] px-2 py-0.5 rounded shadow-[0_2px_0_#2b221a] text-[10px] font-black truncate rotate-1">
+                              {landmark.landmarkName}
+                            </div>
                           </div>
 
-                          {/* Node Stamp Button (Wooden Seal stamp aesthetic) */}
-                          <button
-                            onClick={() => handleNodeClick(scenario, index)}
-                            className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[5px] border-[#2b221a] flex flex-col items-center justify-center font-black transition-all duration-300 group
-                              ${!isUnlocked 
-                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-dashed' 
-                                : isBoss 
-                                  ? `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]` 
-                                  : `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]`
-                              }
-                            `}
-                            style={{ 
-                              borderRadius: isUnlocked 
-                                ? '45% 55% 48% 52% / 52% 48% 55% 45%' // Hand-pressed organic shape for unlocked seals
-                                : '50%'
-                            }}
+                          {/* Interactive Node Wrapper */}
+                          <motion.div
+                            animate={shakingNodeId === scenario.id ? { x: [-10, 10, -10, 10, -5, 5, 0] } : {}}
+                            transition={{ duration: 0.4 }}
+                            className="relative"
                           >
-                            {/* Glow ring for uncleared active level */}
-                            {isUnlocked && !isCleared && (
-                              <div className="absolute -inset-1.5 rounded-full border-[3px] border-dashed border-amber-400 animate-spin [animation-duration:10s] pointer-events-none"></div>
-                            )}
+                            {/* Stars Banner (Gold stars stamped on paper) */}
+                            <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 flex space-x-0.5 bg-gray-900/90 border border-black px-1.5 py-0.5 rounded-full shadow-[0_1.5px_0_#000] z-20">
+                              {[1, 2, 3].map((s) => (
+                                <Star 
+                                  key={s} 
+                                  size={9} 
+                                  className={s <= stars ? "text-amber-400 fill-amber-400 animate-pulse" : "text-gray-600"} 
+                                  strokeWidth={2.5}
+                                />
+                              ))}
+                            </div>
 
-                            {!isUnlocked ? (
-                              <Lock size={22} className="text-gray-400" strokeWidth={3} />
-                            ) : (
-                              <div className="flex flex-col items-center leading-none">
-                                <span className="text-3xl font-black drop-shadow-[0_2px_0_rgba(0,0,0,0.3)]">
-                                  {index === 0 ? "1" : index === 1 ? "2A" : "2B"}
-                                </span>
-                                <span className="text-[7px] uppercase font-black tracking-widest opacity-80 mt-0.5">
-                                  {isBoss ? "SOCIAL BOSS" : index === 1 ? "CAREER" : "START"}
-                                </span>
-                              </div>
-                            )}
+                            {/* Node Stamp Button (Wooden Seal stamp aesthetic) */}
+                            <button
+                              onClick={() => handleNodeClick(scenario, index)}
+                              className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[5px] border-[#2b221a] flex flex-col items-center justify-center font-black transition-all duration-300 group
+                                ${!isUnlocked 
+                                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-dashed' 
+                                  : isBoss 
+                                    ? `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]` 
+                                    : `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]`
+                                }
+                              `}
+                              style={{ 
+                                borderRadius: isUnlocked 
+                                  ? '45% 55% 48% 52% / 52% 48% 55% 45%' // Hand-pressed organic shape for unlocked seals
+                                  : '50%'
+                              }}
+                            >
+                              {/* Glow ring for uncleared active level */}
+                              {isUnlocked && !isCleared && (
+                                <div className="absolute -inset-1.5 rounded-full border-[3px] border-dashed border-amber-400 animate-spin [animation-duration:10s] pointer-events-none"></div>
+                              )}
+
+                              {!isUnlocked ? (
+                                <Lock size={22} className="text-gray-400" strokeWidth={3} />
+                              ) : (
+                                <div className="flex flex-col items-center leading-none">
+                                  <span className="text-3xl font-black drop-shadow-[0_2px_0_rgba(0,0,0,0.3)]">
+                                    {index + 1}
+                                  </span>
+                                  <span className="text-[7px] uppercase font-black tracking-widest opacity-80 mt-0.5">
+                                    {index === 0 ? "START" : isBoss ? "BOSS LEVEL" : `STAGE ${index + 1}`}
+                                  </span>
+                                </div>
+                              )}
 
                             {/* Stamped Cleared mark */}
                             {isCleared && (
