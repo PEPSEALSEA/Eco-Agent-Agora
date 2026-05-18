@@ -4,9 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { 
-  Users, Briefcase, GraduationCap, User, Lock, Unlock, Star, 
-  Play, Gift, Skull, Award, Sparkles, ChevronRight, X, 
-  ArrowLeft, RefreshCw, CheckCircle2, ShieldAlert, Zap, Trophy, HelpCircle
+  Lock, Unlock, Star, Play, Gift, ShieldAlert, Zap, Trophy, 
+  HelpCircle, User, Compass, Bookmark, HelpCircle as HelpIcon,
+  ChevronRight, X, ArrowLeft, RefreshCw, CheckSquare, Coffee
 } from 'lucide-react';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
 import Link from 'next/link';
@@ -25,50 +25,54 @@ type Scenario = {
   phase_rules?: any;
 };
 
-// Opponent details & landmark mapper
+// Opponent details & notebook styling details
 const getLandmarkInfo = (difficulty: number, index: number) => {
   const landmarks = [
     {
       icon: "🏢",
       title: "สมรภูมิตึกทีมพัฒนา",
-      bg: "bg-teal-400",
-      border: "border-teal-600",
-      shadow: "shadow-teal-800",
+      bg: "bg-[#2563eb]/10 text-[#2563eb]",
       avatar: "👨‍💻",
-      reward: "การ์ดเจรจาเร่งด่วน +150 XP",
-      characterDetails: "อเล็กซ์: โปรแกรมเมอร์อาวุโสจอมบ่น, ซาร่า: ผู้จัดการผลิตภัณฑ์ผู้เคร่งครัดเรื่องเวลา"
+      reward: "การ์ด 'คุยเร่งด่วน' +150 XP",
+      characterDetails: "อเล็กซ์: โปรแกรมเมอร์จอมบ่น, ซาร่า: PM ผู้เร่งรีบ",
+      landmarkName: "แผนกไอทีอาละวาด",
+      sealColor: "bg-rose-600 hover:bg-rose-700",
+      sealShadow: "shadow-rose-950/50"
     },
     {
       icon: "💰",
-      title: "ห้องนิรภัยเจรจาแสนล้าน",
-      bg: "bg-amber-400",
-      border: "border-amber-600",
-      shadow: "shadow-amber-800",
+      title: "ห้องเจรจาเงินเดือนแสน",
+      bg: "bg-[#d97706]/10 text-[#d97706]",
       avatar: "👔",
-      reward: "การ์ดตรรกะทองคำ +250 XP",
-      characterDetails: "คุณเฮนเดอร์สัน: เจ้าของธุรกิจจอมประหยัด พูดจาสุภาพแต่อ่อนข้อให้ยากมาก"
+      reward: "การ์ด 'ตรรกะทองคำ' +250 XP",
+      characterDetails: "คุณเฮนเดอร์สัน: เจ้าของธุรกิจจอมประหยัด พูดสุภาพแต่ใจแข็ง",
+      landmarkName: "ห้องเจรจาเงินล้าน",
+      sealColor: "bg-amber-600 hover:bg-amber-700",
+      sealShadow: "shadow-amber-950/50"
     },
     {
       icon: "🌾",
-      title: "หมู่บ้านป่าชุมชนลุงบุญส่ง",
-      bg: "bg-emerald-400",
-      border: "border-emerald-600",
-      shadow: "shadow-emerald-800",
+      title: "ฟาร์มผักลุงบุญส่ง",
+      bg: "bg-[#059669]/10 text-[#059669]",
       avatar: "👨‍🌾",
-      reward: "เหรียญเกียรติยศผู้เจรจาสมดุล +350 XP",
-      characterDetails: "ลุงบุญส่ง: หัวหน้าชุมชนเจ้าถิ่น อารมณ์ร้อนเด็ดขาด, ป้าสมใจ: แกนนำกลุ่มแม่บ้านพลังเยอะ"
+      reward: "เหรียญผู้เจรจาชุมชน +350 XP",
+      characterDetails: "ลุงบุญส่ง: หัวหน้ากลุ่มเกษตรกร, ป้าสมใจ: แกนนำกลุ่มแม่บ้าน",
+      landmarkName: "ป่าชุมชนลุงบุญส่ง",
+      sealColor: "bg-emerald-600 hover:bg-emerald-700",
+      sealShadow: "shadow-emerald-950/50"
     }
   ];
   
   return landmarks[(difficulty - 1) % landmarks.length] || {
     icon: "🗺️",
     title: `ด่านลับที่ ${index + 1}`,
-    bg: "bg-purple-400",
-    border: "border-purple-600",
-    shadow: "shadow-purple-800",
+    bg: "bg-purple-500/10 text-purple-600",
     avatar: "🕵️",
-    reward: "XP พิเศษและโบนัสทักษะการโน้มน้าว",
-    characterDetails: "คู่เจรจาลึกลับที่มีเป้าหมายและแผนการรับมือที่คุณคาดไม่ถึง"
+    reward: "XP พิเศษและโบนัสทักษะ",
+    characterDetails: "คู่เจรจาลึกลับที่มีเป้าหมายและแผนการลับคาดเดาได้ยาก",
+    landmarkName: `สมรภูมิลับที่ ${index + 1}`,
+    sealColor: "bg-purple-600 hover:bg-purple-700",
+    sealShadow: "shadow-purple-950/50"
   };
 };
 
@@ -76,7 +80,7 @@ export default function ScenariosPage() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState('กำลังเสกข้อมูลให้คุณ...');
+  const [loadingMessage, setLoadingMessage] = useState('กำลังเปิดสมุดบันทึกนักเจรจา...');
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'updated'>('idle');
   const [activeTab, setActiveTab] = useState<'campaign' | 'freeplay'>('campaign');
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
@@ -86,7 +90,7 @@ export default function ScenariosPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Load from local storage SWR cache immediately, then fetch fresh in background
+  // Custom Local Storage SWR Cache implementation
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
@@ -95,11 +99,10 @@ export default function ScenariosPage() {
 
     const fetchAllData = async () => {
       setSyncStatus('syncing');
-      setLoadingMessage('กำลังตามหาประวัติการเจรจาของคุณ...');
       
       const cacheKey = 'gas-swr-read_all';
       
-      // 1. Try to load cached data for SWR
+      // 1. Try to load cached data for instant render
       if (typeof window !== 'undefined') {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
@@ -118,7 +121,7 @@ export default function ScenariosPage() {
         }
       }
 
-      // 2. Fetch fresh data from backend
+      // 2. Fetch fresh data in background from backend GAS
       try {
         const allData = await gasFetch('read_all');
         if (allData && !allData.error) {
@@ -151,7 +154,7 @@ export default function ScenariosPage() {
 
   const seedScenarios = async () => {
     setLoading(true);
-    setLoadingMessage('กำลังสร้างโลกการเจรจาใหม่...');
+    setLoadingMessage('กำลังบันทึกหน้ากระดาษเจรจาใหม่...');
     const sampleScenarios = [
       {
         id: uuid(),
@@ -189,7 +192,7 @@ export default function ScenariosPage() {
       {
         id: uuid(),
         title: "โครงการร่วมกับเกษตรกร (จำลองสถานการณ์กดดัน)",
-        description: "บริษัทต้องการเช่าที่ดินทำโครงการ แต่เกษตรกรกังวลและมีวาระซ่อนเร้นที่ไม่ยอมบอกตรงๆ (ด่านวัดระดับความพร้อมเจรจาขั้นสูงสุด)",
+        description: "บริษัทต้องการเช่าที่ดินทำโครงการ แต่เกษตรกรกังวลและมีวาระซ่อนเร้นที่ไม่ยอมบอกตรงๆ (ด่านวัดระดับความพร้อม)",
         target_group: "professional",
         characters: [
           { id: "char_boonsong", name: "ลุงบุญส่ง", role: "ผู้นำกลุ่มเกษตรกร", agenda: "มีข้อเสนอจากบริษัทอื่นที่ดีกว่าอยู่ในมือแล้ว", personality: "กดดัน, สร้างเงื่อนไขบีบบังคับ" },
@@ -206,7 +209,7 @@ export default function ScenariosPage() {
       {
         id: uuid(),
         title: "เล่นอิสระ: ต่อรองซื้อรถมือสอง",
-        description: "คุณต้องการซื้อรถมือสองในราคาที่ถูกลง แต่เต็นท์รถมีเหตุผลร้อยแปดที่ลดราคาไม่ได้ โหมดเล่นอิสระที่คุณสามารถทดลองเทคนิคเจรจาต่างๆ ได้อย่างไร้ขีดจำกัด",
+        description: "คุณต้องการซื้อรถมือสองในราคาที่ถูกลง แต่เต็นท์รถมีเหตุผลร้อยแปดที่ลดราคาไม่ได้ โหมดเล่นอิสระที่คุณสามารถทดลองเทคนิคเจรจาต่างๆ ได้",
         target_group: "professional",
         characters: [
           { id: "char_seller", name: "เฮียชัย", role: "เจ้าของเต็นท์รถ", agenda: "ขายให้ได้กำไรมากที่สุด", personality: "พูดเก่ง, หว่านล้อมเก่ง" }
@@ -241,7 +244,7 @@ export default function ScenariosPage() {
     if (loading || authLoading || !user) return;
     
     setLoading(true);
-    setLoadingMessage('กำลังจัดโต๊ะเจรจาลับ...');
+    setLoadingMessage('กำลังรังสรรค์โต๊ะเจรจาของคุณ...');
     const sessionId = uuid();
     
     try {
@@ -257,7 +260,6 @@ export default function ScenariosPage() {
       
       if (result.error) throw new Error(result.error);
 
-      // Invalidate the cache to ensure fresh state on return
       if (typeof window !== 'undefined') {
         localStorage.removeItem('gas-swr-read_all');
       }
@@ -273,7 +275,7 @@ export default function ScenariosPage() {
   const campaignScenarios = scenarios.filter(s => s.mode === 'campaign' || !s.mode);
   const freeplayScenarios = scenarios.filter(s => s.mode === 'freeplay');
 
-  // Calculates locked/unlocked and star rating for a scenario based on index
+  // Calculates level validation and star achievements dynamically
   const getScenarioStatus = (scenario: Scenario, index: number) => {
     const scenarioSessions = sessions.filter(s => s.scenario_id === scenario.id);
     const completedSessions = scenarioSessions.filter(s => s.outcome_score !== undefined);
@@ -284,21 +286,22 @@ export default function ScenariosPage() {
     
     const isCleared = completedSessions.length > 0;
     
-    // Star Rating mapping:
     let stars = 0;
     if (maxScore >= 85) stars = 3;
     else if (maxScore >= 65) stars = 2;
     else if (maxScore >= 40) stars = 1;
 
-    // Lock/Unlock system: Level 1 is always unlocked. Others are unlocked if the previous one has been completed.
+    // Parallel Branching Logic:
+    // Level 1 (IT Office, index 0) is the ROOT. It is always Unlocked.
+    // Completing Level 1 unlocks BOTH Level 2 (Career Path) and Level 3 (Social Path) in parallel branching!
     let isUnlocked = false;
     if (index === 0) {
       isUnlocked = true;
     } else {
-      const prevScenario = campaignScenarios[index - 1];
-      const prevSessions = sessions.filter(s => s.scenario_id === prevScenario.id);
-      const prevCleared = prevSessions.length > 0;
-      isUnlocked = prevCleared;
+      const rootScenario = campaignScenarios[0];
+      const rootSessions = sessions.filter(s => s.scenario_id === rootScenario?.id);
+      const rootCleared = rootSessions.length > 0;
+      isUnlocked = rootCleared; // Both Level 2 & 3 unlock once the ROOT (Level 1) is cleared
     }
 
     return { isCleared, isUnlocked, stars, maxScore };
@@ -309,7 +312,7 @@ export default function ScenariosPage() {
     
     if (!isUnlocked) {
       setShakingNodeId(scenario.id);
-      setShowLockedAlert(`ช้าก่อน! ต้องผ่านด่านที่ ${index} "${campaignScenarios[index-1]?.title}" ก่อนนะจ๊ะ! 🔒`);
+      setShowLockedAlert(`ช้าก่อน! ต้องพิชิตด่านที่ 1 "${campaignScenarios[0]?.title}" เพื่อปลดล็อกเส้นทางแยกเจรจา! 🔒`);
       
       setTimeout(() => {
         setShakingNodeId(null);
@@ -321,83 +324,78 @@ export default function ScenariosPage() {
     setShowLockedAlert(null);
   };
 
-  // Define column percentages for a vertical winding path (e.g. Left, Center, Right, Center)
-  const colPercents = [22, 50, 78, 50];
-
   return (
-    <div className="min-h-screen cartoon-bg-blue p-4 sm:p-8 relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#1e1510] text-[#2b221a] p-4 sm:p-8 relative overflow-x-hidden">
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       <SyncStatus status={syncStatus} />
 
-      {/* Floating Decorative Clouds (Framer Motion Loops) */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {/* Floating Sketches & Coffee Cup Rings in Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-40">
+        {/* Dynamic Sketched Clouds */}
         <motion.div 
           animate={{ x: ['-20%', '120%'] }}
-          transition={{ repeat: Infinity, duration: 45, ease: 'linear' }}
-          className="absolute top-16 left-0 text-7xl opacity-20 filter drop-shadow-[0_4px_0_#000]"
+          transition={{ repeat: Infinity, duration: 40, ease: 'linear' }}
+          className="absolute top-12 left-0 text-7xl font-sans"
         >
           ☁️
         </motion.div>
         <motion.div 
           animate={{ x: ['120%', '-20%'] }}
-          transition={{ repeat: Infinity, duration: 55, ease: 'linear' }}
-          className="absolute top-[400px] right-0 text-8xl opacity-15 filter drop-shadow-[0_4px_0_#000]"
-        >
-          ☁️
-        </motion.div>
-        <motion.div 
-          animate={{ x: ['-30%', '110%'] }}
           transition={{ repeat: Infinity, duration: 50, ease: 'linear' }}
-          className="absolute bottom-32 left-0 text-6xl opacity-25 filter drop-shadow-[0_4px_0_#000]"
+          className="absolute top-[40%] right-0 text-8xl"
         >
           ☁️
         </motion.div>
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
-        {/* Header Section */}
+        
+        {/* Top Header - Neubrutalist Wooden Board */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 space-y-6 md:space-y-0">
-          <div className="bg-white border-[6px] border-gray-900 p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-[0_10px_0_rgba(0,0,0,1)] -rotate-1 w-full md:w-auto">
-            <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-2 uppercase tracking-tight leading-tight flex items-center gap-3">
-              <Trophy className="text-nintendo-yellow w-10 h-10 filter drop-shadow-[0_2px_0_#000]" strokeWidth={3} />
-              สมรภูมิเจรจาลับ
+          <div className="bg-[#fffdf9] border-[6px] border-[#2b221a] p-6 rounded-[2rem] shadow-[0_8px_0_#2b221a] -rotate-1 w-full md:w-auto relative overflow-hidden">
+            {/* Coffee stain on header */}
+            <div className="absolute -top-6 -right-6 w-16 h-16 border-2 border-amber-800 border-opacity-10 rounded-full"></div>
+            
+            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-1 uppercase tracking-tight flex items-center gap-2">
+              <Compass className="text-[#d97706] w-8 h-8 animate-spin [animation-duration:15s]" strokeWidth={3} />
+              สมุดเจรจาพเนจร (Explorer's Journal)
             </h1>
-            <p className="text-gray-500 font-bold text-sm md:text-lg uppercase tracking-normal leading-relaxed">
-              ฝึกทักษะการเจรจาระดับมือโปรเพื่อพิชิตภารกิจและก้าวขึ้นเป็นสุดยอดนักคุย!
+            <p className="text-gray-500 font-bold text-xs md:text-sm uppercase tracking-wide">
+              บันทึกเส้นทางการเจรจาลับและวิเคราะห์คู่ต่อสู้ เพื่อการเจรจาระดับอัจฉริยะ!
             </p>
           </div>
           
           <Link 
             href="/profile"
             prefetch={false}
-            className="flex items-center space-x-4 bg-white border-4 border-gray-900 px-6 py-3 rounded-[2rem] hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group self-end md:self-auto"
+            className="flex items-center space-x-4 bg-[#fffdf9] border-[4px] border-[#2b221a] px-6 py-2.5 rounded-[2rem] hover:translate-y-1 transition-all shadow-[0_6px_0_#2b221a] active:shadow-none active:translate-y-2 group self-end md:self-auto"
           >
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-nintendo-yellow border-4 border-gray-900 flex items-center justify-center text-gray-900">
-              <User className="w-5 h-5 md:w-6 md:h-6" strokeWidth={3} />
+            <div className="w-10 h-10 rounded-2xl bg-amber-400 border-4 border-[#2b221a] flex items-center justify-center text-gray-900">
+              <User className="w-5 h-5" strokeWidth={3} />
             </div>
             <div className="text-left">
-              <p className="text-[10px] text-gray-400 font-black uppercase leading-tight mb-1">นักเจรจา</p>
-              <p className="text-base md:text-xl text-gray-900 font-black uppercase tracking-tight leading-tight">
+              <p className="text-[10px] text-gray-400 font-black uppercase mb-0.5">นักเดินสาร</p>
+              <p className="text-base text-gray-900 font-black uppercase tracking-tight leading-tight">
                 {user?.name || user?.email?.split('@')[0]}
               </p>
             </div>
           </Link>
         </header>
 
-        {/* Locked Popup Alert */}
+        {/* Warning Toast Alerts */}
         <AnimatePresence>
           {showLockedAlert && (
             <motion.div 
-              initial={{ opacity: 0, y: -20, scale: 0.9 }}
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.9 }}
-              className="bg-nintendo-red text-white border-4 border-gray-900 px-6 py-4 rounded-2xl font-black text-center shadow-[0_6px_0_#000] mb-8 flex items-center justify-center gap-3 relative z-30"
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              className="bg-rose-50 border-[5px] border-[#2b221a] text-rose-700 px-6 py-4 rounded-2xl font-black text-center shadow-[0_6px_0_#2b221a] mb-8 flex items-center justify-center gap-3 relative z-30 rotate-1"
             >
-              <ShieldAlert size={24} className="animate-bounce" />
+              <ShieldAlert size={22} className="animate-bounce" />
               <span>{showLockedAlert}</span>
               <button 
                 onClick={() => setShowLockedAlert(null)} 
-                className="absolute right-4 text-white hover:text-gray-200 text-lg font-black"
+                className="absolute right-4 text-rose-700 hover:text-rose-950 text-xl font-black"
               >
                 ×
               </button>
@@ -405,405 +403,458 @@ export default function ScenariosPage() {
           )}
         </AnimatePresence>
 
-        {/* Modes Navigation - Styled like a Retro Handheld Console Controller */}
-        <div className="flex justify-center mb-16">
-          <div className="bg-gray-800 border-[6px] border-black rounded-[2.5rem] p-3 flex shadow-[0_12px_0_#000] relative">
-            <div className="absolute -top-3 left-10 px-3 bg-nintendo-red text-white text-[10px] font-black border-2 border-black rounded-md rotate-[-3deg] uppercase tracking-wider">
-              Mode Selection
+        {/* Mode Selector - Controller Deck */}
+        <div className="flex justify-center mb-12">
+          <div className="bg-[#382619] border-[5px] border-[#1d120a] rounded-[2rem] p-2.5 flex shadow-[0_10px_0_#1d120a] relative">
+            <div className="absolute -top-3.5 left-8 px-3 bg-[#e60012] text-white text-[9px] font-black border-2 border-black rounded uppercase tracking-wider">
+              JOURNAL TABS
             </div>
             <button
               onClick={() => {
                 setActiveTab('campaign');
                 setShowLockedAlert(null);
               }}
-              className={`flex items-center px-6 md:px-8 py-3 md:py-4 rounded-2xl font-black uppercase tracking-tighter text-sm md:text-lg transition-all ${
+              className={`flex items-center px-6 md:px-8 py-3 rounded-xl font-black uppercase tracking-tight text-xs md:text-sm transition-all ${
                 activeTab === 'campaign' 
-                  ? 'bg-nintendo-pink text-white shadow-[0_6px_0_#000] -translate-y-1' 
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                  ? 'bg-amber-400 text-gray-900 shadow-[0_5px_0_#2b221a] -translate-y-0.5' 
+                  : 'text-amber-100/60 hover:text-amber-50 hover:bg-[#4a3424]'
               }`}
             >
-              <span className="mr-2 text-xl">🏆</span> แผนกผ่านด่าน (CAMPAIGN)
+              <span className="mr-1.5 text-lg">🗺️</span> แผนที่หลัก (CAMPAIGN JOURNAL)
             </button>
             <button
               onClick={() => {
                 setActiveTab('freeplay');
                 setShowLockedAlert(null);
               }}
-              className={`flex items-center px-6 md:px-8 py-3 md:py-4 rounded-2xl font-black uppercase tracking-tighter text-sm md:text-lg transition-all ${
+              className={`flex items-center px-6 md:px-8 py-3 rounded-xl font-black uppercase tracking-tight text-xs md:text-sm transition-all ${
                 activeTab === 'freeplay' 
-                  ? 'bg-nintendo-blue text-white shadow-[0_6px_0_#000] -translate-y-1' 
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                  ? 'bg-amber-400 text-gray-900 shadow-[0_5px_0_#2b221a] -translate-y-0.5' 
+                  : 'text-amber-100/60 hover:text-amber-50 hover:bg-[#4a3424]'
               }`}
             >
-              <span className="mr-2 text-xl">🎮</span> ด่านเล่นอิสระ (FREEPLAY)
+              <span className="mr-1.5 text-lg">👾</span> ตู้ประลองเสรี (FREEPLAY ARCADES)
             </button>
           </div>
         </div>
 
-        {/* CAMPAIGN MODE (VERTICAL WINDING MAP REDESIGN) */}
+        {/* CAMPAIGN MAP OVERHAUL: TRAVELER'S OPEN NOTEBOOK */}
         {activeTab === 'campaign' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+          <div className="relative w-full bg-[#f6ead9] border-[8px] border-[#2b221a] rounded-[3rem] shadow-[0_20px_0_rgba(0,0,0,0.5)] p-4 sm:p-10 mb-12 min-h-[750px]">
             
-            {/* The Winding Map Board (7 Columns on Desktop) */}
-            <div className="lg:col-span-8 bg-white border-[6px] border-gray-900 rounded-[3rem] shadow-[0_15px_0_rgba(0,0,0,1)] overflow-hidden relative p-6 sm:p-12 min-h-[700px] flex flex-col justify-center">
+            {/* Ring Binder running down the exact center (For Desktop Screens) */}
+            <div className="hidden lg:flex absolute left-1/2 top-0 bottom-0 w-8 -translate-x-1/2 flex-col justify-around py-16 pointer-events-none z-20">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div 
+                  key={i} 
+                  className="w-12 h-6 bg-gradient-to-r from-gray-400 via-gray-100 to-gray-500 border-2 border-black rounded-full shadow-[0_4px_4px_rgba(0,0,0,0.3)] transform -translate-x-2"
+                ></div>
+              ))}
+            </div>
+
+            {/* Split Page Layout: Left Page is Sketch Map, Right Page is Dossier Briefing */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 relative z-10">
               
-              {/* Radial Dot Pattern overlay */}
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,black_3px,transparent_4px)] bg-[size:32px_32px] pointer-events-none"></div>
-              
-              <div className="relative w-full z-10" style={{ minHeight: `${campaignScenarios.length * 200}px` }}>
+              {/* LEFT PAGE: ORGANIC SKETCHED BRANCHING QUEST MAP */}
+              <div className="bg-[#fcfaf4] border-[4px] border-[#382b21] rounded-[2rem] p-6 shadow-[0_8px_16px_rgba(0,0,0,0.05)] relative overflow-hidden -rotate-1 min-h-[600px] flex flex-col justify-center">
                 
-                {/* SVG Connecting Path */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                {/* Vintage Coffee Ring Stains */}
+                <div className="absolute top-12 left-10 w-24 h-24 border-[3px] border-amber-800 border-opacity-[0.05] rounded-full pointer-events-none"></div>
+                <div className="absolute bottom-16 right-12 w-16 h-16 border-[2px] border-amber-800 border-opacity-[0.04] rounded-full pointer-events-none"></div>
+                
+                {/* Hand-drawn ink header */}
+                <div className="absolute top-6 left-6 right-6 flex justify-between items-center pointer-events-none select-none">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider font-mono">
+                    PAGE 04 // BRANCHING quest TREE
+                  </span>
+                  <span className="text-xl rotate-12">🧭</span>
+                </div>
+
+                <div className="relative w-full h-[520px] mt-8">
+                  
+                  {/* Dynamic Curvy Ink Connections (SVG Drawing Branching Paths) */}
+                  {campaignScenarios.length > 0 && (
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                      {/* 
+                          Level 1 (index 0) = Root at center (x=50%, y=75%)
+                          Level 2 (index 1) = Branch Left (x=24%, y=30%)
+                          Level 3 (index 2) = Branch Right (x=76%, y=30%)
+                      */}
+                      
+                      {/* Connection Root -> Left Branch (salary) */}
+                      <path
+                        d="M 50% 390 C 45% 290, 28% 260, 24% 150"
+                        fill="transparent"
+                        stroke="#2b221a"
+                        strokeWidth="10"
+                        strokeLinecap="round"
+                        className="opacity-20"
+                      />
+                      <path
+                        d="M 50% 390 C 45% 290, 28% 260, 24% 150"
+                        fill="transparent"
+                        stroke="#b45309"
+                        strokeWidth="4"
+                        strokeDasharray="10, 10"
+                        strokeLinecap="round"
+                      />
+
+                      {/* Connection Root -> Right Branch (farm) */}
+                      <path
+                        d="M 50% 390 C 55% 290, 72% 260, 76% 150"
+                        fill="transparent"
+                        stroke="#2b221a"
+                        strokeWidth="10"
+                        strokeLinecap="round"
+                        className="opacity-20"
+                      />
+                      <path
+                        d="M 50% 390 C 55% 290, 72% 260, 76% 150"
+                        fill="transparent"
+                        stroke="#b45309"
+                        strokeWidth="4"
+                        strokeDasharray="10, 10"
+                        strokeLinecap="round"
+                      />
+
+                      {/* Cute hand-drawn ink arrows at branch splits */}
+                      <text x="35%" y="270" fill="#b45309" className="text-xl font-bold font-sans rotate-[-30deg]">💼</text>
+                      <text x="63%" y="270" fill="#b45309" className="text-xl font-bold font-sans rotate-[30deg]">🌾</text>
+                    </svg>
+                  )}
+
+                  {/* Level Nodes */}
                   {campaignScenarios.map((scenario, index) => {
-                    if (index === campaignScenarios.length - 1) return null;
+                    const { isCleared, isUnlocked, stars, maxScore } = getScenarioStatus(scenario, index);
+                    const isBoss = scenario.difficulty === 3;
+                    const landmark = getLandmarkInfo(scenario.difficulty || 1, index);
                     
-                    const x1 = colPercents[index % colPercents.length];
-                    const x2 = colPercents[(index + 1) % colPercents.length];
-                    const y1 = index * 200 + 100;
-                    const y2 = (index + 1) * 200 + 100;
-                    const cpY1 = y1 + 70;
-                    const cpY2 = y2 - 70;
+                    // Branch positions inside the vertical canvas
+                    // Node 1: Root Bottom
+                    // Node 2: Career Branch (Salary) Left
+                    // Node 3: Social Branch (Farmer) Right
+                    let left = "50%";
+                    let top = "390px";
                     
+                    if (index === 1) {
+                      left = "24%";
+                      top = "150px";
+                    } else if (index === 2) {
+                      left = "76%";
+                      top = "150px";
+                    }
+
                     return (
-                      <g key={`winding-path-${scenario.id}`}>
-                        {/* Shadow Outline Line */}
-                        <path
-                          d={`M ${x1}% ${y1} C ${x1}% ${cpY1}, ${x2}% ${cpY2}, ${x2}% ${y2}`}
-                          fill="transparent"
-                          stroke="black"
-                          strokeWidth="16"
-                          strokeLinecap="round"
-                        />
-                        {/* Core Dashed Glowing Road */}
-                        <path
-                          d={`M ${x1}% ${y1} C ${x1}% ${cpY1}, ${x2}% ${cpY2}, ${x2}% ${y2}`}
-                          fill="transparent"
-                          stroke="#f8cc00"
-                          strokeWidth="8"
-                          strokeDasharray="16, 12"
-                          strokeLinecap="round"
-                        />
-                      </g>
+                      <div 
+                        key={scenario.id} 
+                        className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10"
+                        style={{ left, top }}
+                      >
+                        {/* Node Label Flags */}
+                        <div className="absolute -bottom-14 w-28 text-center pointer-events-none select-none">
+                          <div className="bg-[#fffdfa] border-2 border-[#2b221a] px-2 py-0.5 rounded shadow-[0_2px_0_#2b221a] text-[10px] font-black truncate rotate-1">
+                            {landmark.landmarkName}
+                          </div>
+                        </div>
+
+                        {/* Interactive Node Wrapper */}
+                        <motion.div
+                          animate={shakingNodeId === scenario.id ? { x: [-10, 10, -10, 10, -5, 5, 0] } : {}}
+                          transition={{ duration: 0.4 }}
+                          className="relative"
+                        >
+                          {/* Stars Banner (Gold stars stamped on paper) */}
+                          <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 flex space-x-0.5 bg-gray-900/90 border border-black px-1.5 py-0.5 rounded-full shadow-[0_1.5px_0_#000] z-20">
+                            {[1, 2, 3].map((s) => (
+                              <Star 
+                                key={s} 
+                                size={9} 
+                                className={s <= stars ? "text-amber-400 fill-amber-400 animate-pulse" : "text-gray-600"} 
+                                strokeWidth={2.5}
+                              />
+                            ))}
+                          </div>
+
+                          {/* Node Stamp Button (Wooden Seal stamp aesthetic) */}
+                          <button
+                            onClick={() => handleNodeClick(scenario, index)}
+                            className={`relative w-20 h-20 sm:w-22 sm:h-22 rounded-full border-[5px] border-[#2b221a] flex flex-col items-center justify-center font-black transition-all duration-300 group
+                              ${!isUnlocked 
+                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-dashed' 
+                                : isBoss 
+                                  ? `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]` 
+                                  : `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]`
+                              }
+                            `}
+                            style={{ 
+                              borderRadius: isUnlocked 
+                                ? '45% 55% 48% 52% / 52% 48% 55% 45%' // Hand-pressed organic shape for unlocked seals
+                                : '50%'
+                            }}
+                          >
+                            {/* Glow ring for uncleared active level */}
+                            {isUnlocked && !isCleared && (
+                              <div className="absolute -inset-1.5 rounded-full border-[3px] border-dashed border-amber-400 animate-spin [animation-duration:10s] pointer-events-none"></div>
+                            )}
+
+                            {!isUnlocked ? (
+                              <Lock size={22} className="text-gray-400" strokeWidth={3} />
+                            ) : (
+                              <div className="flex flex-col items-center leading-none">
+                                <span className="text-3xl font-black drop-shadow-[0_2px_0_rgba(0,0,0,0.3)]">
+                                  {index === 0 ? "1" : index === 1 ? "2A" : "2B"}
+                                </span>
+                                <span className="text-[7px] uppercase font-black tracking-widest opacity-80 mt-0.5">
+                                  {isBoss ? "SOCIAL BOSS" : index === 1 ? "CAREER" : "START"}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Stamped Cleared mark */}
+                            {isCleared && (
+                              <div className="absolute -bottom-1 -right-1 bg-emerald-600 border-2 border-black rounded-full p-0.5 text-white shadow-[0_1.5px_0_#000] rotate-12">
+                                <span className="text-[8px] font-black leading-none px-1">PASSED</span>
+                              </div>
+                            )}
+                          </button>
+                        </motion.div>
+                      </div>
                     );
                   })}
-                </svg>
-
-                {/* Level Nodes */}
-                {campaignScenarios.map((scenario, index) => {
-                  const { isCleared, isUnlocked, stars, maxScore } = getScenarioStatus(scenario, index);
-                  const isBoss = scenario.difficulty === 3;
-                  const colX = colPercents[index % colPercents.length];
-                  const rowY = index * 200 + 100;
-                  const landmark = getLandmarkInfo(scenario.difficulty || 1, index);
-                  
-                  return (
-                    <div 
-                      key={scenario.id} 
-                      className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 transition-transform"
-                      style={{ left: `${colX}%`, top: `${rowY}px` }}
-                    >
-                      {/* Landmark Visual Indicator Under/Beside Node */}
-                      <div className="absolute -bottom-16 w-28 text-center pointer-events-none select-none">
-                        <div className="text-gray-900 font-black text-xs px-2 py-0.5 bg-white border-2 border-black rounded-lg shadow-[0_2px_0_#000] truncate">
-                          {landmark.title}
-                        </div>
-                      </div>
-
-                      {/* Level Node Box */}
-                      <motion.div
-                        animate={shakingNodeId === scenario.id ? { x: [-10, 10, -10, 10, -5, 5, 0] } : {}}
-                        transition={{ duration: 0.4 }}
-                        className="relative"
-                      >
-                        {/* Node Star rating (Under node) */}
-                        <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 flex space-x-1 z-20 bg-gray-900 border-2 border-black px-2 py-0.5 rounded-full shadow-[0_2px_0_#000]">
-                          {[1, 2, 3].map((s) => (
-                            <Star 
-                              key={s} 
-                              size={12} 
-                              className={s <= stars ? "text-nintendo-yellow fill-nintendo-yellow animate-pulse" : "text-gray-600"} 
-                              strokeWidth={3}
-                            />
-                          ))}
-                        </div>
-
-                        {/* Node Main Button */}
-                        <button
-                          onClick={() => handleNodeClick(scenario, index)}
-                          className={`relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-[6px] border-black flex flex-col items-center justify-center font-black transition-all duration-300 group
-                            ${!isUnlocked 
-                              ? 'bg-gray-400 text-gray-700 cursor-not-allowed shadow-[0_6px_0_#1a1a1a]' 
-                              : isBoss 
-                                ? 'bg-gradient-to-br from-nintendo-red to-rose-600 text-white shadow-[0_8px_0_#000] hover:scale-110 hover:-translate-y-1 active:scale-95 active:shadow-[0_4px_0_#000]' 
-                                : 'bg-gradient-to-br from-nintendo-yellow to-amber-500 text-gray-900 shadow-[0_8px_0_#000] hover:scale-110 hover:-translate-y-1 active:scale-95 active:shadow-[0_4px_0_#000]'
-                            }
-                          `}
-                        >
-                          {/* Pulsing Active Highlight */}
-                          {isUnlocked && !isCleared && (
-                            <div className="absolute -inset-2 rounded-full border-4 border-dashed border-nintendo-pink animate-spin [animation-duration:8s] pointer-events-none"></div>
-                          )}
-
-                          {/* Node Icon/Number */}
-                          {!isUnlocked ? (
-                            <Lock size={32} className="text-gray-700" strokeWidth={3} />
-                          ) : (
-                            <div className="flex flex-col items-center">
-                              <span className="text-4xl drop-shadow-[0_3px_0_rgba(0,0,0,0.3)]">{index + 1}</span>
-                              <span className="text-[10px] uppercase font-black tracking-widest opacity-80 leading-none mt-1">
-                                {isBoss ? "BOSS 🔥" : "START"}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Cleared Checkmark Badge */}
-                          {isCleared && (
-                            <div className="absolute -bottom-1 -right-1 bg-nintendo-green border-4 border-black rounded-full p-1 text-white shadow-[0_2px_0_#000] rotate-12">
-                              <CheckCircle2 size={16} strokeWidth={4} />
-                            </div>
-                          )}
-                        </button>
-                      </motion.div>
-                    </div>
-                  );
-                })}
+                </div>
               </div>
-            </div>
 
-            {/* Campaign Sidebar Drawer/Details (4 Columns on Desktop) */}
-            <div className="lg:col-span-4 space-y-6">
-              
-              <AnimatePresence mode="wait">
-                {selectedScenario ? (
-                  <motion.div
-                    key={selectedScenario.id}
-                    initial={{ opacity: 0, x: 50, scale: 0.95 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    exit={{ opacity: 0, x: 50, scale: 0.95 }}
-                    className="bg-white border-[6px] border-gray-900 rounded-[2.5rem] p-6 shadow-[0_12px_0_rgba(0,0,0,1)] relative overflow-hidden"
-                  >
-                    {/* Top banner tag */}
-                    <div className="absolute top-0 left-0 right-0 h-4 bg-nintendo-pink"></div>
-                    
-                    {/* Header */}
-                    <div className="flex justify-between items-center mb-6 pt-2">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-nintendo-yellow text-gray-900 border-2 border-black px-3 py-1 rounded-full text-xs font-black uppercase tracking-tight">
-                          ด่านที่ {campaignScenarios.findIndex(s => s.id === selectedScenario.id) + 1}
-                        </span>
-                        {selectedScenario.difficulty === 3 && (
-                          <span className="bg-nintendo-red text-white border-2 border-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">
-                            FINAL BOSS 🔥
-                          </span>
-                        )}
-                      </div>
-                      <button 
-                        onClick={() => setSelectedScenario(null)}
-                        className="p-1 bg-gray-100 hover:bg-red-100 border-2 border-black rounded-lg transition-all"
-                      >
-                        <X size={16} strokeWidth={3} />
-                      </button>
-                    </div>
+              {/* RIGHT PAGE: BRIEF DOSSIER OVERLAY (EXPLORER BRIEFING SHEET) */}
+              <div className="bg-[#fcfaf4] border-[4px] border-[#382b21] rounded-[2rem] p-6 shadow-[0_8px_16px_rgba(0,0,0,0.05)] relative overflow-hidden rotate-1 min-h-[600px] flex flex-col justify-between">
+                
+                {/* Paper notebook binding detail */}
+                <div className="absolute top-6 left-6 right-6 flex justify-between items-center pointer-events-none select-none">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider font-mono">
+                    SECTION // DOSSIER BRIEFING
+                  </span>
+                  <span className="text-xl">📜</span>
+                </div>
 
-                    <h2 className="text-3xl font-black text-gray-900 mb-4 uppercase tracking-tighter leading-tight">
-                      {selectedScenario.title}
-                    </h2>
-                    
-                    <div className="bg-gray-50 border-4 border-gray-900 rounded-2xl p-4 mb-6">
-                      <p className="text-gray-700 font-bold text-sm leading-relaxed mb-4">
-                        {selectedScenario.description}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
-                        <span>เป้าหมายหลัก:</span>
-                        <span className="text-nintendo-blue">ผ่านด่านและทำคะแนน &gt; 40%</span>
-                      </div>
-                    </div>
-
-                    {/* Opponent Profile Panel */}
-                    <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
-                      🕵️ ข้อมูลฝ่ายเจรจา (Opponent)
-                    </h3>
-                    <div className="bg-sky-50 border-4 border-gray-900 rounded-2xl p-4 mb-6 relative overflow-hidden">
-                      <div className="absolute right-3 top-3 text-5xl opacity-20 select-none">
-                        {getLandmarkInfo(selectedScenario.difficulty || 1, 0).avatar}
-                      </div>
-                      
-                      <div className="space-y-3 relative z-10">
-                        {selectedScenario.characters?.map((c: any, i: number) => (
-                          <div key={i} className="border-b-2 border-dashed border-sky-200 pb-2 last:border-b-0 last:pb-0">
-                            <h4 className="font-black text-base text-gray-900 flex items-center gap-1.5">
-                              <span className="text-sm">👤</span> {c.name}
-                            </h4>
-                            <p className="text-gray-500 font-bold text-xs leading-relaxed mt-0.5">
-                              <strong className="text-gray-600">บุคลิก:</strong> {c.personality || 'ไม่ระบุ'} <br />
-                              <strong className="text-gray-600">ความต้องการลับ:</strong> {c.agenda || 'มีวาระซ่อนเร้น'}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Win / Phase Roadmap */}
-                    <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
-                      🗺️ เส้นทางความก้าวหน้า (Phases)
-                    </h3>
-                    <div className="grid grid-cols-4 gap-1 border-4 border-gray-900 p-2 rounded-2xl bg-gray-100 mb-6">
-                      {selectedScenario.phase_rules?.phases?.map((p: string, i: number) => (
-                        <div 
-                          key={p} 
-                          className="bg-white border-2 border-black p-1 rounded-lg text-center flex flex-col justify-center items-center shadow-[0_2px_0_#000] rotate-1 group hover:scale-105 transition-transform"
-                        >
-                          <span className="text-[10px] text-gray-400 font-black leading-none mb-0.5">P-{i+1}</span>
-                          <span className="text-[10px] font-black text-gray-900 uppercase truncate w-full">
-                            {p === 'opening' || p === 'rapport' ? '🤝 คุยสนุก' :
-                             p === 'conflict' || p === 'listening' ? '🔥 เผชิญหน้า' :
-                             p === 'negotiation' || p === 'bargaining' ? '⚖️ แลกเปลี่ยน' : '🏁 บทสรุป'}
-                          </span>
-                        </div>
-                      )) || (
-                        <div className="col-span-4 text-center py-2 font-bold text-xs text-gray-400">
-                          ไม่มีข้อมูลเฟสแบบเฉพาะเจาะจง
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Rewards Chest Section */}
-                    <div className="border-4 border-dashed border-nintendo-green bg-emerald-50 rounded-2xl p-4 mb-6">
-                      <h4 className="font-black text-sm text-nintendo-green flex items-center gap-1.5 mb-2">
-                        <Gift size={16} /> ของรางวัลการผ่านด่าน (Rewards)
-                      </h4>
-                      <p className="text-xs text-gray-600 font-bold leading-relaxed">
-                        • {getLandmarkInfo(selectedScenario.difficulty || 1, 0).reward} <br />
-                        • โบนัสสิทธิ์ในการแต่งตัวโปรไฟล์เจรจาลับ
-                      </p>
-                    </div>
-
-                    {/* Action Button */}
-                    <button 
-                      onClick={() => {
-                        const id = selectedScenario.id;
-                        setSelectedScenario(null);
-                        startSession(id);
-                      }}
-                      className="w-full bg-nintendo-blue text-white py-4 rounded-2xl border-[6px] border-gray-900 font-black text-2xl uppercase tracking-tighter shadow-[0_8px_0_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[0_4px_0_rgba(0,0,0,1)] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-2 group"
+                <AnimatePresence mode="wait">
+                  {selectedScenario ? (
+                    <motion.div
+                      key={selectedScenario.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="flex-1 flex flex-col justify-between mt-8 h-full relative"
                     >
-                      <span>เริ่มการเจรจาลับ!</span> 
-                      <Play size={20} className="fill-current group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="no-selection"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="bg-gray-100 border-[6px] border-dashed border-gray-900 rounded-[2.5rem] p-8 text-center flex flex-col justify-center items-center h-full min-h-[300px]"
-                  >
-                    <div className="text-5xl mb-4 animate-bounce">👉</div>
-                    <h3 className="text-2xl font-black text-gray-900 mb-2">เลือกด่านรบเจรจา!</h3>
-                    <p className="text-gray-500 font-bold text-sm leading-relaxed max-w-[25ch]">
-                      คลิกปุ่มตัวเลขบนแผนผังผจญภัย เพื่อวิเคราะห์ภารกิจ ตรวจสอบคู่เจรจา และโชว์ของรางวัลก่อนเริ่มสู้!
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      {/* Green Masking Tape sticker at top */}
+                      <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-[#cedf9f]/90 border-2 border-black/30 px-6 py-1 rounded text-[10px] font-black uppercase tracking-wider rotate-[-2deg] shadow-sm pointer-events-none select-none z-20">
+                        📁 ACTIVE CASE Brief
+                      </div>
+
+                      <div className="space-y-6 pt-2">
+                        {/* Title of Level */}
+                        <div>
+                          <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-tight">
+                            {selectedScenario.title}
+                          </h2>
+                          <div className="flex gap-2 mt-2">
+                            <span className="bg-[#f59e0b]/10 text-[#d97706] border border-[#d97706]/40 px-2 py-0.5 rounded text-[10px] font-black uppercase">
+                              ระดับความยาก: {selectedScenario.difficulty === 3 ? "ยากระดับบอส" : selectedScenario.difficulty === 2 ? "ระดับกลาง" : "เริ่มต้น"}
+                            </span>
+                            <span className="bg-sky-50 text-sky-700 border border-sky-300/40 px-2 py-0.5 rounded text-[10px] font-black uppercase">
+                              กลุ่ม: {selectedScenario.target_group}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Briefing text (Torn paper element) */}
+                        <div className="bg-[#fdfcf7] border-2 border-[#2b221a] p-4 rounded-xl shadow-inner relative">
+                          {/* Sketchy binder corner design */}
+                          <div className="absolute top-0 right-0 w-4 h-4 border-b-2 border-l-2 border-[#2b221a] opacity-40"></div>
+                          
+                          <p className="text-gray-700 font-bold text-xs sm:text-sm leading-relaxed">
+                            {selectedScenario.description}
+                          </p>
+                        </div>
+
+                        {/* Polaroid Snapshot of Opponent with Paperclip detail */}
+                        <div>
+                          <h3 className="text-sm font-black text-gray-800 mb-2 flex items-center gap-1">
+                            <span>👤</span> คู่เจรจาประจำภารกิจ (Character Dossier)
+                          </h3>
+                          
+                          <div className="relative flex bg-[#fff] border-2 border-[#2b221a] p-3 rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.06)] rotate-1 group">
+                            {/* Steel Paper Clip holding the Polaroid */}
+                            <div className="absolute -top-3.5 left-6 w-4.5 h-11 bg-gradient-to-b from-gray-300 via-gray-100 to-gray-500 border-2 border-black rounded-full z-20 rotate-[-10deg]"></div>
+                            
+                            <div className="w-14 h-14 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center text-4xl mr-4 pointer-events-none select-none">
+                              {getLandmarkInfo(selectedScenario.difficulty || 1, 0).avatar}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              {selectedScenario.characters?.map((c: any, i: number) => (
+                                <div key={i} className="mb-1.5 last:mb-0">
+                                  <h4 className="font-black text-xs text-gray-900 truncate">
+                                    {c.name}
+                                  </h4>
+                                  <p className="text-gray-500 font-bold text-[9px] leading-tight line-clamp-1">
+                                    <strong className="text-gray-700">บทบาท:</strong> {c.role} | 
+                                    <strong className="text-gray-700"> ท่าที:</strong> {c.personality}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Phase Outline Checklist */}
+                        <div>
+                          <h3 className="text-sm font-black text-gray-800 mb-2 flex items-center gap-1">
+                            <span>📋</span> ลำดับขั้นตอนการคุย (Target Phases)
+                          </h3>
+                          <div className="grid grid-cols-2 gap-2 bg-[#fdfcf7] p-3 rounded-xl border-2 border-dashed border-[#2b221a]/30">
+                            {selectedScenario.phase_rules?.phases?.map((p: string, i: number) => (
+                              <div key={p} className="flex items-center gap-1.5">
+                                <CheckSquare size={13} className="text-[#059669]" strokeWidth={3} />
+                                <span className="text-[10px] font-black text-gray-700 uppercase">
+                                  {p === 'opening' || p === 'rapport' ? ' R-1 // ทักทายสมานฉันท์' :
+                                   p === 'conflict' || p === 'listening' ? ' R-2 // รับมือประเด็นร้อน' :
+                                   p === 'negotiation' || p === 'bargaining' ? ' R-3 // แลกเปลี่ยนยื่นคำขอ' : ' R-4 // ปิดจ๊อบสำเร็จ'}
+                                </span>
+                              </div>
+                            )) || <span className="text-[10px] text-gray-400 font-bold">คุยสดโดยไม่แบ่งเฟส</span>}
+                          </div>
+                        </div>
+
+                        {/* Yellow Masking Tape: Rewards */}
+                        <div className="bg-amber-300 border-2 border-black rounded-lg px-4 py-2 rotate-[-1deg] shadow-sm relative">
+                          <div className="absolute top-0 right-3 text-xs">🎁</div>
+                          <h4 className="text-[10px] font-black text-amber-950 uppercase tracking-widest leading-none mb-1">
+                            ของรางวัลผู้สำเร็จคดี (REWARDS BRIEF)
+                          </h4>
+                          <p className="text-[10px] text-amber-900 font-black leading-tight">
+                            • {getLandmarkInfo(selectedScenario.difficulty || 1, 0).reward} <br />
+                            • คะแนนทักษะเจรจาสากลสำหรับปลดล็อกยศถัดไป
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Validation Stamp Button (STAMP & START) */}
+                      <button 
+                        onClick={() => {
+                          const id = selectedScenario.id;
+                          setSelectedScenario(null);
+                          startSession(id);
+                        }}
+                        className="w-full mt-6 bg-[#b45309] text-white py-3.5 rounded-xl border-[4px] border-[#2b221a] font-black text-lg sm:text-xl uppercase tracking-wider shadow-[0_5px_0_#2b221a] hover:translate-y-0.5 hover:shadow-[0_3px_0_#2b221a] active:translate-y-1.5 active:shadow-none transition-all flex items-center justify-center gap-2 group"
+                      >
+                        <span>ปั๊มตราและประทับลุย ✉️</span> 
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="no-dossier"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex-1 flex flex-col justify-center items-center text-center p-6 h-full mt-8"
+                    >
+                      <div className="w-16 h-16 rounded-full bg-[#f3ebd3] border-2 border-[#2b221a] flex items-center justify-center text-3xl mb-4 animate-bounce">
+                        ✒️
+                      </div>
+                      <h3 className="text-xl font-black text-gray-900 mb-2">วิเคราะห์แผนการรบ!</h3>
+                      <p className="text-gray-500 font-bold text-xs sm:text-sm leading-relaxed max-w-[28ch]">
+                        โปรดปักหมุดเลือกด่าน wax seal บนหน้ากระดาษฝั่งซ้าย เพื่อดึงข้อมูลแฟ้มลับ อัตราผลตอบแทน และข้อมูลคู่ต่อสู้ออกมากางวิเคราะห์!
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+              </div>
+
             </div>
+
           </div>
         ) : (
           
-          /* FREEPLAY MODE (RETRO ARCADE CABINET SELECTION) */
+          /* FREEPLAY ARCADE CARDS (LOOSE POLAROID & MEMO Grid) */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
             {freeplayScenarios.map((scenario, index) => {
+              const landmark = getLandmarkInfo(scenario.difficulty || 1, index);
+              
               return (
-                <div 
+                <motion.div 
                   key={scenario.id}
-                  className="group bg-gray-900 border-[6px] border-black rounded-[3rem] overflow-hidden transition-all duration-300 shadow-[0_15px_0_rgba(0,0,0,1)] hover:-translate-y-2 hover:shadow-[0_22px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[0_8px_0_rgba(0,0,0,1)] cursor-pointer flex flex-col relative"
+                  whileHover={{ rotate: 1.5, y: -4 }}
+                  className="bg-white border-[5px] border-[#2b221a] p-4 rounded-3xl shadow-[0_8px_0_#2b221a] hover:shadow-[0_12px_0_#2b221a] transition-all cursor-pointer flex flex-col relative overflow-hidden"
                   onClick={() => startSession(scenario.id)}
                 >
-                  {/* Neon Header Marquee */}
-                  <div className="bg-nintendo-blue border-b-[6px] border-black py-2 px-4 flex justify-between items-center">
-                    <span className="font-black text-xs text-white uppercase tracking-widest">
-                      🕹️ FREEPLAY CABINET
-                    </span>
-                    <span className="bg-white border-2 border-black rounded px-1.5 py-0.5 text-[8px] font-black text-gray-900 animate-pulse">
-                      INSERT COIN
-                    </span>
-                  </div>
+                  {/* Sticky Tape at top */}
+                  <div className="absolute top-0.5 left-1/3 right-1/3 h-5 bg-amber-200/60 border-x-2 border-b-2 border-black/30 rounded-b-md shadow-inner pointer-events-none z-10"></div>
 
-                  <div className="p-6 flex-1 flex flex-col relative bg-gray-800">
-                    {/* Screen Outer Border */}
-                    <div className="bg-black border-[4px] border-gray-900 p-4 rounded-2xl mb-6 shadow-inner flex-1 flex flex-col justify-between">
-                      <div>
-                        {/* Target Badge & Icon */}
-                        <div className="flex justify-between items-center mb-4">
-                          <span className="bg-nintendo-pink border-2 border-black text-white px-2 py-0.5 rounded text-[10px] font-black tracking-widest">
-                            {scenario.target_group?.toUpperCase() || 'GENERAL'}
-                          </span>
-                          <span className="text-xl">👾</span>
-                        </div>
-
-                        {/* Title */}
-                        <h3 className="text-2xl font-black text-nintendo-yellow group-hover:text-white transition-colors mb-2 uppercase tracking-wide leading-tight">
-                          {scenario.title}
-                        </h3>
-                        {/* Description */}
-                        <p className="text-gray-400 font-bold text-xs leading-relaxed line-clamp-4">
-                          {scenario.description}
-                        </p>
+                  <div className="flex-1 flex flex-col justify-between pt-4">
+                    {/* Upper content */}
+                    <div>
+                      {/* Badge header */}
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="bg-[#baebd6] border-2 border-[#2b221a] text-[#047857] px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider">
+                          {scenario.target_group?.toUpperCase() || 'GENERAL'}
+                        </span>
+                        <span className="text-lg">👾</span>
                       </div>
 
-                      {/* Character Faces */}
-                      <div className="mt-6 flex -space-x-3">
+                      {/* Polaroid sketch image */}
+                      <div className="bg-[#fbf9f4] border-2 border-[#2b221a] rounded-2xl p-3 mb-4 shadow-inner text-center font-black relative overflow-hidden">
+                        <div className="text-4xl filter drop-shadow-[0_2px_0_#000]">{landmark.avatar}</div>
+                        <div className="text-[8px] text-gray-400 font-mono mt-1">OPPONENT CAPTURE // 01</div>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="text-xl font-black text-gray-900 leading-tight mb-2">
+                        {scenario.title}
+                      </h3>
+                      {/* Description */}
+                      <p className="text-gray-500 font-bold text-xs leading-relaxed line-clamp-3">
+                        {scenario.description}
+                      </p>
+                    </div>
+
+                    {/* Dashboard bottom button */}
+                    <div className="mt-6 pt-3 border-t-2 border-dashed border-[#2b221a]/20 flex justify-between items-center">
+                      <div className="flex -space-x-2.5">
                         {scenario.characters?.map((char: any, i: number) => (
                           <div 
                             key={i} 
-                            className="w-9 h-9 rounded-xl bg-white border-2 border-black flex items-center justify-center text-xs font-black text-gray-900 shadow-md transform rotate-6 odd:-rotate-6"
-                            title={char.name}
+                            className="w-7 h-7 rounded-lg bg-[#fffdf8] border-2 border-black flex items-center justify-center text-[10px] font-black text-gray-900 rotate-6"
                           >
                             {char.name?.charAt(0) || '?'}
                           </div>
                         ))}
                       </div>
-                    </div>
 
-                    {/* Joystick Dashboard Area (Cabinet Base) */}
-                    <div className="bg-gray-900 border-[4px] border-black p-3 rounded-2xl flex justify-between items-center">
-                      <div className="flex items-center gap-1">
-                        {/* Joystick drawing */}
-                        <div className="w-5 h-5 rounded-full bg-nintendo-red border-2 border-black relative">
-                          <div className="w-1.5 h-1.5 rounded-full bg-white/60 absolute top-0.5 left-0.5"></div>
-                        </div>
-                        <span className="text-[8px] text-gray-400 font-black tracking-widest">1P START</span>
-                      </div>
-                      
-                      <div className="flex gap-1.5">
-                        {/* Action buttons */}
-                        <div className="w-3.5 h-3.5 rounded-full bg-nintendo-yellow border-2 border-black shadow"></div>
-                        <div className="w-3.5 h-3.5 rounded-full bg-nintendo-green border-2 border-black shadow"></div>
-                        <div className="w-3.5 h-3.5 rounded-full bg-nintendo-pink border-2 border-black shadow"></div>
-                      </div>
+                      <span className="bg-[#b45309] text-white border-2 border-black rounded-lg px-2.5 py-1 text-[10px] font-black uppercase flex items-center gap-1 group-hover:bg-[#d97706] transition-colors">
+                        เริ่มประลอง <Play size={10} className="fill-current" />
+                      </span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
         )}
 
-        {/* If no scenarios match */}
+        {/* If no scenarios match tab */}
         {((activeTab === 'campaign' && campaignScenarios.length === 0) || 
           (activeTab === 'freeplay' && freeplayScenarios.length === 0)) && !loading && (
-          <div className="col-span-full py-20 text-center bg-white border-[6px] border-gray-900 rounded-[3rem] max-w-3xl mx-auto shadow-[0_10px_0_#000]">
-            <HelpCircle size={64} className="mx-auto text-nintendo-red mb-4 animate-bounce" />
-            <h3 className="text-3xl font-black mb-2 uppercase text-gray-900">ยังไม่มีสถานการณ์เจรจา</h3>
-            <p className="text-gray-500 font-bold mb-8 uppercase text-sm">
-              ดูเหมือนว่าสมรภูมินี้จะยังไม่มีด่านให้ทดสอบความสามารถ
+          <div className="col-span-full py-16 text-center bg-white border-[6px] border-[#2b221a] rounded-[3rem] max-w-3xl mx-auto shadow-[0_10px_0_#2b221a] p-8">
+            <HelpIcon size={56} className="mx-auto text-[#b45309] mb-4 animate-bounce" />
+            <h3 className="text-2xl font-black mb-2 text-gray-900">สมุดเดินสารว่างเปล่า</h3>
+            <p className="text-gray-500 font-bold mb-6 text-sm">
+              ยังไม่มีแผ่นกระดาษด่านทดสอบความสามารถลงบันทึกในบทนี้
             </p>
             <button 
               onClick={seedScenarios}
-              className="bg-nintendo-red hover:bg-red-600 text-white font-black px-8 py-4 rounded-2xl border-[6px] border-gray-900 shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 transition-all uppercase tracking-tighter text-xl"
+              className="bg-[#b45309] hover:bg-[#d97706] text-white font-black px-6 py-3.5 rounded-xl border-[4px] border-[#2b221a] shadow-[0_6px_0_#2b221a] active:shadow-none active:translate-y-1.5 active:translate-x-0.5 transition-all text-lg"
             >
-              สร้างด่านเจรจาตัวอย่างทันที!
+              เขียนบันทึกด่านทดสอบตัวอย่างทันที!
             </button>
           </div>
         )}
