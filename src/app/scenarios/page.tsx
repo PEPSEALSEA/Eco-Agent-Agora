@@ -486,7 +486,7 @@ export default function ScenariosPage() {
                           const currLeft = i % 2 === 1 ? "28%" : "72%";
                           const prevLeft = (i - 1) === 0 ? "50%" : ((i - 1) % 2 === 1 ? "28%" : "72%");
                           
-                          const currX = currLeft === "50%" ? 500 : currLeft === "28%" ? 280 : 720;
+                          const currX = currLeft === "28%" ? 280 : 720;
                           const prevX = prevLeft === "50%" ? 500 : prevLeft === "28%" ? 280 : 720;
 
                           return (
@@ -599,6 +599,7 @@ export default function ScenariosPage() {
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               </div>
 
