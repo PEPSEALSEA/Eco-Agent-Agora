@@ -444,13 +444,19 @@ export default function ScenariosPage() {
         {activeTab === 'campaign' ? (
           <div className="relative w-full bg-[#f6ead9] border-[8px] border-[#2b221a] rounded-[3rem] shadow-[0_20px_0_rgba(0,0,0,0.5)] p-4 sm:p-10 mb-12 min-h-[750px]">
             
-            {/* Ring Binder running down the exact center (For Desktop Screens) */}
-            <div className="hidden lg:flex absolute left-1/2 top-0 bottom-0 w-8 -translate-x-1/2 flex-col justify-around py-16 pointer-events-none z-20">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div 
-                  key={i} 
-                  className="w-12 h-6 bg-gradient-to-r from-gray-400 via-gray-100 to-gray-500 border-2 border-black rounded-full shadow-[0_4px_4px_rgba(0,0,0,0.3)] transform -translate-x-2"
-                ></div>
+            {/* Realistic Spiral Wire Binder (For Desktop Screens) */}
+            <div className="hidden lg:flex absolute left-1/2 top-0 bottom-0 w-16 -translate-x-1/2 flex-col justify-around py-10 pointer-events-none z-30">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="relative w-full h-8 flex items-center justify-center">
+                  {/* Left Punched Hole */}
+                  <div className="absolute left-1.5 w-4 h-4 bg-[#2b221a] rounded-full shadow-[inset_0_4px_6px_rgba(0,0,0,1)] border-[0.5px] border-[#4a3a2c]/30"></div>
+                  
+                  {/* Right Punched Hole */}
+                  <div className="absolute right-1.5 w-4 h-4 bg-[#2b221a] rounded-full shadow-[inset_0_4px_6px_rgba(0,0,0,1)] border-[0.5px] border-[#4a3a2c]/30"></div>
+                  
+                  {/* Metallic Wire Coil */}
+                  <div className="absolute w-[44px] h-3 bg-gradient-to-b from-gray-400 via-white to-gray-500 border border-gray-800 rounded-full shadow-[0_5px_5px_rgba(0,0,0,0.5)] rotate-[-12deg]"></div>
+                </div>
               ))}
             </div>
 
