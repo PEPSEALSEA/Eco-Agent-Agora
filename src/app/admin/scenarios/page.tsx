@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
-import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCap, Settings, FileJson, Copy, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCap, Settings, FileJson, Copy, Check, Database, Loader2 } from 'lucide-react';
 import { CartoonLoading } from '@/components/CartoonLoading';
 import Link from 'next/link';
 
@@ -34,6 +34,24 @@ export default function AdminScenariosPage() {
   const [showJsonInput, setShowJsonInput] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(false);
+
+  const handleSetupDb = async () => {
+    if (!confirm('คุณต้องการอัปเดตโครงสร้างฐานข้อมูล (Fix Sheet) ใช่หรือไม่?')) return;
+    setSetupLoading(true);
+    try {
+      const result = await gasFetch('setup');
+      if (result.success) {
+        alert('อัปเดตโครงสร้างฐานข้อมูลสำเร็จ!');
+      } else {
+        alert('เกิดข้อผิดพลาด: ' + (result.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setSetupLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading) {
@@ -262,6 +280,15 @@ export default function AdminScenariosPage() {
               title="ตั้งค่าระบบ"
             >
               <Settings size={24} />
+            </button>
+            <button 
+              onClick={handleSetupDb}
+              disabled={setupLoading}
+              className="flex items-center px-6 py-4 bg-[#059669] text-white border-4 border-gray-900 rounded-2xl font-black hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 uppercase tracking-tighter disabled:opacity-50"
+              title="อัปเดตและซ่อมแซมชีต (Fix Sheet)"
+            >
+              {setupLoading ? <Loader2 size={20} className="mr-2 animate-spin" /> : <Database size={20} className="mr-2" />} 
+              <span>Fix Sheet</span>
             </button>
             <button 
               onClick={handleCreate}

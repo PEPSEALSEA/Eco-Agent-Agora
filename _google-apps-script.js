@@ -465,8 +465,8 @@ function setupDatabase() {
   const ss = getSpreadsheet();
   const tables = {
     'users': ['id', 'email', 'created_at', 'streak_count', 'last_active_date'],
-    'scenarios': ['id', 'title', 'description', 'target_group', 'player_role', 'characters', 'phase_rules', 'initial_state', 'opening_scene'],
-    'sessions': ['id', 'user_id', 'scenario_id', 'started_at', 'ended_at', 'outcome_score', 'status', 'state', 'history_summary', 'ai_evaluation'],
+    'scenarios': ['id', 'title', 'description', 'target_group', 'player_role', 'characters', 'phase_rules', 'initial_state', 'opening_scene', 'mode', 'difficulty'],
+    'sessions': ['id', 'user_id', 'scenario_id', 'started_at', 'ended_at', 'outcome_score', 'status', 'state', 'history_summary', 'ai_evaluation', 'mode', 'stage'],
     'messages': ['id', 'session_id', 'sender', 'character_name', 'content', 'created_at'],
     'feedback_logs': ['id', 'session_id', 'message_id', 'feedback_text', 'score', 'dimension', 'created_at'],
     'skill_progress': ['id', 'user_id', 'skill_name', 'level', 'xp', 'updated_at']

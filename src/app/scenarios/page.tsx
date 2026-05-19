@@ -251,12 +251,15 @@ export default function ScenariosPage() {
     const sessionId = uuid();
     
     try {
+      const scenario = scenarios.find(s => s.id === scenarioId);
       const sessionData = {
         id: sessionId,
         user_id: user.id,
         scenario_id: scenarioId,
         status: 'ongoing',
-        started_at: new Date().toISOString()
+        started_at: new Date().toISOString(),
+        mode: scenario?.mode || 'campaign',
+        stage: scenario?.mode === 'campaign' ? (scenario?.difficulty || 1) : ''
       };
 
       const result = await gasPost('create', 'sessions', sessionData);
@@ -331,24 +334,7 @@ export default function ScenariosPage() {
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       <SyncStatus status={syncStatus} />
 
-      {/* Floating Sketches & Coffee Cup Rings in Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-40">
-        {/* Dynamic Sketched Clouds */}
-        <motion.div 
-          animate={{ x: ['-20%', '120%'] }}
-          transition={{ repeat: Infinity, duration: 40, ease: 'linear' }}
-          className="absolute top-12 left-0 text-7xl font-sans"
-        >
-          ☁️
-        </motion.div>
-        <motion.div 
-          animate={{ x: ['120%', '-20%'] }}
-          transition={{ repeat: Infinity, duration: 50, ease: 'linear' }}
-          className="absolute top-[40%] right-0 text-8xl"
-        >
-          ☁️
-        </motion.div>
-      </div>
+
 
       <div className="max-w-6xl mx-auto relative z-10">
         
