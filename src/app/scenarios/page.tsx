@@ -685,8 +685,6 @@ export default function ScenariosPage() {
                           </h3>
                           
                           <div className="relative flex bg-[#fff] border-2 border-[#2b221a] p-3 rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.06)] rotate-1 group">
-                            {/* Steel Paper Clip holding the Polaroid */}
-                            <div className="absolute -top-3.5 left-6 w-[18px] h-11 bg-gradient-to-b from-gray-300 via-gray-100 to-gray-500 border-2 border-black rounded-full z-20 rotate-[-10deg]"></div>
                             
                             <div className="w-14 h-14 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center text-4xl mr-4 pointer-events-none select-none">
                               {activeLandmark.avatar}
