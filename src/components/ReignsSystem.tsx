@@ -95,7 +95,7 @@ export const ReignsSystem = ({ onSelect, dynamicDecisions, disabled }: ReignsSys
              </div>
           </div>
           
-          <h3 className="text-3xl font-black text-gray-900 text-center uppercase tracking-tighter leading-none mb-4">
+          <h3 className="text-3xl font-black text-gray-900 text-center uppercase tracking-tighter leading-tight mb-4">
             เลือกท่าทาง<br/>ของคุณ!
           </h3>
           

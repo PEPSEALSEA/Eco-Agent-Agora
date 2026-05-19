@@ -177,7 +177,7 @@ function DebriefContent() {
           <Link 
             href="/scenarios" 
             prefetch={false}
-            className="flex items-center bg-white border-4 border-gray-900 px-6 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group"
+            className="flex items-center bg-white text-gray-900 border-4 border-gray-900 px-6 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group"
           >
             <ArrowLeft size={20} className="mr-2" /> 
             <span className="font-black uppercase tracking-tighter">กลับหน้าภารกิจ</span>

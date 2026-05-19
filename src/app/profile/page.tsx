@@ -161,7 +161,7 @@ export default function ProfilePage() {
 
             <div className="text-center md:text-left">
               <div className="bg-white border-[6px] border-gray-900 p-6 rounded-[2.5rem] shadow-[0_10px_0_rgba(0,0,0,1)] -rotate-1">
-                <h1 className="text-5xl font-black text-gray-900 uppercase tracking-tighter leading-none mb-2">
+                <h1 className="text-4xl md:text-5xl font-black text-gray-900 uppercase tracking-tighter leading-tight mb-2">
                   {user?.name || user?.email?.split('@')[0]}
                 </h1>
                 <p className="text-gray-400 font-bold text-lg uppercase tracking-tighter">{user?.email}</p>
@@ -184,7 +184,7 @@ export default function ProfilePage() {
             <Link 
               href="/scenarios"
               prefetch={false}
-              className="flex-1 md:flex-none flex items-center justify-center bg-white border-4 border-gray-900 px-6 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group"
+              className="flex-1 md:flex-none flex items-center justify-center bg-white text-gray-900 border-4 border-gray-900 px-6 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 group"
             >
               <ArrowLeft size={20} className="mr-2" />
               <span className="font-black uppercase tracking-tighter">กลับ</span>
@@ -246,7 +246,7 @@ export default function ProfilePage() {
                 return (
                   <div key={skillItem.name} className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_12px_0_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[0_6px_0_rgba(0,0,0,1)] transition-all">
                     <div className="flex justify-between items-start mb-6">
-                      <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter leading-none">{skillItem.label}</h3>
+                      <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter leading-snug">{skillItem.label}</h3>
                       <span className="bg-nintendo-blue text-white px-4 py-1 border-4 border-gray-900 rounded-full text-sm font-black uppercase tracking-tighter">Lv.{skill.level}</span>
                     </div>
                     
@@ -334,7 +334,7 @@ export default function ProfilePage() {
                   className="bg-white border-[6px] border-gray-900 p-6 rounded-[2.5rem] flex items-center justify-between shadow-[0_10px_0_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[0_6px_0_rgba(0,0,0,1)] cursor-pointer transition-all active:scale-95 group"
                 >
                   <div className="flex-1 pr-4">
-                    <h4 className="text-xl font-black text-gray-900 uppercase tracking-tighter leading-none mb-2">{session.scenario_title}</h4>
+                    <h4 className="text-xl font-black text-gray-900 uppercase tracking-tighter leading-snug mb-2">{session.scenario_title}</h4>
                     <p className="text-sm text-gray-400 font-bold uppercase">{new Date(session.started_at).toLocaleDateString('th-TH')}</p>
                   </div>
                   <div className="text-right flex items-center">
