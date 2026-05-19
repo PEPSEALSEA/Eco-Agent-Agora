@@ -446,16 +446,42 @@ export default function ScenariosPage() {
             
             {/* Realistic Spiral Wire Binder (For Desktop Screens) */}
             <div className="hidden lg:flex absolute left-1/2 top-0 bottom-0 w-16 -translate-x-1/2 flex-col justify-around py-10 pointer-events-none z-30">
+              <svg width="0" height="0" className="absolute">
+                <defs>
+                  <linearGradient id="wireGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#9ca3af" />
+                    <stop offset="25%" stopColor="#f3f4f6" />
+                    <stop offset="50%" stopColor="#d1d5db" />
+                    <stop offset="80%" stopColor="#4b5563" />
+                    <stop offset="100%" stopColor="#1f2937" />
+                  </linearGradient>
+                  <filter id="wireShadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="5" stdDeviation="3" floodColor="#000000" floodOpacity="0.5" />
+                  </filter>
+                </defs>
+              </svg>
+
               {[...Array(12)].map((_, i) => (
                 <div key={i} className="relative w-full h-8 flex items-center justify-center">
+                  
+                  {/* Slanted Curved Wire */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+                    <path 
+                      d="M 14 18 C 20 -2, 44 -4, 50 14" 
+                      fill="none" 
+                      stroke="url(#wireGradient)" 
+                      strokeWidth="4" 
+                      strokeLinecap="round" 
+                      filter="url(#wireShadow)"
+                    />
+                  </svg>
+
                   {/* Left Punched Hole */}
-                  <div className="absolute left-1.5 w-4 h-4 bg-[#2b221a] rounded-full shadow-[inset_0_4px_6px_rgba(0,0,0,1)] border-[0.5px] border-[#4a3a2c]/30"></div>
+                  <div className="absolute left-1.5 top-2 w-4 h-4 bg-[#1a1410] rounded-full shadow-[inset_0_4px_6px_rgba(0,0,0,0.8)] border-[0.5px] border-[#4a3a2c]/30 z-10"></div>
                   
                   {/* Right Punched Hole */}
-                  <div className="absolute right-1.5 w-4 h-4 bg-[#2b221a] rounded-full shadow-[inset_0_4px_6px_rgba(0,0,0,1)] border-[0.5px] border-[#4a3a2c]/30"></div>
+                  <div className="absolute right-1.5 top-2 w-4 h-4 bg-[#1a1410] rounded-full shadow-[inset_0_4px_6px_rgba(0,0,0,0.8)] border-[0.5px] border-[#4a3a2c]/30 z-10"></div>
                   
-                  {/* Metallic Wire Coil */}
-                  <div className="absolute w-[44px] h-3 bg-gradient-to-b from-gray-400 via-white to-gray-500 border border-gray-800 rounded-full shadow-[0_5px_5px_rgba(0,0,0,0.5)] rotate-[-12deg]"></div>
                 </div>
               ))}
             </div>
