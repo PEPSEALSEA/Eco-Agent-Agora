@@ -210,8 +210,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
       }
     }
     
-    // Default fallback
-    return 'http://localhost:8000';
+    // Default fallback (Hugging Face Space)
+    return 'https://pepsealsea-wongjrajapythonaudiosystem.hf.space';
   };
 
   const processAudio = async (blob: Blob) => {
