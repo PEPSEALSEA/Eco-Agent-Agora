@@ -1,3 +1,12 @@
+---
+title: WongJraJaPythonAudioSystem
+emoji: 🎙️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # Python Audio Engine
 
 This module handles audio analysis and metadata extraction.
