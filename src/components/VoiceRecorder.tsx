@@ -220,10 +220,16 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
 
       const prompt = `
         Task: Analyze the audio in Thai language to produce a JSON summary.
-        Transcribe the audio exactly. Analyze the emotional vibe, volume, and speech rate.
+        Transcribe the audio exactly into natural written Thai.
+        IMPORTANT FORMATTING RULES:
+        1. Write Thai words continuously WITHOUT spaces between them. (Incorrect: "เรา มี ร้าน", Correct: "เรามีร้าน")
+        2. DO use spaces properly for natural pauses, clause breaks, or sentence separations as per standard Thai grammar.
+        3. Use spaces before and after English words.
+        
+        Analyze the emotional vibe, volume, and speech rate.
         Output MUST be a valid JSON object exactly like this, without any markdown formatting:
         {
-          "text": "ข้อความภาษาไทยที่ถอดเสียง",
+          "text": "ข้อความภาษาไทยที่เว้นวรรคเฉพาะประโยคหรือจังหวะหยุดพูด",
           "vibe": "Neutral", 
           "intensity": 0.5,
           "context_note": "Metrics: ... สังเกตเห็น: ..."
