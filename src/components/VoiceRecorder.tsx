@@ -191,52 +191,68 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
     return new Blob([view], { type: 'audio/wav' });
   };
 
-  const getAudioServerUrl = () => {
-    // 1. Check if user configured an environment variable
-    if (process.env.NEXT_PUBLIC_AUDIO_SERVER_URL) {
-      return process.env.NEXT_PUBLIC_AUDIO_SERVER_URL;
-    }
-    
-    // 2. Otherwise check if we are in the browser
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      
-      // If we are accessing via local network (IP address or localhost), point to port 8000 on the same host
-      const isIpAddress = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
-      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local');
-      
-      if (isIpAddress || isLocalhost) {
-        return `http://${hostname}:8000`;
-      }
-    }
-    
-    // Default fallback (Hugging Face Space)
-    return 'https://pepsealsea-wongjrajapythonaudiosystem.hf.space';
-  };
-
   const processAudio = async (blob: Blob) => {
     setIsProcessing(true);
-    const formData = new FormData();
-    formData.append('file', blob, 'recording.wav');
 
     try {
-      // Connect to the Python audio server (dynamically determined)
-      const serverUrl = getAudioServerUrl();
-      const response = await fetch(`${serverUrl}/analyze`, {
-        method: 'POST',
-        body: formData,
+      // 1. Convert Blob to Base64 for Gemini
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      const base64Audio = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]); // Extract only the base64 data
+        };
+        reader.onerror = reject;
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Unknown server error' }));
-        throw new Error(errorData.detail || 'Analysis server error');
+      // 2. Initialize Gemini API natively in the frontend
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+      
+      if (!apiKey) {
+        throw new Error('ไม่พบ API Key ของ Gemini กรุณาตั้งค่าตัวแปร NEXT_PUBLIC_GEMINI_API_KEY ในไฟล์ .env');
       }
 
-      const result = await response.json();
-      onTranscription(result);
+      const genAI = new GoogleGenerativeAI(apiKey);
+      // Gemini 2.5 Flash supports lightning fast multimodal audio analysis
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+      const prompt = `
+        Task: Analyze the audio in Thai language to produce a JSON summary.
+        Transcribe the audio exactly. Analyze the emotional vibe, volume, and speech rate.
+        Output MUST be a valid JSON object exactly like this, without any markdown formatting:
+        {
+          "text": "ข้อความภาษาไทยที่ถอดเสียง",
+          "vibe": "Neutral", 
+          "intensity": 0.5,
+          "context_note": "Metrics: ... สังเกตเห็น: ..."
+        }
+      `;
+
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: base64Audio,
+            mimeType: "audio/wav"
+          }
+        }
+      ]);
+
+      const text = result.response.text();
+      
+      // Clean up markdown block if the LLM wraps it in ```json ... ```
+      let cleanJson = text.trim();
+      if (cleanJson.startsWith('\`\`\`')) {
+        cleanJson = cleanJson.replace(/^\`\`\`(json)?\n/, '').replace(/\n\`\`\`$/, '');
+      }
+      
+      const jsonResult = JSON.parse(cleanJson);
+      onTranscription(jsonResult);
     } catch (err: any) {
-      console.error('Error analyzing audio:', err);
-      alert(`ไม่สามารถวิเคราะห์เสียงได้: ${err.message}\n\n(หากเป็นข้อผิดพลาด 500 หรือ FFmpeg not found กรุณาตรวจสอบว่าติดตั้ง FFmpeg ในเครื่องแล้ว)`);
+      console.error('Error analyzing audio with Gemini:', err);
+      alert(`ไม่สามารถวิเคราะห์เสียงได้: ${err.message}`);
     } finally {
       setIsProcessing(false);
     }

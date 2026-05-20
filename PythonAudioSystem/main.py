@@ -17,8 +17,8 @@ app.add_middleware(
 )
 
 # Initialize Audio Engine
-# Using 'base' model by default. Can be changed to 'tiny' for speed.
-engine = AudioEngine(model_size="base")
+# Using 'small' model for better Thai language accuracy (requires ~2GB RAM).
+engine = AudioEngine(model_size="small")
 
 TEMP_DIR = "temp_audio"
 os.makedirs(TEMP_DIR, exist_ok=True)
