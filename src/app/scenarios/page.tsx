@@ -330,7 +330,7 @@ export default function ScenariosPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1e1510] text-[#2b221a] p-4 sm:p-8 relative overflow-x-hidden">
+    <div className="min-h-screen cartoon-bg-blue text-[#2b221a] p-4 sm:p-8 relative overflow-x-hidden">
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       <SyncStatus status={syncStatus} />
 

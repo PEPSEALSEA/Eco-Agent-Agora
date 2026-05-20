@@ -191,14 +191,38 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
     return new Blob([view], { type: 'audio/wav' });
   };
 
+  const getAudioServerUrl = () => {
+    // 1. Check if user configured an environment variable
+    if (process.env.NEXT_PUBLIC_AUDIO_SERVER_URL) {
+      return process.env.NEXT_PUBLIC_AUDIO_SERVER_URL;
+    }
+    
+    // 2. Otherwise check if we are in the browser
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      
+      // If we are accessing via local network (IP address or localhost), point to port 8000 on the same host
+      const isIpAddress = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
+      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local');
+      
+      if (isIpAddress || isLocalhost) {
+        return `http://${hostname}:8000`;
+      }
+    }
+    
+    // Default fallback
+    return 'http://localhost:8000';
+  };
+
   const processAudio = async (blob: Blob) => {
     setIsProcessing(true);
     const formData = new FormData();
     formData.append('file', blob, 'recording.wav');
 
     try {
-      // Connect to the local Python server
-      const response = await fetch('http://localhost:8000/analyze', {
+      // Connect to the Python audio server (dynamically determined)
+      const serverUrl = getAudioServerUrl();
+      const response = await fetch(`${serverUrl}/analyze`, {
         method: 'POST',
         body: formData,
       });
