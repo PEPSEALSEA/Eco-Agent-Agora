@@ -280,10 +280,19 @@ async function createRow(sheetId, tableName, data, token) {
     headers: { Authorization: `Bearer ${token}` }
   });
   const headData = await response.json();
-  const headers = headData.values ? headData.values[0] : Object.keys(data);
+  let headers = headData.values ? headData.values[0] : Object.keys(data);
+  const missingHeaders = Object.keys(data).filter(h => !headers.includes(h));
+  if (missingHeaders.length > 0) {
+    headers = [...headers, ...missingHeaders];
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${tableName}!A1:ZZ1?valueInputOption=USER_ENTERED`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ values: [headers] })
+    });
+  }
 
   const newRow = headers.map(h => {
-    let val = data[h] || "";
+    let val = data[h] !== undefined && data[h] !== null ? data[h] : "";
     return typeof val === 'object' ? JSON.stringify(val) : val;
   });
 
@@ -304,7 +313,16 @@ async function updateRow(sheetId, tableName, id, data, token) {
   const headResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${tableName}!A1:Z1`, {
     headers: { Authorization: `Bearer ${token}` }
   });
-  const headers = (await headResponse.json()).values[0];
+  let headers = (await headResponse.json()).values[0];
+  const missingHeaders = Object.keys(data).filter(h => !headers.includes(h));
+  if (missingHeaders.length > 0) {
+    headers = [...headers, ...missingHeaders];
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${tableName}!A1:ZZ1?valueInputOption=USER_ENTERED`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ values: [headers] })
+    });
+  }
 
   const currentRow = tableData[rowIndex];
   const updatedRow = headers.map(h => {
@@ -420,7 +438,7 @@ async function handleChatAction(env, data, token) {
 }
 
 async function handleGetChatContext(env, data, token) {
-  const { sessionId, text, vibe, intensity } = data;
+  const { sessionId, text, vibe, intensity, voiceComment } = data;
   const context = await handleGetNegotiationData(env.SHEET_ID, sessionId, token);
   if (context.error) return context;
   const { scenario, session, messages } = context;
@@ -438,9 +456,10 @@ async function handleGetChatContext(env, data, token) {
 
   // Append current user message if provided
   if (text) {
+    const voiceNote = voiceComment ? `\nDetailed voice coach note: ${voiceComment}` : "";
     history.push({
       role: 'user',
-      parts: [{ text: `[Detected Vibe: ${vibe || 'Neutral'}, Intensity: ${intensity || '0.5'}]\nUser: ${text}` }]
+      parts: [{ text: `[Detected Vibe: ${vibe || 'Neutral'}, Intensity: ${intensity || '0.5'}${voiceNote}]\nUser: ${text}` }]
     });
   }
 
@@ -448,7 +467,7 @@ async function handleGetChatContext(env, data, token) {
 }
 
 async function handleProcessChatResult(env, data, token) {
-  const { sessionId, aiResponse, state, userText } = data;
+  const { sessionId, aiResponse, state, userText, voiceVibe, voiceIntensity, voiceComment } = data;
   const context = await handleGetNegotiationData(env.SHEET_ID, sessionId, token);
   if (context.error) return context;
   const { scenario, session } = context;
@@ -479,7 +498,7 @@ async function handleProcessChatResult(env, data, token) {
   const sessionUpdateData = {
     state: JSON.stringify(state),
     status: gameOver ? 'completed' : 'ongoing',
-    history_summary: (session.history_summary || "") + (userText ? ` | User: ${userText}` : "") + (aiResponse.dialogue ? ` | AI: ${aiResponse.dialogue.map(d => d.line).join(" ")}` : "")
+    history_summary: (session.history_summary || "") + (userText ? ` | User: ${userText}` : "") + (voiceComment ? ` [Voice: ${voiceVibe || 'Unknown'}, intensity ${voiceIntensity || 'N/A'}, ${voiceComment}]` : "") + (aiResponse.dialogue ? ` | AI: ${aiResponse.dialogue.map(d => d.line).join(" ")}` : "")
   };
 
   if (gameOver) {
@@ -529,7 +548,8 @@ async function handleGenerateEvaluation(env, data) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
   
   const systemPrompt = `
-    You are an expert negotiation coach. Review this transcript and evaluate performance in THAI. 
+    You are an expert negotiation coach. Review this transcript and evaluate performance in THAI.
+    If a user line includes microphone voice metadata, use it in both the overall coaching and that line's feedback_text. Comment on tone of voice, intensity, pace/pauses, confidence, politeness, and how the delivery affected negotiation outcomes.
     Return strictly JSON: 
     {
       "overall_score": 0-10, 
@@ -624,7 +644,7 @@ async function handleSetupSheets(sheetId, token) {
     "users": ["id", "email", "created_at", "streak_count", "last_active_date"],
     "scenarios": ["id", "title", "description", "target_group", "player_role", "characters", "phase_rules", "initial_state", "opening_scene", "mode", "difficulty"],
     "sessions": ["id", "user_id", "scenario_id", "started_at", "ended_at", "outcome_score", "status", "state", "history_summary", "ai_evaluation", "mode", "stage"],
-    "messages": ["id", "session_id", "sender", "character_name", "content", "created_at"],
+    "messages": ["id", "session_id", "sender", "character_name", "content", "created_at", "input_mode", "voice_vibe", "voice_intensity", "voice_comment"],
     "feedback_logs": ["id", "session_id", "message_id", "feedback_text", "score", "dimension", "created_at"],
     "skill_progress": ["id", "user_id", "skill_name", "level", "xp", "updated_at"],
     "real_world_journals": ["id", "user_id", "title", "situation_description", "outcome", "success_rate", "skills_applied", "created_at"]

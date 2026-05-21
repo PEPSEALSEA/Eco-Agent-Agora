@@ -33,9 +33,13 @@ type Message = {
   character_name?: string;
   content: string;
   created_at?: string;
+  input_mode?: 'text' | 'strategy' | 'microphone';
   vibe?: string;
   intensity?: number;
   context_note?: string;
+  voice_vibe?: string;
+  voice_intensity?: number;
+  voice_comment?: string;
 };
 
 function NegotiateContent(): React.ReactElement {
@@ -249,7 +253,7 @@ function NegotiateContent(): React.ReactElement {
     }
   };
 
-  const handleSend = async (strategyOverride?: Strategy, audioResult?: { text: string, vibe: string, intensity: number }) => {
+  const handleSend = async (strategyOverride?: Strategy, audioResult?: { text: string, vibe: string, intensity: number, context_note?: string }) => {
     if ((!input.trim() && !strategyOverride && !audioResult) || !user || sending || !sessionId) {
       if (!user) setError('คุณต้องเข้าสู่ระบบเพื่อส่งข้อความ');
       return;
@@ -258,6 +262,7 @@ function NegotiateContent(): React.ReactElement {
     const userMessageContent = audioResult ? audioResult.text : (strategyOverride ? strategyOverride.thaiLabel : input);
     const vibe = audioResult ? audioResult.vibe : "Neutral";
     const intensity = audioResult ? audioResult.intensity : 0.5;
+    const voiceComment = audioResult?.context_note || '';
     
     if (!audioResult) setInput('');
     setError(null);
@@ -267,6 +272,13 @@ function NegotiateContent(): React.ReactElement {
       session_id: sessionId!,
       sender: 'user',
       content: userMessageContent,
+      input_mode: audioResult ? 'microphone' : (strategyOverride ? 'strategy' : 'text'),
+      voice_vibe: audioResult ? vibe : '',
+      voice_intensity: audioResult ? intensity : undefined,
+      voice_comment: voiceComment,
+      vibe: audioResult ? vibe : undefined,
+      intensity: audioResult ? intensity : undefined,
+      context_note: voiceComment,
       created_at: new Date().toISOString()
     };
 
@@ -284,7 +296,8 @@ function NegotiateContent(): React.ReactElement {
         sessionId: sessionId,
         text: userMessageContent,
         vibe: vibe,
-        intensity: intensity
+        intensity: intensity,
+        voiceComment
       });
 
       if (context.error) throw new Error(context.error);
@@ -313,7 +326,10 @@ function NegotiateContent(): React.ReactElement {
         sessionId: sessionId,
         aiResponse: aiResponse,
         state: context.state,
-        userText: userMessageContent
+        userText: userMessageContent,
+        voiceVibe: audioResult ? vibe : '',
+        voiceIntensity: audioResult ? intensity : '',
+        voiceComment
       });
 
       if (processResult.error) throw new Error(processResult.error);

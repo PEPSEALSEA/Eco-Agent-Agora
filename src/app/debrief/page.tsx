@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { gasFetch, gasPost } from '@/lib/gas';
 import { getGeminiResponse } from '@/lib/gemini';
 import { useAuth } from '@/components/AuthProvider';
-import { ArrowLeft, RefreshCcw, TrendingUp, Zap, HelpCircle, Trophy, Target, MessageSquare } from 'lucide-react';
+import { ArrowLeft, RefreshCcw, TrendingUp, Zap, HelpCircle, Trophy, Target, MessageSquare, Mic } from 'lucide-react';
 import { CartoonLoading } from '@/components/CartoonLoading';
 import Link from 'next/link';
 
@@ -84,11 +84,25 @@ function DebriefContent() {
     }
   };
 
+  const getVoiceComment = (message: any) => message.voice_comment || message.context_note || '';
+  const getVoiceVibe = (message: any) => message.voice_vibe || message.vibe || '';
+  const getVoiceIntensity = (message: any) => message.voice_intensity || message.intensity || '';
+  const isMicrophoneMessage = (message: any) =>
+    message.input_mode === 'microphone' || Boolean(getVoiceVibe(message) || getVoiceComment(message));
+
+  const buildTranscriptLine = (message: any) => {
+    const speaker = message.sender === 'user' ? 'คุณ' : (message.character_name || 'AI');
+    const voiceMeta = message.sender === 'user' && isMicrophoneMessage(message)
+      ? ` [MICROPHONE MODE | tone=${getVoiceVibe(message) || 'N/A'} | intensity=${getVoiceIntensity(message) || 'N/A'} | AI voice comment=${getVoiceComment(message) || 'N/A'}]`
+      : '';
+    return `[ID: ${message.id}] [${speaker}]${voiceMeta}: ${message.content}`;
+  };
+
   const handleReanalyze = async () => {
     setIsReanalyzing(true);
     setAiEvaluation(null);
     try {
-      const transcript = messages.map(m => `[ID: ${m.id}] [${m.sender === 'user' ? 'คุณ' : (m.character_name || 'AI')}]: ${m.content}`).join('\n');
+      const transcript = messages.map(buildTranscriptLine).join('\n');
       
       // Use backend to generate evaluation (bypasses frontend proxy/API key issues)
       const result = await gasPost('generate_evaluation', 'sessions', { transcript });
@@ -384,6 +398,26 @@ function DebriefContent() {
                              {isUser ? 'คุณ' : (m.character_name || 'AI')}
                           </span>
                           <p className={`text-xl font-bold ${isUser ? 'text-gray-900' : 'text-slate-700'} italic leading-snug`}>"{m.content}"</p>
+                          {isUser && isMicrophoneMessage(m) && (
+                            <div className="mt-4 bg-cyan-50 border-4 border-cyan-200 p-4 rounded-2xl">
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <span className="inline-flex items-center px-3 py-1 bg-cyan-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest">
+                                  <Mic size={12} className="mr-1" /> Microphone
+                                </span>
+                                <span className="px-3 py-1 bg-white border-2 border-cyan-200 rounded-full text-[10px] font-black text-cyan-700 uppercase">
+                                  Tone: {getVoiceVibe(m) || 'N/A'}
+                                </span>
+                                <span className="px-3 py-1 bg-white border-2 border-cyan-200 rounded-full text-[10px] font-black text-cyan-700 uppercase">
+                                  Intensity: {getVoiceIntensity(m) || 'N/A'}
+                                </span>
+                              </div>
+                              {getVoiceComment(m) && (
+                                <p className="text-sm text-cyan-950 font-bold leading-relaxed">
+                                  {getVoiceComment(m)}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                         {isUser && (
                           <button 

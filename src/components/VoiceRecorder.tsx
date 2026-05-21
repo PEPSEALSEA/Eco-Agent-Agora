@@ -226,7 +226,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription, d
         2. DO use spaces properly for natural pauses, clause breaks, or sentence separations as per standard Thai grammar.
         3. Use spaces before and after English words.
         
-        Analyze the emotional vibe, volume, and speech rate.
+        Analyze the emotional vibe, volume, speech rate, pauses, clarity, confidence, politeness, pressure, and negotiation impact.
+        Make context_note a detailed AI voice coach comment that can be shown later on the negotiation summary page.
         Output MUST be a valid JSON object exactly like this, without any markdown formatting:
         {
           "text": "ข้อความภาษาไทยที่เว้นวรรคเฉพาะประโยคหรือจังหวะหยุดพูด",

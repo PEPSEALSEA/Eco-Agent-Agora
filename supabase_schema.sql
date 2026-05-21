@@ -36,6 +36,10 @@ CREATE TABLE public.messages (
   sender TEXT NOT NULL, -- user/ai
   character_name TEXT, -- null if user
   content TEXT NOT NULL,
+  input_mode TEXT,
+  voice_vibe TEXT,
+  voice_intensity NUMERIC,
+  voice_comment TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
