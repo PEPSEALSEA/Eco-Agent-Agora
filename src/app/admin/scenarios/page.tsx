@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
-import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCap, Settings, FileJson, Copy, Check, Database, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCap, Settings, FileJson, Copy, Check, Database, Loader2, BarChart3 } from 'lucide-react';
 import { CartoonLoading } from '@/components/CartoonLoading';
 import Link from 'next/link';
 
@@ -274,6 +274,13 @@ export default function AdminScenariosPage() {
           </div>
 
           <div className="flex space-x-4">
+            <button 
+              onClick={() => router.push('/admin/campaign-analytics')}
+              className="p-4 bg-white border-4 border-gray-900 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 text-gray-900"
+              title="Campaign Analytics"
+            >
+              <BarChart3 size={24} />
+            </button>
             <button 
               onClick={() => router.push('/admin/settings')}
               className="p-4 bg-white border-4 border-gray-900 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 text-gray-900"
