@@ -251,7 +251,7 @@ export default function CampaignAnalyticsPage() {
             <InfoBlock label="Improvement" text="Compare each player's first scored campaign attempt with their latest scored attempt." />
             <InfoBlock label="Detailed" text="Use saved AI evaluations and feedback logs to explain which negotiation skills changed." />
           </div>
-          <p className="mt-5 text-sm font-bold text-gray-600">
+          <p className="mt-5 text-sm font-bold text-gray-800">
             Current dashboard uses session-level data from Google Sheets. Stronger skill-level reporting depends on users opening the summary page and generating/saving AI evaluation after each run.
           </p>
         </section>
@@ -261,7 +261,7 @@ export default function CampaignAnalyticsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-xs uppercase text-gray-400 border-b-4 border-gray-100">
+                  <tr className="text-xs uppercase text-gray-700 border-b-4 border-gray-300">
                     <th className="py-3 pr-4">Stage</th>
                     <th className="py-3 pr-4">Scenario</th>
                     <th className="py-3 pr-4">Plays</th>
@@ -273,7 +273,7 @@ export default function CampaignAnalyticsPage() {
                 </thead>
                 <tbody>
                   {analytics.byStage.map(stage => (
-                    <tr key={`${stage.stage}-${stage.title}`} className="border-b-2 border-gray-50 font-bold text-sm">
+                    <tr key={`${stage.stage}-${stage.title}`} className="border-b-2 border-gray-200 font-bold text-sm text-gray-900">
                       <td className="py-3 pr-4 font-black">{stage.stage || '-'}</td>
                       <td className="py-3 pr-4 max-w-[220px] truncate">{stage.title}</td>
                       <td className="py-3 pr-4">{stage.plays}</td>
@@ -300,7 +300,7 @@ export default function CampaignAnalyticsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-xs uppercase text-gray-400 border-b-4 border-gray-100">
+                  <tr className="text-xs uppercase text-gray-700 border-b-4 border-gray-300">
                     <th className="py-3 pr-4">Player</th>
                     <th className="py-3 pr-4">Plays</th>
                     <th className="py-3 pr-4">Levels</th>
@@ -311,13 +311,13 @@ export default function CampaignAnalyticsPage() {
                 </thead>
                 <tbody>
                   {analytics.byUser.map(row => (
-                    <tr key={row.userLabel} className="border-b-2 border-gray-50 font-bold text-sm">
+                    <tr key={row.userLabel} className="border-b-2 border-gray-200 font-bold text-sm text-gray-900">
                       <td className="py-3 pr-4 max-w-[220px] truncate">{row.userLabel}</td>
                       <td className="py-3 pr-4">{row.plays}</td>
                       <td className="py-3 pr-4">{row.levelsTried}</td>
                       <td className="py-3 pr-4">{formatScore(row.firstScore)}</td>
                       <td className="py-3 pr-4">{formatScore(row.latestScore)}</td>
-                      <td className={`py-3 font-black ${(row.improvement || 0) > 0 ? 'text-green-600' : (row.improvement || 0) < 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                      <td className={`py-3 font-black ${(row.improvement || 0) > 0 ? 'text-green-700' : (row.improvement || 0) < 0 ? 'text-red-700' : 'text-gray-700'}`}>
                         {row.improvement === null ? 'N/A' : `${row.improvement > 0 ? '+' : ''}${row.improvement.toFixed(1)}`}
                       </td>
                     </tr>
@@ -332,7 +332,7 @@ export default function CampaignAnalyticsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="text-xs uppercase text-gray-400 border-b-4 border-gray-100">
+                <tr className="text-xs uppercase text-gray-700 border-b-4 border-gray-300">
                   <th className="py-3 pr-4">Started</th>
                   <th className="py-3 pr-4">Player</th>
                   <th className="py-3 pr-4">Stage</th>
@@ -343,7 +343,7 @@ export default function CampaignAnalyticsPage() {
               </thead>
               <tbody>
                 {analytics.recent.map(attempt => (
-                  <tr key={attempt.id} className="border-b-2 border-gray-50 font-bold text-sm">
+                  <tr key={attempt.id} className="border-b-2 border-gray-200 font-bold text-sm text-gray-900">
                     <td className="py-3 pr-4 whitespace-nowrap">{attempt.startedAt ? new Date(attempt.startedAt).toLocaleString() : 'N/A'}</td>
                     <td className="py-3 pr-4 max-w-[220px] truncate">{attempt.userLabel}</td>
                     <td className="py-3 pr-4 font-black">{attempt.stage || '-'}</td>
@@ -367,7 +367,7 @@ function MetricCard({ icon, label, value, color }: { icon: React.ReactNode; labe
       <div className={`w-14 h-14 ${color} border-4 border-gray-900 rounded-2xl flex items-center justify-center text-white mb-5`}>
         {icon}
       </div>
-      <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1">{label}</p>
+      <p className="text-gray-700 text-xs font-black uppercase tracking-widest mb-1">{label}</p>
       <p className="text-4xl font-black text-gray-900 tracking-tighter">{value}</p>
     </div>
   );
