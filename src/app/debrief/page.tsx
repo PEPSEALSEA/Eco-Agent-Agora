@@ -98,6 +98,15 @@ function DebriefContent() {
     return `[ID: ${message.id}] [${speaker}]${voiceMeta}: ${message.content}`;
   };
 
+  const getSkillScore = (skills: any, key: string) => {
+    const legacyMap: Record<string, string> = {
+      finding_common_ground: 'value_creation',
+      empathy_expression: 'empathy',
+      logical_argument: 'assertiveness'
+    };
+    return skills?.[key] ?? skills?.[legacyMap[key]] ?? 'N/A';
+  };
+
   const handleReanalyze = async () => {
     setIsReanalyzing(true);
     setAiEvaluation(null);
@@ -298,22 +307,26 @@ function DebriefContent() {
                    {aiEvaluation.skills_assessment && (
                      <div className="bg-white border-4 border-gray-900 p-6 rounded-2xl mb-6">
                         <h3 className="font-black text-gray-900 uppercase tracking-tighter mb-4">การประเมินทักษะย่อย (เต็ม 10)</h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                           <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl">
-                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">ความเห็นอกเห็นใจ (Empathy)</span>
-                            <span className="text-2xl font-black text-nintendo-blue">{aiEvaluation.skills_assessment.empathy}/10</span>
+                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">การเริ่มสนทนา</span>
+                            <span className="text-2xl font-black text-nintendo-blue">{getSkillScore(aiEvaluation.skills_assessment, 'opening_conversation')}/10</span>
                           </div>
                           <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl">
-                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">การสร้างทางออก (Win-Win)</span>
-                            <span className="text-2xl font-black text-nintendo-green">{aiEvaluation.skills_assessment.value_creation}/10</span>
+                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">รับมือแรงต้าน</span>
+                            <span className="text-2xl font-black text-nintendo-green">{getSkillScore(aiEvaluation.skills_assessment, 'handling_pushback')}/10</span>
                           </div>
                           <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl">
-                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">ความหนักแน่น (Assertiveness)</span>
-                            <span className="text-2xl font-black text-nintendo-yellow">{aiEvaluation.skills_assessment.assertiveness}/10</span>
+                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">การหาจุดร่วม</span>
+                            <span className="text-2xl font-black text-nintendo-yellow">{getSkillScore(aiEvaluation.skills_assessment, 'finding_common_ground')}/10</span>
                           </div>
                           <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl">
-                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">การควบคุมอารมณ์</span>
-                            <span className="text-2xl font-black text-nintendo-pink">{aiEvaluation.skills_assessment.emotional_control}/10</span>
+                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">ความเห็นอกเห็นใจ</span>
+                            <span className="text-2xl font-black text-nintendo-pink">{getSkillScore(aiEvaluation.skills_assessment, 'empathy_expression')}/10</span>
+                          </div>
+                          <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl">
+                            <span className="text-gray-500 font-black text-xs uppercase block mb-1">ตรรกะและเหตุผล</span>
+                            <span className="text-2xl font-black text-gray-900">{getSkillScore(aiEvaluation.skills_assessment, 'logical_argument')}/10</span>
                           </div>
                         </div>
                      </div>

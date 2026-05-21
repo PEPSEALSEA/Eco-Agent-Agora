@@ -550,16 +550,18 @@ async function handleGenerateEvaluation(env, data) {
   const systemPrompt = `
     You are an expert negotiation coach. Review this transcript and evaluate performance in THAI.
     If a user line includes microphone voice metadata, use it in both the overall coaching and that line's feedback_text. Comment on tone of voice, intensity, pace/pauses, confidence, politeness, and how the delivery affected negotiation outcomes.
+    The skills_assessment object must use the same five keys as the Skill Radar: opening_conversation, handling_pushback, finding_common_ground, empathy_expression, logical_argument.
     Return strictly JSON: 
     {
       "overall_score": 0-10, 
       "feedback_text": "...", 
       "history_summary": "...", 
       "skills_assessment": {
-        "empathy": 0-10,
-        "value_creation": 0-10,
-        "assertiveness": 0-10,
-        "emotional_control": 0-10
+        "opening_conversation": 0-10,
+        "handling_pushback": 0-10,
+        "finding_common_ground": 0-10,
+        "empathy_expression": 0-10,
+        "logical_argument": 0-10
       },
       "aar": {
         "what_went_well": "อะไรทำได้ดี...",
