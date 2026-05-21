@@ -547,9 +547,9 @@ export default function ScenariosPage() {
                           style={{ left, top }}
                         >
                           {/* Node Label Flags */}
-                          <div className="absolute -bottom-14 w-28 text-center pointer-events-none select-none">
+                          <div className="absolute -bottom-14 w-32 text-center pointer-events-none select-none">
                             <div className="bg-[#fffdfa] border-2 border-[#2b221a] px-2 py-0.5 rounded shadow-[0_2px_0_#2b221a] text-[10px] font-black truncate rotate-1">
-                              {landmark.landmarkName}
+                              {scenario.title || landmark.landmarkName}
                             </div>
                           </div>
 

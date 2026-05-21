@@ -33,6 +33,9 @@ type Message = {
   character_name?: string;
   content: string;
   created_at?: string;
+  vibe?: string;
+  intensity?: number;
+  context_note?: string;
 };
 
 function NegotiateContent(): React.ReactElement {
