@@ -30,34 +30,34 @@ const getLandmarkInfo = (difficulty: number, index: number) => {
   const landmarks = [
     {
       icon: "🏢",
-      title: "สมรภูมิตึกทีมพัฒนา",
+      title: "วิกฤตทีมพัฒนา",
       bg: "bg-[#2563eb]/10 text-[#2563eb]",
       avatar: "👨‍💻",
-      reward: "การ์ด 'คุยเร่งด่วน' +150 XP",
-      characterDetails: "อเล็กซ์: โปรแกรมเมอร์จอมบ่น, ซาร่า: PM ผู้เร่งรีบ",
-      landmarkName: "แผนกไอทีอาละวาด",
+      reward: "การ์ด 'คุยเรื่องด่วน' +150 XP",
+      characterDetails: "อเล็กซ์: นักพัฒนาที่เริ่มหมดแรง, ซาร่า: PM ที่ต้องเร่งงานให้ทัน",
+      landmarkName: "แผนกไอทีช่วงวิกฤต",
       sealColor: "bg-rose-600 hover:bg-rose-700",
       sealShadow: "shadow-rose-950/50"
     },
     {
       icon: "💰",
-      title: "ห้องเจรจาเงินเดือนแสน",
+      title: "ห้องเจรจาเงินเดือน",
       bg: "bg-[#d97706]/10 text-[#d97706]",
       avatar: "👔",
       reward: "การ์ด 'ตรรกะทองคำ' +250 XP",
-      characterDetails: "คุณเฮนเดอร์สัน: เจ้าของธุรกิจจอมประหยัด พูดสุภาพแต่ใจแข็ง",
-      landmarkName: "ห้องเจรจาเงินล้าน",
+      characterDetails: "คุณเฮนเดอร์สัน: หัวหน้าที่ระวังเรื่องงบ พูดสุภาพแต่ใจแข็ง",
+      landmarkName: "ห้องต่อรองเงินเดือน",
       sealColor: "bg-amber-600 hover:bg-amber-700",
       sealShadow: "shadow-amber-950/50"
     },
     {
       icon: "🌾",
-      title: "ฟาร์มผักลุงบุญส่ง",
+      title: "พื้นที่โครงการลุงบุญส่ง",
       bg: "bg-[#059669]/10 text-[#059669]",
       avatar: "👨‍🌾",
       reward: "เหรียญผู้เจรจาชุมชน +350 XP",
       characterDetails: "ลุงบุญส่ง: หัวหน้ากลุ่มเกษตรกร, ป้าสมใจ: แกนนำกลุ่มแม่บ้าน",
-      landmarkName: "ป่าชุมชนลุงบุญส่ง",
+      landmarkName: "ชุมชนลุงบุญส่ง",
       sealColor: "bg-emerald-600 hover:bg-emerald-700",
       sealShadow: "shadow-emerald-950/50"
     }
@@ -69,8 +69,8 @@ const getLandmarkInfo = (difficulty: number, index: number) => {
     bg: "bg-purple-500/10 text-purple-600",
     avatar: "🕵️",
     reward: "XP พิเศษและโบนัสทักษะ",
-    characterDetails: "คู่เจรจาลึกลับที่มีเป้าหมายและแผนการลับคาดเดาได้ยาก",
-    landmarkName: `สมรภูมิลับที่ ${index + 1}`,
+    characterDetails: "คู่เจรจาลึกลับที่มีเป้าหมายและเงื่อนไขซ่อนอยู่",
+    landmarkName: `ด่านเจรจาลับที่ ${index + 1}`,
     sealColor: "bg-purple-600 hover:bg-purple-700",
     sealShadow: "shadow-purple-950/50"
   };
@@ -157,15 +157,15 @@ export default function ScenariosPage() {
 
   const seedScenarios = async () => {
     setLoading(true);
-    setLoadingMessage('กำลังบันทึกหน้ากระดาษเจรจาใหม่...');
+    setLoadingMessage('กำลังบันทึกสถานการณ์เจรจาใหม่...');
     const sampleScenarios = [
       {
         id: uuid(),
         title: "เส้นตายโครงการ",
-        description: "สมาชิกในทีมทำงานล่าช้ากว่ากำหนด ซึ่งเสี่ยงต่อความล้มเหลวของทั้งโครงการ จงเจรจาเพื่อหาทางออกโดยไม่ทำให้ขวัญกำลังใจเสีย",
+        description: "สมาชิกในทีมทำงานล่าช้ากว่ากำหนด จนอาจกระทบทั้งโครงการ คุณต้องเจรจาเพื่อหาทางออกโดยยังรักษาขวัญกำลังใจของทีมไว้",
         target_group: "professional",
         characters: [
-          { id: "char_alex", name: "อเล็กซ์ (นักพัฒนา)", role: "นักพัฒนาอาวุโสที่ทำงานหนักเกินไป", agenda: "ต้องการเวลาเพิ่มหรือลดภาระงาน", personality: "ระแวดระวังแต่มีความสามารถ" },
+          { id: "char_alex", name: "อเล็กซ์ (นักพัฒนา)", role: "นักพัฒนาอาวุโสที่รับงานหนักเกินไป", agenda: "ต้องการเวลาเพิ่มหรือลดภาระงาน", personality: "ระมัดระวังแต่มีความสามารถ" },
           { id: "char_sara", name: "ซาร่า (ผู้จัดการผลิตภัณฑ์)", role: "ผู้จัดการที่กำลังเครียด", agenda: "ต้องการให้โครงการเสร็จตรงเวลา", personality: "ตรงไปตรงมาและเน้นผลลัพธ์" }
         ],
         phase_rules: {
@@ -179,7 +179,7 @@ export default function ScenariosPage() {
       {
         id: uuid(),
         title: "การต่อรองเงินเดือน",
-        description: "คุณกำลังขอขึ้นเงินเดือน 20% หลังจากปีที่ประสบความสำเร็จ แต่บริษัทกำลังอยู่ในช่วง 'ปีที่ต้องประหยัดงบ'",
+        description: "คุณกำลังขอขึ้นเงินเดือน 20% หลังจากทำผลงานได้ดีตลอดปี แต่บริษัทกำลังอยู่ในช่วงควบคุมงบประมาณ",
         target_group: "professional",
         characters: [
           { id: "char_henderson", name: "คุณเฮนเดอร์สัน", role: "หัวหน้าแผนก", agenda: "พยายามลดค่าใช้จ่ายในขณะที่ยังรักษาบุคลากรเก่งๆ ไว้", personality: "เป็นกันเองแต่มักจะตอบว่า 'ไม่'" }
@@ -194,16 +194,16 @@ export default function ScenariosPage() {
       },
       {
         id: uuid(),
-        title: "โครงการร่วมกับเกษตรกร (จำลองสถานการณ์กดดัน)",
-        description: "บริษัทต้องการเช่าที่ดินทำโครงการ แต่เกษตรกรกังวลและมีวาระซ่อนเร้นที่ไม่ยอมบอกตรงๆ (ด่านวัดระดับความพร้อม)",
+        title: "โครงการร่วมกับเกษตรกร (สถานการณ์กดดัน)",
+        description: "บริษัทต้องการเช่าที่ดินเพื่อทำโครงการ แต่กลุ่มเกษตรกรยังไม่มั่นใจ และมีเงื่อนไขบางอย่างที่ยังไม่ยอมพูดตรงๆ",
         target_group: "professional",
         characters: [
-          { id: "char_boonsong", name: "ลุงบุญส่ง", role: "ผู้นำกลุ่มเกษตรกร", agenda: "มีข้อเสนอจากบริษัทอื่นที่ดีกว่าอยู่ในมือแล้ว", personality: "กดดัน, สร้างเงื่อนไขบีบบังคับ" },
-          { id: "char_somjai", name: "ป้าสมใจ", role: "ตัวแทนกลุ่มแม่บ้าน", agenda: "ไม่พอใจที่บริษัทไม่เคยเหลียวแลชุมชน", personality: "ใช้อารมณ์, ต่อต้าน" }
+          { id: "char_boonsong", name: "ลุงบุญส่ง", role: "ผู้นำกลุ่มเกษตรกร", agenda: "มีข้อเสนอจากบริษัทอื่นที่ดีกว่าอยู่ในมือแล้ว", personality: "กดดันและตั้งเงื่อนไขเข้มงวด" },
+          { id: "char_somjai", name: "ป้าสมใจ", role: "ตัวแทนกลุ่มแม่บ้าน", agenda: "ไม่พอใจที่บริษัทไม่เคยใส่ใจชุมชน", personality: "ใช้อารมณ์และไม่ไว้วางใจ" }
         ],
         phase_rules: {
           phases: ["listening", "negotiation", "agreement"],
-          win_condition: "เกษตรกรยอมรับเงื่อนไขและมีความสุข",
+          win_condition: "เกษตรกรยอมรับเงื่อนไขและรู้สึกพอใจ",
           fail_condition: "เกิดความขัดแย้งรุนแรงจนโครงการยุติ"
         },
         mode: 'campaign',
@@ -211,8 +211,8 @@ export default function ScenariosPage() {
       },
       {
         id: uuid(),
-        title: "เล่นอิสระ: ต่อรองซื้อรถมือสอง",
-        description: "คุณต้องการซื้อรถมือสองในราคาที่ถูกลง แต่เต็นท์รถมีเหตุผลร้อยแปดที่ลดราคาไม่ได้ โหมดเล่นอิสระที่คุณสามารถทดลองเทคนิคเจรจาต่างๆ ได้",
+        title: "เล่นอิสระ: ต่อรองราคารถมือสอง",
+        description: "คุณต้องการซื้อรถมือสองให้ได้ราคาดีขึ้น แต่เจ้าของเต็นท์รถมีเหตุผลมากมายที่ไม่อยากลดราคา โหมดนี้เปิดให้คุณลองใช้เทคนิคเจรจาได้อย่างอิสระ",
         target_group: "professional",
         characters: [
           { id: "char_seller", name: "เฮียชัย", role: "เจ้าของเต็นท์รถ", agenda: "ขายให้ได้กำไรมากที่สุด", personality: "พูดเก่ง, หว่านล้อมเก่ง" }
@@ -247,7 +247,7 @@ export default function ScenariosPage() {
     if (loading || authLoading || !user) return;
     
     setLoading(true);
-    setLoadingMessage('กำลังรังสรรค์โต๊ะเจรจาของคุณ...');
+    setLoadingMessage('กำลังเตรียมโต๊ะเจรจาของคุณ...');
     const sessionId = uuid();
     
     try {
@@ -317,7 +317,7 @@ export default function ScenariosPage() {
     
     if (!isUnlocked) {
       setShakingNodeId(scenario.id);
-      setShowLockedAlert(`ช้าก่อน! ต้องพิชิตด่านที่ 1 "${campaignScenarios[0]?.title || 'ด่านแรก'}" เพื่อปลดล็อกเส้นทางแยกเจรจา! 🔒`);
+      setShowLockedAlert(`ช้าก่อน! ต้องผ่านด่านที่ 1 "${campaignScenarios[0]?.title || 'ด่านแรก'}" ก่อน จึงจะปลดล็อกเส้นทางถัดไปได้ 🔒`);
       
       setTimeout(() => {
         setShakingNodeId(null);
@@ -346,10 +346,10 @@ export default function ScenariosPage() {
             
             <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-1 uppercase tracking-tight flex items-center gap-2">
               <Compass className="text-[#d97706] w-8 h-8 animate-spin [animation-duration:15s]" strokeWidth={3} />
-              สมุดเจรจาพเนจร (Explorer's Journal)
+              สมุดภารกิจนักเจรจา (Explorer&apos;s Journal)
             </h1>
             <p className="text-gray-500 font-bold text-xs md:text-sm uppercase tracking-wide">
-              บันทึกเส้นทางการเจรจาลับและวิเคราะห์คู่ต่อสู้ เพื่อการเจรจาระดับอัจฉริยะ!
+              เลือกภารกิจ ฝึกอ่านสถานการณ์ และเตรียมกลยุทธ์ก่อนเข้าสู่โต๊ะเจรจา
             </p>
           </div>
           
@@ -362,7 +362,7 @@ export default function ScenariosPage() {
               <User className="w-5 h-5" strokeWidth={3} />
             </div>
             <div className="text-left">
-              <p className="text-[10px] text-gray-400 font-black uppercase mb-0.5">นักเดินสาร</p>
+              <p className="text-[10px] text-gray-400 font-black uppercase mb-0.5">นักเจรจา</p>
               <p className="text-base text-gray-900 font-black uppercase tracking-tight leading-tight">
                 {user?.name || user?.email?.split('@')[0]}
               </p>
@@ -408,7 +408,7 @@ export default function ScenariosPage() {
                   : 'text-amber-100/60 hover:text-amber-50 hover:bg-[#4a3424]'
               }`}
             >
-              <span className="mr-1.5 text-lg">🗺️</span> แผนที่หลัก (CAMPAIGN JOURNAL)
+              <span className="mr-1.5 text-lg">🗺️</span> แผนที่ภารกิจ (CAMPAIGN JOURNAL)
             </button>
             <button
               onClick={() => {
@@ -421,7 +421,7 @@ export default function ScenariosPage() {
                   : 'text-amber-100/60 hover:text-amber-50 hover:bg-[#4a3424]'
               }`}
             >
-              <span className="mr-1.5 text-lg">👾</span> ตู้ประลองเสรี (FREEPLAY ARCADES)
+              <span className="mr-1.5 text-lg">👾</span> ฝึกเจรจาอิสระ (FREEPLAY ARCADE)
             </button>
           </div>
         </div>
@@ -681,7 +681,7 @@ export default function ScenariosPage() {
                         {/* Polaroid Snapshot of Opponent with Paperclip detail */}
                         <div>
                           <h3 className="text-sm font-black text-gray-800 mb-2 flex items-center gap-1">
-                            <span>👤</span> คู่เจรจาประจำภารกิจ (Character Dossier)
+                            <span>👤</span> คู่เจรจาในภารกิจ (Character Dossier)
                           </h3>
                           
                           <div className="relative flex bg-[#fff] border-2 border-[#2b221a] p-3 rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.06)] rotate-1 group">
@@ -709,16 +709,16 @@ export default function ScenariosPage() {
                         {/* Phase Outline Checklist */}
                         <div>
                           <h3 className="text-sm font-black text-gray-800 mb-2 flex items-center gap-1">
-                            <span>📋</span> ลำดับขั้นตอนการคุย (Target Phases)
+                            <span>📋</span> ลำดับการเจรจา (Target Phases)
                           </h3>
                           <div className="grid grid-cols-2 gap-2 bg-[#fdfcf7] p-3 rounded-xl border-2 border-dashed border-[#2b221a]/30">
                             {selectedScenario.phase_rules?.phases?.map((p: string, i: number) => (
                               <div key={p} className="flex items-center gap-1.5">
                                 <CheckSquare size={13} className="text-[#059669]" strokeWidth={3} />
                                 <span className="text-[10px] font-black text-gray-700 uppercase">
-                                  {p === 'opening' || p === 'rapport' ? ' R-1 // ทักทายสมานฉันท์' :
+                                  {p === 'opening' || p === 'rapport' ? ' R-1 // เปิดบทสนทนา' :
                                    p === 'conflict' || p === 'listening' ? ' R-2 // รับมือประเด็นร้อน' :
-                                   p === 'negotiation' || p === 'bargaining' ? ' R-3 // แลกเปลี่ยนยื่นคำขอ' : ' R-4 // ปิดจ๊อบสำเร็จ'}
+                                   p === 'negotiation' || p === 'bargaining' ? ' R-3 // แลกเปลี่ยนข้อเสนอ' : ' R-4 // สรุปข้อตกลง'}
                                 </span>
                               </div>
                             )) || <span className="text-[10px] text-gray-400 font-bold">คุยสดโดยไม่แบ่งเฟส</span>}
@@ -729,11 +729,11 @@ export default function ScenariosPage() {
                         <div className="bg-amber-300 border-2 border-black rounded-lg px-4 py-2 rotate-[-1deg] shadow-sm relative">
                           <div className="absolute top-0 right-3 text-xs">🎁</div>
                           <h4 className="text-[10px] font-black text-amber-950 uppercase tracking-widest leading-none mb-1">
-                            ของรางวัลผู้สำเร็จคดี (REWARDS BRIEF)
+                            รางวัลเมื่อทำภารกิจสำเร็จ (REWARDS BRIEF)
                           </h4>
                           <p className="text-[10px] text-amber-900 font-black leading-tight">
                             • {activeLandmark.reward} <br />
-                            • คะแนนทักษะเจรจาสากลสำหรับปลดล็อกยศถัดไป
+                            • คะแนนทักษะเจรจาสำหรับปลดล็อกระดับถัดไป
                           </p>
                         </div>
                       </div>
@@ -747,7 +747,7 @@ export default function ScenariosPage() {
                         }}
                         className="w-full mt-6 bg-[#b45309] text-white py-3.5 rounded-xl border-[4px] border-[#2b221a] font-black text-lg sm:text-xl uppercase tracking-wider shadow-[0_5px_0_#2b221a] hover:translate-y-0.5 hover:shadow-[0_3px_0_#2b221a] active:translate-y-1.5 active:shadow-none transition-all flex items-center justify-center gap-2 group"
                       >
-                        <span>ปั๊มตราและประทับลุย ✉️</span> 
+                        <span>เริ่มภารกิจนี้ ✉️</span> 
                       </button>
                           </>
                         );
@@ -764,9 +764,9 @@ export default function ScenariosPage() {
                       <div className="w-16 h-16 rounded-full bg-[#f3ebd3] border-2 border-[#2b221a] flex items-center justify-center text-3xl mb-4 animate-bounce">
                         ✒️
                       </div>
-                      <h3 className="text-xl font-black text-gray-900 mb-2">วิเคราะห์แผนการรบ!</h3>
+                      <h3 className="text-xl font-black text-gray-900 mb-2">เลือกภารกิจเพื่อดูรายละเอียด</h3>
                       <p className="text-gray-500 font-bold text-xs sm:text-sm leading-relaxed max-w-[28ch]">
-                        โปรดปักหมุดเลือกด่าน wax seal บนหน้ากระดาษฝั่งซ้าย เพื่อดึงข้อมูลแฟ้มลับ อัตราผลตอบแทน และข้อมูลคู่ต่อสู้ออกมากางวิเคราะห์!
+                        เลือกตราภารกิจบนหน้ากระดาษฝั่งซ้าย เพื่อดูข้อมูลสถานการณ์ รางวัล และรายละเอียดคู่เจรจาก่อนเริ่ม
                       </p>
                     </motion.div>
                   )}
@@ -835,7 +835,7 @@ export default function ScenariosPage() {
                       </div>
 
                       <span className="bg-[#b45309] text-white border-2 border-black rounded-lg px-2.5 py-1 text-[10px] font-black uppercase flex items-center gap-1 group-hover:bg-[#d97706] transition-colors">
-                        เริ่มประลอง <Play size={10} className="fill-current" />
+                        เริ่มฝึก <Play size={10} className="fill-current" />
                       </span>
                     </div>
                   </div>
@@ -867,15 +867,15 @@ export default function ScenariosPage() {
           (activeTab === 'freeplay' && freeplayScenarios.length === 0)) && !loading && !error && (
           <div className="col-span-full py-16 text-center bg-white border-[6px] border-[#2b221a] rounded-[3rem] max-w-3xl mx-auto shadow-[0_10px_0_#2b221a] p-8">
             <HelpCircle size={56} className="mx-auto text-[#b45309] mb-4 animate-bounce" />
-            <h3 className="text-2xl font-black mb-2 text-gray-900">สมุดเดินสารว่างเปล่า</h3>
+            <h3 className="text-2xl font-black mb-2 text-gray-900">ยังไม่มีภารกิจในสมุดนี้</h3>
             <p className="text-gray-500 font-bold mb-6 text-sm">
-              ยังไม่มีแผ่นกระดาษด่านทดสอบความสามารถลงบันทึกในบทนี้
+              ยังไม่มีสถานการณ์สำหรับฝึกเจรจาในหมวดนี้
             </p>
             <button 
               onClick={seedScenarios}
               className="bg-[#b45309] hover:bg-[#d97706] text-white font-black px-6 py-3.5 rounded-xl border-[4px] border-[#2b221a] shadow-[0_6px_0_#2b221a] active:shadow-none active:translate-y-1.5 active:translate-x-0.5 transition-all text-lg"
             >
-              เขียนบันทึกด่านทดสอบตัวอย่างทันที!
+              เพิ่มสถานการณ์ตัวอย่างทันที
             </button>
           </div>
         )}
