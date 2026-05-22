@@ -6,7 +6,8 @@ import { useAuth } from '@/components/AuthProvider';
 import {
   Lock, Unlock, Star, Play, Gift, ShieldAlert, Zap, Trophy,
   HelpCircle, User, Compass, Bookmark,
-  ChevronRight, X, ArrowLeft, RefreshCw, CheckSquare, Coffee
+  ChevronRight, X, ArrowLeft, RefreshCw, CheckSquare, Coffee,
+  Gamepad2, Car, Handshake, Briefcase, MessageCircle, type LucideIcon
 } from 'lucide-react';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
 import Link from 'next/link';
@@ -91,6 +92,33 @@ const getLandmarkInfo = (difficulty: number, index: number) => {
     sealColor: "bg-purple-600 hover:bg-purple-700",
     sealShadow: "shadow-purple-950/50"
   };
+};
+
+type FreeplayCardVisual = {
+  Icon: LucideIcon;
+  accent: string;
+  bg: string;
+};
+
+const getFreeplayCardVisual = (scenario: Scenario, index: number): FreeplayCardVisual => {
+  const title = scenario.title.toLowerCase();
+
+  if (title.includes('รถ') || title.includes('car') || title.includes('มือสอง')) {
+    return { Icon: Car, accent: 'text-amber-800', bg: 'bg-amber-100' };
+  }
+  if (title.includes('กาแฟ') || title.includes('coffee') || title.includes('คาเฟ่')) {
+    return { Icon: Coffee, accent: 'text-stone-800', bg: 'bg-stone-100' };
+  }
+  if (title.includes('เงิน') || title.includes('salary') || title.includes('เดือน')) {
+    return { Icon: Briefcase, accent: 'text-slate-800', bg: 'bg-slate-100' };
+  }
+
+  const defaults: FreeplayCardVisual[] = [
+    { Icon: Handshake, accent: 'text-emerald-800', bg: 'bg-emerald-100' },
+    { Icon: MessageCircle, accent: 'text-sky-800', bg: 'bg-sky-100' },
+    { Icon: Briefcase, accent: 'text-violet-800', bg: 'bg-violet-100' },
+  ];
+  return defaults[index % defaults.length];
 };
 
 export default function ScenariosPage() {
@@ -464,7 +492,7 @@ export default function ScenariosPage() {
                   : 'text-amber-100/60 hover:text-amber-50 hover:bg-[#4a3424]'
                 }`}
             >
-              <span className="mr-1.5 text-lg">👾</span> ฝึกเจรจาอิสระ (FREEPLAY ARCADE)
+              <Gamepad2 size={18} className="mr-1.5 shrink-0" strokeWidth={2.5} /> ฝึกเจรจาอิสระ (FREEPLAY ARCADE)
             </button>
           </div>
         </div>
@@ -824,7 +852,8 @@ export default function ScenariosPage() {
           /* FREEPLAY ARCADE CARDS (LOOSE POLAROID & MEMO Grid) */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
             {freeplayScenarios.map((scenario, index) => {
-              const landmark = getLandmarkInfo(scenario.difficulty || 1, index);
+              const visual = getFreeplayCardVisual(scenario, index);
+              const ScenarioIcon = visual.Icon;
 
               return (
                 <motion.div
@@ -844,17 +873,19 @@ export default function ScenariosPage() {
                         <span className="bg-[#baebd6] border-2 border-[#2b221a] text-[#047857] px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider">
                           {scenario.target_group?.toUpperCase() || 'GENERAL'}
                         </span>
-                        <span className="text-lg">👾</span>
+                        <Gamepad2 size={16} className="text-[#047857]" strokeWidth={2.5} />
                       </div>
 
                       {/* Polaroid sketch image */}
                       <div className="bg-[#fbf9f4] border-2 border-[#2b221a] rounded-2xl p-3 mb-4 shadow-inner text-center font-black relative overflow-hidden">
-                        <div className="text-4xl filter drop-shadow-[0_2px_0_#000]">{landmark.avatar}</div>
-                        <div className="text-[8px] text-gray-400 font-mono mt-1">OPPONENT CAPTURE // 01</div>
+                        <div className={`w-14 h-14 mx-auto rounded-xl border-2 border-[#2b221a] ${visual.bg} flex items-center justify-center shadow-[0_3px_0_#2b221a]`}>
+                          <ScenarioIcon size={28} className={visual.accent} strokeWidth={2.5} />
+                        </div>
+                        <div className="text-[8px] text-gray-400 font-mono mt-2">OPPONENT CAPTURE // 01</div>
                       </div>
 
                       {/* Title */}
-                      <h3 className="text-xl font-black text-gray-900 leading-tight mb-2">
+                      <h3 className="text-xl font-black text-gray-900 leading-normal break-words mb-2">
                         {scenario.title}
                       </h3>
                       {/* Description */}
