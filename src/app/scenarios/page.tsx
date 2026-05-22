@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
-import { 
-  Lock, Unlock, Star, Play, Gift, ShieldAlert, Zap, Trophy, 
-  HelpCircle, User, Compass, Bookmark, 
+import {
+  Lock, Unlock, Star, Play, Gift, ShieldAlert, Zap, Trophy,
+  HelpCircle, User, Compass, Bookmark,
   ChevronRight, X, ArrowLeft, RefreshCw, CheckSquare, Coffee
 } from 'lucide-react';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
@@ -62,7 +62,7 @@ const getLandmarkInfo = (difficulty: number, index: number) => {
       sealShadow: "shadow-emerald-950/50"
     }
   ];
-  
+
   return landmarks[(difficulty - 1) % landmarks.length] || {
     icon: "🗺️",
     title: `ด่านลับที่ ${index + 1}`,
@@ -87,7 +87,7 @@ export default function ScenariosPage() {
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [shakingNodeId, setShakingNodeId] = useState<string | null>(null);
   const [showLockedAlert, setShowLockedAlert] = useState<string | null>(null);
-  
+
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -95,7 +95,7 @@ export default function ScenariosPage() {
     setSyncStatus('syncing');
     setError(null);
     const cacheKey = 'gas-swr-read_all';
-    
+
     // 1. Try to load cached data for instant render
     if (typeof window !== 'undefined') {
       const cached = localStorage.getItem(cacheKey);
@@ -245,11 +245,11 @@ export default function ScenariosPage() {
 
   const startSession = async (scenarioId: string) => {
     if (loading || authLoading || !user) return;
-    
+
     setLoading(true);
     setLoadingMessage('กำลังเตรียมโต๊ะเจรจาของคุณ...');
     const sessionId = uuid();
-    
+
     try {
       const scenario = scenarios.find(s => s.id === scenarioId);
       const sessionData = {
@@ -263,7 +263,7 @@ export default function ScenariosPage() {
       };
 
       const result = await gasPost('create', 'sessions', sessionData);
-      
+
       if (result.error) throw new Error(result.error);
 
       if (typeof window !== 'undefined') {
@@ -285,13 +285,13 @@ export default function ScenariosPage() {
   const getScenarioStatus = (scenario: Scenario, index: number) => {
     const scenarioSessions = sessions.filter(s => s.scenario_id === scenario.id);
     const completedSessions = scenarioSessions.filter(s => s.outcome_score !== undefined);
-    
-    const maxScore = completedSessions.length > 0 
-      ? Math.max(...completedSessions.map(s => s.outcome_score || 0)) 
+
+    const maxScore = completedSessions.length > 0
+      ? Math.max(...completedSessions.map(s => s.outcome_score || 0))
       : 0;
-    
+
     const isCleared = completedSessions.length > 0;
-    
+
     let stars = 0;
     if (maxScore >= 85) stars = 3;
     else if (maxScore >= 65) stars = 2;
@@ -314,17 +314,17 @@ export default function ScenariosPage() {
 
   const handleNodeClick = (scenario: Scenario, index: number) => {
     const { isUnlocked } = getScenarioStatus(scenario, index);
-    
+
     if (!isUnlocked) {
       setShakingNodeId(scenario.id);
       setShowLockedAlert(`ช้าก่อน! ต้องผ่านด่านที่ 1 "${campaignScenarios[0]?.title || 'ด่านแรก'}" ก่อน จึงจะปลดล็อกเส้นทางถัดไปได้ 🔒`);
-      
+
       setTimeout(() => {
         setShakingNodeId(null);
       }, 500);
       return;
     }
-    
+
     setSelectedScenario(scenario);
     setShowLockedAlert(null);
   };
@@ -337,13 +337,13 @@ export default function ScenariosPage() {
 
 
       <div className="max-w-6xl mx-auto relative z-10">
-        
+
         {/* Top Header - Neubrutalist Wooden Board */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 space-y-6 md:space-y-0">
           <div className="bg-[#fffdf9] border-[6px] border-[#2b221a] p-6 rounded-[2rem] shadow-[0_8px_0_#2b221a] -rotate-1 w-full md:w-auto relative overflow-hidden">
             {/* Coffee stain on header */}
             <div className="absolute -top-6 -right-6 w-16 h-16 border-2 border-amber-800 border-opacity-10 rounded-full"></div>
-            
+
             <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-1 uppercase tracking-tight flex items-center gap-2">
               <Compass className="text-[#d97706] w-8 h-8 animate-spin [animation-duration:15s]" strokeWidth={3} />
               สมุดภารกิจนักเจรจา (Explorer&apos;s Journal)
@@ -352,8 +352,8 @@ export default function ScenariosPage() {
               เลือกภารกิจ ฝึกอ่านสถานการณ์ และเตรียมกลยุทธ์ก่อนเข้าสู่โต๊ะเจรจา
             </p>
           </div>
-          
-          <Link 
+
+          <Link
             href="/profile"
             prefetch={false}
             className="flex items-center space-x-4 bg-[#fffdf9] border-[4px] border-[#2b221a] px-6 py-2.5 rounded-[2rem] hover:translate-y-1 transition-all shadow-[0_6px_0_#2b221a] active:shadow-none active:translate-y-2 group self-end md:self-auto"
@@ -373,7 +373,7 @@ export default function ScenariosPage() {
         {/* Warning Toast Alerts */}
         <AnimatePresence>
           {showLockedAlert && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
@@ -381,8 +381,8 @@ export default function ScenariosPage() {
             >
               <ShieldAlert size={22} className="animate-bounce" />
               <span>{showLockedAlert}</span>
-              <button 
-                onClick={() => setShowLockedAlert(null)} 
+              <button
+                onClick={() => setShowLockedAlert(null)}
                 className="absolute right-4 text-rose-700 hover:text-rose-950 text-xl font-black"
               >
                 ×
@@ -402,24 +402,22 @@ export default function ScenariosPage() {
                 setActiveTab('campaign');
                 setShowLockedAlert(null);
               }}
-              className={`flex items-center px-6 md:px-8 py-3 rounded-xl font-black uppercase tracking-tight text-xs md:text-sm transition-all ${
-                activeTab === 'campaign' 
-                  ? 'bg-amber-400 text-gray-900 shadow-[0_5px_0_#2b221a] -translate-y-0.5' 
+              className={`flex items-center px-6 md:px-8 py-3 rounded-xl font-black uppercase tracking-tight text-xs md:text-sm transition-all ${activeTab === 'campaign'
+                  ? 'bg-amber-400 text-gray-900 shadow-[0_5px_0_#2b221a] -translate-y-0.5'
                   : 'text-amber-100/60 hover:text-amber-50 hover:bg-[#4a3424]'
-              }`}
+                }`}
             >
-              <span className="mr-1.5 text-lg">🗺️</span> แผนที่ภารกิจ (CAMPAIGN JOURNAL)
+              <span className="mr-1.5 text-lg">🗺️</span> เนื้อเรื่องหลัก (CAMPAIGN JOURNAL)
             </button>
             <button
               onClick={() => {
                 setActiveTab('freeplay');
                 setShowLockedAlert(null);
               }}
-              className={`flex items-center px-6 md:px-8 py-3 rounded-xl font-black uppercase tracking-tight text-xs md:text-sm transition-all ${
-                activeTab === 'freeplay' 
-                  ? 'bg-amber-400 text-gray-900 shadow-[0_5px_0_#2b221a] -translate-y-0.5' 
+              className={`flex items-center px-6 md:px-8 py-3 rounded-xl font-black uppercase tracking-tight text-xs md:text-sm transition-all ${activeTab === 'freeplay'
+                  ? 'bg-amber-400 text-gray-900 shadow-[0_5px_0_#2b221a] -translate-y-0.5'
                   : 'text-amber-100/60 hover:text-amber-50 hover:bg-[#4a3424]'
-              }`}
+                }`}
             >
               <span className="mr-1.5 text-lg">👾</span> ฝึกเจรจาอิสระ (FREEPLAY ARCADE)
             </button>
@@ -429,7 +427,7 @@ export default function ScenariosPage() {
         {/* CAMPAIGN MAP OVERHAUL: TRAVELER'S OPEN NOTEBOOK */}
         {activeTab === 'campaign' ? (
           <div className="relative w-full bg-[#f6ead9] border-[8px] border-[#2b221a] rounded-[3rem] shadow-[0_20px_0_rgba(0,0,0,0.5)] p-4 sm:p-10 mb-12 min-h-[750px]">
-            
+
             {/* Realistic Spiral Wire Binder (For Desktop Screens) */}
             <div className="hidden lg:flex absolute left-1/2 top-0 bottom-0 w-16 -translate-x-1/2 flex-col justify-around py-10 pointer-events-none z-30">
               <svg width="0" height="0" className="absolute">
@@ -449,39 +447,39 @@ export default function ScenariosPage() {
 
               {[...Array(12)].map((_, i) => (
                 <div key={i} className="relative w-full h-8 flex items-center justify-center">
-                  
+
                   {/* Slanted Curved Wire */}
                   <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
-                    <path 
-                      d="M 14 18 C 20 -2, 44 -4, 50 14" 
-                      fill="none" 
-                      stroke="url(#wireGradient)" 
-                      strokeWidth="4" 
-                      strokeLinecap="round" 
+                    <path
+                      d="M 14 18 C 20 -2, 44 -4, 50 14"
+                      fill="none"
+                      stroke="url(#wireGradient)"
+                      strokeWidth="4"
+                      strokeLinecap="round"
                       filter="url(#wireShadow)"
                     />
                   </svg>
 
                   {/* Left Punched Hole */}
                   <div className="absolute left-1.5 top-2 w-4 h-4 bg-[#1a1410] rounded-full shadow-[inset_0_4px_6px_rgba(0,0,0,0.8)] border-[0.5px] border-[#4a3a2c]/30 z-10"></div>
-                  
+
                   {/* Right Punched Hole */}
                   <div className="absolute right-1.5 top-2 w-4 h-4 bg-[#1a1410] rounded-full shadow-[inset_0_4px_6px_rgba(0,0,0,0.8)] border-[0.5px] border-[#4a3a2c]/30 z-10"></div>
-                  
+
                 </div>
               ))}
             </div>
 
             {/* Split Page Layout: Left Page is Sketch Map, Right Page is Dossier Briefing */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 relative z-10">
-              
+
               {/* LEFT PAGE: ORGANIC SKETCHED BRANCHING QUEST MAP */}
               <div className="bg-[#fcfaf4] border-[4px] border-[#382b21] rounded-[2rem] p-6 shadow-[0_8px_16px_rgba(0,0,0,0.05)] relative overflow-hidden -rotate-1 min-h-[600px] flex flex-col justify-center">
-                
+
                 {/* Vintage Coffee Ring Stains */}
                 <div className="absolute top-12 left-10 w-24 h-24 border-[3px] border-amber-800 border-opacity-[0.05] rounded-full pointer-events-none"></div>
                 <div className="absolute bottom-16 right-12 w-16 h-16 border-[2px] border-amber-800 border-opacity-[0.04] rounded-full pointer-events-none"></div>
-                
+
                 {/* Hand-drawn ink header */}
                 <div className="absolute top-6 left-6 right-6 flex justify-between items-center pointer-events-none select-none">
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider font-mono">
@@ -492,7 +490,7 @@ export default function ScenariosPage() {
 
                 <div className="relative w-full h-[520px] mt-8 overflow-y-auto overflow-x-hidden border-y-2 border-dashed border-[#2b221a]/20 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-amber-800/30 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent" id="campaign-map-container">
                   <div className="relative w-full" style={{ height: `${Math.max(520, campaignScenarios.length * 160 + 100)}px` }}>
-                    
+
                     {/* Dynamic Curvy Ink Connections (SVG Drawing Branching Paths) */}
                     {campaignScenarios.length > 0 && (
                       <svg viewBox={`0 0 1000 ${Math.max(520, campaignScenarios.length * 160 + 100)}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none z-0">
@@ -500,10 +498,10 @@ export default function ScenariosPage() {
                           if (i === 0) return null;
                           const currTop = 80 + i * 160;
                           const prevTop = 80 + (i - 1) * 160;
-                          
+
                           const currLeft = i % 2 === 1 ? "28%" : "72%";
                           const prevLeft = (i - 1) === 0 ? "50%" : ((i - 1) % 2 === 1 ? "28%" : "72%");
-                          
+
                           const currX = currLeft === "28%" ? 280 : 720;
                           const prevX = prevLeft === "50%" ? 500 : prevLeft === "28%" ? 280 : 720;
 
@@ -536,13 +534,13 @@ export default function ScenariosPage() {
                       const { isCleared, isUnlocked, stars, maxScore } = getScenarioStatus(scenario, index);
                       const isBoss = scenario.difficulty === 3;
                       const landmark = getLandmarkInfo(scenario.difficulty || 1, index);
-                      
+
                       const top = `${80 + index * 160}px`;
                       const left = index === 0 ? "50%" : (index % 2 === 1 ? "28%" : "72%");
 
                       return (
-                        <div 
-                          key={scenario.id} 
+                        <div
+                          key={scenario.id}
                           className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10"
                           style={{ left, top }}
                         >
@@ -562,10 +560,10 @@ export default function ScenariosPage() {
                             {/* Stars Banner (Gold stars stamped on paper) */}
                             <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 flex space-x-0.5 bg-gray-900/90 border border-black px-1.5 py-0.5 rounded-full shadow-[0_1.5px_0_#000] z-20">
                               {[1, 2, 3].map((s) => (
-                                <Star 
-                                  key={s} 
-                                  size={9} 
-                                  className={s <= stars ? "text-amber-400 fill-amber-400 animate-pulse" : "text-gray-600"} 
+                                <Star
+                                  key={s}
+                                  size={9}
+                                  className={s <= stars ? "text-amber-400 fill-amber-400 animate-pulse" : "text-gray-600"}
                                   strokeWidth={2.5}
                                 />
                               ))}
@@ -575,15 +573,15 @@ export default function ScenariosPage() {
                             <button
                               onClick={() => handleNodeClick(scenario, index)}
                               className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[5px] border-[#2b221a] flex flex-col items-center justify-center font-black transition-all duration-300 group
-                                ${!isUnlocked 
-                                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-dashed' 
-                                  : isBoss 
-                                    ? `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]` 
+                                ${!isUnlocked
+                                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-dashed'
+                                  : isBoss
+                                    ? `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]`
                                     : `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]`
                                 }
                               `}
-                              style={{ 
-                                borderRadius: isUnlocked 
+                              style={{
+                                borderRadius: isUnlocked
                                   ? '45% 55% 48% 52% / 52% 48% 55% 45%' // Hand-pressed organic shape for unlocked seals
                                   : '50%'
                               }}
@@ -606,24 +604,24 @@ export default function ScenariosPage() {
                                 </div>
                               )}
 
-                            {/* Stamped Cleared mark */}
-                            {isCleared && (
-                              <div className="absolute -bottom-1 -right-1 bg-emerald-600 border-2 border-black rounded-full p-0.5 text-white shadow-[0_1.5px_0_#000] rotate-12">
-                                <span className="text-[8px] font-black leading-none px-1">PASSED</span>
-                              </div>
-                            )}
-                          </button>
-                        </motion.div>
-                      </div>
-                    );
-                  })}
+                              {/* Stamped Cleared mark */}
+                              {isCleared && (
+                                <div className="absolute -bottom-1 -right-1 bg-emerald-600 border-2 border-black rounded-full p-0.5 text-white shadow-[0_1.5px_0_#000] rotate-12">
+                                  <span className="text-[8px] font-black leading-none px-1">PASSED</span>
+                                </div>
+                              )}
+                            </button>
+                          </motion.div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
 
               {/* RIGHT PAGE: BRIEF DOSSIER OVERLAY (EXPLORER BRIEFING SHEET) */}
               <div className="bg-[#fcfaf4] border-[4px] border-[#382b21] rounded-[2rem] p-6 shadow-[0_8px_16px_rgba(0,0,0,0.05)] relative overflow-hidden rotate-1 min-h-[600px] flex flex-col justify-between">
-                
+
                 {/* Paper notebook binding detail */}
                 <div className="absolute top-6 left-6 right-6 flex justify-between items-center pointer-events-none select-none">
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider font-mono">
@@ -652,103 +650,103 @@ export default function ScenariosPage() {
                               📁 ACTIVE CASE Brief
                             </div>
 
-                      <div className="space-y-6 pt-2">
-                        {/* Title of Level */}
-                        <div>
-                          <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-tight">
-                            {selectedScenario.title}
-                          </h2>
-                          <div className="flex gap-2 mt-2">
-                            <span className="bg-[#f59e0b]/10 text-[#d97706] border border-[#d97706]/40 px-2 py-0.5 rounded text-[10px] font-black uppercase">
-                              ระดับความยาก: {selectedScenario.difficulty === 3 ? "ยากระดับบอส" : selectedScenario.difficulty === 2 ? "ระดับกลาง" : "เริ่มต้น"}
-                            </span>
-                            <span className="bg-sky-50 text-sky-700 border border-sky-300/40 px-2 py-0.5 rounded text-[10px] font-black uppercase">
-                              กลุ่ม: {selectedScenario.target_group}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Briefing text (Torn paper element) */}
-                        <div className="bg-[#fdfcf7] border-2 border-[#2b221a] p-4 rounded-xl shadow-inner relative">
-                          {/* Sketchy binder corner design */}
-                          <div className="absolute top-0 right-0 w-4 h-4 border-b-2 border-l-2 border-[#2b221a] opacity-40"></div>
-                          
-                          <p className="text-gray-700 font-bold text-xs sm:text-sm leading-relaxed">
-                            {selectedScenario.description}
-                          </p>
-                        </div>
-
-                        {/* Polaroid Snapshot of Opponent with Paperclip detail */}
-                        <div>
-                          <h3 className="text-sm font-black text-gray-800 mb-2 flex items-center gap-1">
-                            <span>👤</span> คู่เจรจาในภารกิจ (Character Dossier)
-                          </h3>
-                          
-                          <div className="relative flex bg-[#fff] border-2 border-[#2b221a] p-3 rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.06)] rotate-1 group">
-                            
-                            <div className="w-14 h-14 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center text-4xl mr-4 pointer-events-none select-none">
-                              {activeLandmark.avatar}
-                            </div>
-                            
-                            <div className="flex-1 min-w-0">
-                              {selectedScenario.characters?.map((c: any, i: number) => (
-                                <div key={i} className="mb-1.5 last:mb-0">
-                                  <h4 className="font-black text-xs text-gray-900 truncate">
-                                    {c.name}
-                                  </h4>
-                                  <p className="text-gray-500 font-bold text-[9px] leading-tight line-clamp-1">
-                                    <strong className="text-gray-700">บทบาท:</strong> {c.role} | 
-                                    <strong className="text-gray-700"> ท่าที:</strong> {c.personality}
-                                  </p>
+                            <div className="space-y-6 pt-2">
+                              {/* Title of Level */}
+                              <div>
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-tight">
+                                  {selectedScenario.title}
+                                </h2>
+                                <div className="flex gap-2 mt-2">
+                                  <span className="bg-[#f59e0b]/10 text-[#d97706] border border-[#d97706]/40 px-2 py-0.5 rounded text-[10px] font-black uppercase">
+                                    ระดับความยาก: {selectedScenario.difficulty === 3 ? "ยากระดับบอส" : selectedScenario.difficulty === 2 ? "ระดับกลาง" : "เริ่มต้น"}
+                                  </span>
+                                  <span className="bg-sky-50 text-sky-700 border border-sky-300/40 px-2 py-0.5 rounded text-[10px] font-black uppercase">
+                                    กลุ่ม: {selectedScenario.target_group}
+                                  </span>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Phase Outline Checklist */}
-                        <div>
-                          <h3 className="text-sm font-black text-gray-800 mb-2 flex items-center gap-1">
-                            <span>📋</span> ลำดับการเจรจา (Target Phases)
-                          </h3>
-                          <div className="grid grid-cols-2 gap-2 bg-[#fdfcf7] p-3 rounded-xl border-2 border-dashed border-[#2b221a]/30">
-                            {selectedScenario.phase_rules?.phases?.map((p: string, i: number) => (
-                              <div key={p} className="flex items-center gap-1.5">
-                                <CheckSquare size={13} className="text-[#059669]" strokeWidth={3} />
-                                <span className="text-[10px] font-black text-gray-700 uppercase">
-                                  {p === 'opening' || p === 'rapport' ? ' R-1 // เปิดบทสนทนา' :
-                                   p === 'conflict' || p === 'listening' ? ' R-2 // รับมือประเด็นร้อน' :
-                                   p === 'negotiation' || p === 'bargaining' ? ' R-3 // แลกเปลี่ยนข้อเสนอ' : ' R-4 // สรุปข้อตกลง'}
-                                </span>
                               </div>
-                            )) || <span className="text-[10px] text-gray-400 font-bold">คุยสดโดยไม่แบ่งเฟส</span>}
-                          </div>
-                        </div>
 
-                        {/* Yellow Masking Tape: Rewards */}
-                        <div className="bg-amber-300 border-2 border-black rounded-lg px-4 py-2 rotate-[-1deg] shadow-sm relative">
-                          <div className="absolute top-0 right-3 text-xs">🎁</div>
-                          <h4 className="text-[10px] font-black text-amber-950 uppercase tracking-widest leading-none mb-1">
-                            รางวัลเมื่อทำภารกิจสำเร็จ (REWARDS BRIEF)
-                          </h4>
-                          <p className="text-[10px] text-amber-900 font-black leading-tight">
-                            • {activeLandmark.reward} <br />
-                            • คะแนนทักษะเจรจาสำหรับปลดล็อกระดับถัดไป
-                          </p>
-                        </div>
-                      </div>
+                              {/* Briefing text (Torn paper element) */}
+                              <div className="bg-[#fdfcf7] border-2 border-[#2b221a] p-4 rounded-xl shadow-inner relative">
+                                {/* Sketchy binder corner design */}
+                                <div className="absolute top-0 right-0 w-4 h-4 border-b-2 border-l-2 border-[#2b221a] opacity-40"></div>
 
-                      {/* Validation Stamp Button (STAMP & START) */}
-                      <button 
-                        onClick={() => {
-                          const id = selectedScenario.id;
-                          setSelectedScenario(null);
-                          startSession(id);
-                        }}
-                        className="w-full mt-6 bg-[#b45309] text-white py-3.5 rounded-xl border-[4px] border-[#2b221a] font-black text-lg sm:text-xl uppercase tracking-wider shadow-[0_5px_0_#2b221a] hover:translate-y-0.5 hover:shadow-[0_3px_0_#2b221a] active:translate-y-1.5 active:shadow-none transition-all flex items-center justify-center gap-2 group"
-                      >
-                        <span>เริ่มภารกิจนี้ ✉️</span> 
-                      </button>
+                                <p className="text-gray-700 font-bold text-xs sm:text-sm leading-relaxed">
+                                  {selectedScenario.description}
+                                </p>
+                              </div>
+
+                              {/* Polaroid Snapshot of Opponent with Paperclip detail */}
+                              <div>
+                                <h3 className="text-sm font-black text-gray-800 mb-2 flex items-center gap-1">
+                                  <span>👤</span> คู่เจรจาในภารกิจ (Character Dossier)
+                                </h3>
+
+                                <div className="relative flex bg-[#fff] border-2 border-[#2b221a] p-3 rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.06)] rotate-1 group">
+
+                                  <div className="w-14 h-14 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center text-4xl mr-4 pointer-events-none select-none">
+                                    {activeLandmark.avatar}
+                                  </div>
+
+                                  <div className="flex-1 min-w-0">
+                                    {selectedScenario.characters?.map((c: any, i: number) => (
+                                      <div key={i} className="mb-1.5 last:mb-0">
+                                        <h4 className="font-black text-xs text-gray-900 truncate">
+                                          {c.name}
+                                        </h4>
+                                        <p className="text-gray-500 font-bold text-[9px] leading-tight line-clamp-1">
+                                          <strong className="text-gray-700">บทบาท:</strong> {c.role} |
+                                          <strong className="text-gray-700"> ท่าที:</strong> {c.personality}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Phase Outline Checklist */}
+                              <div>
+                                <h3 className="text-sm font-black text-gray-800 mb-2 flex items-center gap-1">
+                                  <span>📋</span> ลำดับการเจรจา (Target Phases)
+                                </h3>
+                                <div className="grid grid-cols-2 gap-2 bg-[#fdfcf7] p-3 rounded-xl border-2 border-dashed border-[#2b221a]/30">
+                                  {selectedScenario.phase_rules?.phases?.map((p: string, i: number) => (
+                                    <div key={p} className="flex items-center gap-1.5">
+                                      <CheckSquare size={13} className="text-[#059669]" strokeWidth={3} />
+                                      <span className="text-[10px] font-black text-gray-700 uppercase">
+                                        {p === 'opening' || p === 'rapport' ? ' R-1 // เปิดบทสนทนา' :
+                                          p === 'conflict' || p === 'listening' ? ' R-2 // รับมือประเด็นร้อน' :
+                                            p === 'negotiation' || p === 'bargaining' ? ' R-3 // แลกเปลี่ยนข้อเสนอ' : ' R-4 // สรุปข้อตกลง'}
+                                      </span>
+                                    </div>
+                                  )) || <span className="text-[10px] text-gray-400 font-bold">คุยสดโดยไม่แบ่งเฟส</span>}
+                                </div>
+                              </div>
+
+                              {/* Yellow Masking Tape: Rewards */}
+                              <div className="bg-amber-300 border-2 border-black rounded-lg px-4 py-2 rotate-[-1deg] shadow-sm relative">
+                                <div className="absolute top-0 right-3 text-xs">🎁</div>
+                                <h4 className="text-[10px] font-black text-amber-950 uppercase tracking-widest leading-none mb-1">
+                                  รางวัลเมื่อทำภารกิจสำเร็จ (REWARDS BRIEF)
+                                </h4>
+                                <p className="text-[10px] text-amber-900 font-black leading-tight">
+                                  • {activeLandmark.reward} <br />
+                                  • คะแนนทักษะเจรจาสำหรับปลดล็อกระดับถัดไป
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Validation Stamp Button (STAMP & START) */}
+                            <button
+                              onClick={() => {
+                                const id = selectedScenario.id;
+                                setSelectedScenario(null);
+                                startSession(id);
+                              }}
+                              className="w-full mt-6 bg-[#b45309] text-white py-3.5 rounded-xl border-[4px] border-[#2b221a] font-black text-lg sm:text-xl uppercase tracking-wider shadow-[0_5px_0_#2b221a] hover:translate-y-0.5 hover:shadow-[0_3px_0_#2b221a] active:translate-y-1.5 active:shadow-none transition-all flex items-center justify-center gap-2 group"
+                            >
+                              <span>เริ่มภารกิจนี้ ✉️</span>
+                            </button>
                           </>
                         );
                       })()}
@@ -778,14 +776,14 @@ export default function ScenariosPage() {
 
           </div>
         ) : (
-          
+
           /* FREEPLAY ARCADE CARDS (LOOSE POLAROID & MEMO Grid) */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
             {freeplayScenarios.map((scenario, index) => {
               const landmark = getLandmarkInfo(scenario.difficulty || 1, index);
-              
+
               return (
-                <motion.div 
+                <motion.div
                   key={scenario.id}
                   whileHover={{ rotate: 1.5, y: -4 }}
                   className="bg-white border-[5px] border-[#2b221a] p-4 rounded-3xl shadow-[0_8px_0_#2b221a] hover:shadow-[0_12px_0_#2b221a] transition-all cursor-pointer flex flex-col relative overflow-hidden"
@@ -825,8 +823,8 @@ export default function ScenariosPage() {
                     <div className="mt-6 pt-3 border-t-2 border-dashed border-[#2b221a]/20 flex justify-between items-center">
                       <div className="flex -space-x-2.5">
                         {scenario.characters?.map((char: any, i: number) => (
-                          <div 
-                            key={i} 
+                          <div
+                            key={i}
                             className="w-7 h-7 rounded-lg bg-[#fffdf8] border-2 border-black flex items-center justify-center text-[10px] font-black text-gray-900 rotate-6"
                           >
                             {char.name?.charAt(0) || '?'}
@@ -853,7 +851,7 @@ export default function ScenariosPage() {
             <p className="text-rose-700 font-bold mb-6 text-sm">
               {error}
             </p>
-            <button 
+            <button
               onClick={fetchAllData}
               className="bg-amber-400 hover:bg-amber-500 text-gray-900 font-black px-6 py-3.5 rounded-xl border-[4px] border-[#2b221a] shadow-[0_6px_0_#2b221a] active:shadow-none active:translate-y-1.5 active:translate-x-0.5 transition-all text-lg"
             >
@@ -863,22 +861,22 @@ export default function ScenariosPage() {
         )}
 
         {/* If no scenarios match tab */}
-        {((activeTab === 'campaign' && campaignScenarios.length === 0) || 
+        {((activeTab === 'campaign' && campaignScenarios.length === 0) ||
           (activeTab === 'freeplay' && freeplayScenarios.length === 0)) && !loading && !error && (
-          <div className="col-span-full py-16 text-center bg-white border-[6px] border-[#2b221a] rounded-[3rem] max-w-3xl mx-auto shadow-[0_10px_0_#2b221a] p-8">
-            <HelpCircle size={56} className="mx-auto text-[#b45309] mb-4 animate-bounce" />
-            <h3 className="text-2xl font-black mb-2 text-gray-900">ยังไม่มีภารกิจในสมุดนี้</h3>
-            <p className="text-gray-500 font-bold mb-6 text-sm">
-              ยังไม่มีสถานการณ์สำหรับฝึกเจรจาในหมวดนี้
-            </p>
-            <button 
-              onClick={seedScenarios}
-              className="bg-[#b45309] hover:bg-[#d97706] text-white font-black px-6 py-3.5 rounded-xl border-[4px] border-[#2b221a] shadow-[0_6px_0_#2b221a] active:shadow-none active:translate-y-1.5 active:translate-x-0.5 transition-all text-lg"
-            >
-              เพิ่มสถานการณ์ตัวอย่างทันที
-            </button>
-          </div>
-        )}
+            <div className="col-span-full py-16 text-center bg-white border-[6px] border-[#2b221a] rounded-[3rem] max-w-3xl mx-auto shadow-[0_10px_0_#2b221a] p-8">
+              <HelpCircle size={56} className="mx-auto text-[#b45309] mb-4 animate-bounce" />
+              <h3 className="text-2xl font-black mb-2 text-gray-900">ยังไม่มีภารกิจในสมุดนี้</h3>
+              <p className="text-gray-500 font-bold mb-6 text-sm">
+                ยังไม่มีสถานการณ์สำหรับฝึกเจรจาในหมวดนี้
+              </p>
+              <button
+                onClick={seedScenarios}
+                className="bg-[#b45309] hover:bg-[#d97706] text-white font-black px-6 py-3.5 rounded-xl border-[4px] border-[#2b221a] shadow-[0_6px_0_#2b221a] active:shadow-none active:translate-y-1.5 active:translate-x-0.5 transition-all text-lg"
+              >
+                เพิ่มสถานการณ์ตัวอย่างทันที
+              </button>
+            </div>
+          )}
       </div>
     </div>
   );
