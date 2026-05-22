@@ -386,9 +386,12 @@ export default function ScenariosPage() {
             {/* Coffee stain on header */}
             <div className="absolute -top-6 -right-6 w-16 h-16 border-2 border-amber-800 border-opacity-10 rounded-full"></div>
 
-            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-1 uppercase tracking-tight flex items-center gap-2">
+            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2 tracking-tight flex items-start gap-2 leading-[1.25]">
               <Compass className="text-[#d97706] w-8 h-8 animate-spin [animation-duration:15s]" strokeWidth={3} />
-              สมุดภารกิจนักเจรจา (Explorer&apos;s Journal)
+              <span className="flex flex-col">
+                <span>สมุดภารกิจนักเจรจา</span>
+                <span className="text-xl md:text-2xl uppercase leading-[1.35] mt-1">Explorer&apos;s Journal</span>
+              </span>
             </h1>
             <p className="text-gray-500 font-bold text-xs md:text-sm uppercase tracking-wide">
               เลือกภารกิจ ฝึกอ่านสถานการณ์ และเตรียมกลยุทธ์ก่อนเข้าสู่โต๊ะเจรจา
