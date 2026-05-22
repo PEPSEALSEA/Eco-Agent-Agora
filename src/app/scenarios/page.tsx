@@ -25,6 +25,23 @@ type Scenario = {
   phase_rules?: any;
 };
 
+type SessionRow = {
+  id?: unknown;
+  user_id?: unknown;
+  scenario_id?: unknown;
+  ended_at?: unknown;
+  outcome_score?: unknown;
+  status?: unknown;
+};
+
+const normalizeId = (value: unknown) => String(value ?? '').trim();
+
+const toScore = (value: unknown) => {
+  if (value === null || value === undefined || value === '') return null;
+  const score = Number(value);
+  return Number.isFinite(score) ? score : null;
+};
+
 // Opponent details & notebook styling details
 const getLandmarkInfo = (difficulty: number, index: number) => {
   const landmarks = [
@@ -78,7 +95,7 @@ const getLandmarkInfo = (difficulty: number, index: number) => {
 
 export default function ScenariosPage() {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState('กำลังเปิดสมุดบันทึกนักเจรจา...');
@@ -281,16 +298,43 @@ export default function ScenariosPage() {
   const campaignScenarios = scenarios.filter(s => s.mode === 'campaign' || !s.mode);
   const freeplayScenarios = scenarios.filter(s => s.mode === 'freeplay');
 
-  // Calculates level validation and star achievements dynamically
-  const getScenarioStatus = (scenario: Scenario, index: number) => {
-    const scenarioSessions = sessions.filter(s => s.scenario_id === scenario.id);
-    const completedSessions = scenarioSessions.filter(s => s.outcome_score !== undefined);
+  const getCompletedScore = (session: SessionRow) => {
+    const score = toScore(session.outcome_score);
+    if (score === null) return null;
 
-    const maxScore = completedSessions.length > 0
-      ? Math.max(...completedSessions.map(s => s.outcome_score || 0))
+    const status = normalizeId(session.status).toLowerCase();
+    const hasEndedAt = normalizeId(session.ended_at) !== '';
+    const isCompleted = status === 'completed' || status === 'done' || hasEndedAt;
+
+    return isCompleted ? score : null;
+  };
+
+  const getUserScenarioScores = (scenarioId: unknown) => {
+    const currentUserId = normalizeId(user?.id);
+    if (!currentUserId) return [];
+
+    return sessions
+      .filter(session =>
+        normalizeId(session.user_id) === currentUserId &&
+        normalizeId(session.scenario_id) === normalizeId(scenarioId)
+      )
+      .map(getCompletedScore)
+      .filter((score): score is number => score !== null);
+  };
+
+  const hasPassedScenario = (scenarioId: unknown) => {
+    return getUserScenarioScores(scenarioId).some(score => score > 0);
+  };
+
+  // Calculates level validation and star achievements from Cloudflare/Google Sheets session rows.
+  const getScenarioStatus = (scenario: Scenario, index: number) => {
+    const completedScores = getUserScenarioScores(scenario.id);
+
+    const maxScore = completedScores.length > 0
+      ? Math.max(...completedScores)
       : 0;
 
-    const isCleared = completedSessions.length > 0;
+    const isCleared = maxScore > 0;
 
     let stars = 0;
     if (maxScore >= 85) stars = 3;
@@ -304,9 +348,7 @@ export default function ScenariosPage() {
     } else {
       // Node is unlocked if the PREVIOUS node is cleared
       const prevScenario = campaignScenarios[index - 1];
-      const prevSessions = sessions.filter(s => s.scenario_id === prevScenario?.id);
-      const prevCleared = prevSessions.some(s => s.outcome_score !== undefined);
-      isUnlocked = prevCleared;
+      isUnlocked = hasPassedScenario(prevScenario?.id);
     }
 
     return { isCleared, isUnlocked, stars, maxScore };
@@ -532,7 +574,6 @@ export default function ScenariosPage() {
                     {/* Level Nodes */}
                     {campaignScenarios.map((scenario, index) => {
                       const { isCleared, isUnlocked, stars, maxScore } = getScenarioStatus(scenario, index);
-                      const isBoss = scenario.difficulty === 3;
                       const landmark = getLandmarkInfo(scenario.difficulty || 1, index);
 
                       const top = `${80 + index * 160}px`;
@@ -575,8 +616,8 @@ export default function ScenariosPage() {
                               className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[5px] border-[#2b221a] flex flex-col items-center justify-center font-black transition-all duration-300 group
                                 ${!isUnlocked
                                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed border-dashed'
-                                  : isBoss
-                                    ? `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]`
+                                  : isCleared
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]'
                                     : `${landmark.sealColor} text-white shadow-[0_6px_0_#2b221a] hover:scale-105 active:scale-95 active:shadow-[0_2px_0_#2b221a]`
                                 }
                               `}
@@ -599,7 +640,7 @@ export default function ScenariosPage() {
                                     {index + 1}
                                   </span>
                                   <span className="text-[7px] uppercase font-black tracking-widest opacity-80 mt-0.5">
-                                    {index === 0 ? "START" : isBoss ? "BOSS LEVEL" : `STAGE ${index + 1}`}
+                                    {index === 0 ? "START" : scenario.difficulty === 3 ? "BOSS LEVEL" : `STAGE ${index + 1}`}
                                   </span>
                                 </div>
                               )}
@@ -607,7 +648,7 @@ export default function ScenariosPage() {
                               {/* Stamped Cleared mark */}
                               {isCleared && (
                                 <div className="absolute -bottom-1 -right-1 bg-emerald-600 border-2 border-black rounded-full p-0.5 text-white shadow-[0_1.5px_0_#000] rotate-12">
-                                  <span className="text-[8px] font-black leading-none px-1">PASSED</span>
+                                  <span className="text-[8px] font-black leading-none px-1">PASSED {Math.round(maxScore)}</span>
                                 </div>
                               )}
                             </button>
