@@ -78,40 +78,41 @@ export const KidGameplay = ({ onSelect, dynamicDecisions, disabled }: KidGamepla
         ))}
       </div>
 
-      {/* Card Deck Area */}
-      <div className="relative flex items-center justify-center h-80 w-full perspective-1000">
-        <AnimatePresence>
-          {decisions.map((d, i) => {
-            const visual = KID_TYPE_MAP[d.type] || KID_TYPE_MAP.default;
-            const isHovered = hoveredCard === d.id;
-            
-            // Calculate rotation and position based on index
-            const count = decisions.length;
-            const mid = (count - 1) / 2;
-            const rot = (i - mid) * 15;
-            const xOffset = (i - mid) * 120;
-            const yOffset = Math.abs(i - mid) * 15;
+      {/* Card Deck Area — flex fan with controlled overlap */}
+      <div className="relative w-full max-w-3xl mx-auto isolate min-h-[17.5rem] sm:min-h-[18.5rem] py-4 px-2 sm:px-4">
+        <div className="flex items-end justify-center w-full">
+          <AnimatePresence>
+            {decisions.map((d, i) => {
+              const visual = KID_TYPE_MAP[d.type] || KID_TYPE_MAP.default;
+              const isHovered = hoveredCard === d.id;
 
-            return (
-              <motion.div
-                key={d.id}
-                initial={{ opacity: 0, y: 100, rotate: 0 }}
-                animate={{ 
-                  opacity: 1, 
-                  y: isHovered ? -40 : yOffset, 
-                  x: xOffset,
-                  rotate: isHovered ? 0 : rot,
-                  scale: isHovered ? 1.15 : 1,
-                  zIndex: isHovered ? 50 : i
-                }}
-                exit={{ opacity: 0, scale: 0.5, y: -200 }}
-                onHoverStart={() => setHoveredCard(d.id)}
-                onHoverEnd={() => setHoveredCard(null)}
-                onClick={() => handlePick(d)}
-                className={`absolute w-44 h-64 rounded-[2.5rem] border-8 border-gray-900 cursor-pointer overflow-hidden flex flex-col items-center justify-between p-6 shadow-[0_15px_0_rgba(0,0,0,1)] transition-colors
-                  ${isHovered ? visual.color : 'bg-white'}
-                `}
-              >
+              const count = decisions.length;
+              const mid = (count - 1) / 2;
+              const offsetFromCenter = i - mid;
+              const rot = offsetFromCenter * 7;
+              const lift = Math.abs(offsetFromCenter) * 6;
+              const stackZ = 10 + i;
+
+              return (
+                <motion.div
+                  key={d.id}
+                  initial={{ opacity: 0, y: 80, rotate: 0 }}
+                  animate={{
+                    opacity: 1,
+                    y: isHovered ? -28 : lift,
+                    rotate: isHovered ? 0 : rot,
+                    scale: isHovered ? 1.06 : 1,
+                    zIndex: isHovered ? 30 : stackZ,
+                  }}
+                  exit={{ opacity: 0, scale: 0.5, y: -120 }}
+                  onHoverStart={() => setHoveredCard(d.id)}
+                  onHoverEnd={() => setHoveredCard(null)}
+                  onClick={() => handlePick(d)}
+                  style={{ marginLeft: i === 0 ? 0 : '-2.25rem' }}
+                  className={`relative flex-shrink-0 w-[9.25rem] sm:w-40 h-60 sm:h-64 rounded-[2.5rem] border-8 border-gray-900 cursor-pointer overflow-hidden flex flex-col items-center justify-between p-4 sm:p-6 shadow-[0_15px_0_rgba(0,0,0,1)] transition-colors
+                    ${isHovered ? visual.color : 'bg-white'}
+                  `}
+                >
                 {/* Nintendo Stripe */}
                 <div className={`absolute top-0 left-0 w-full h-3 ${isHovered ? 'bg-white/30' : visual.color}`} />
                 
@@ -121,8 +122,8 @@ export const KidGameplay = ({ onSelect, dynamicDecisions, disabled }: KidGamepla
                   {visual.icon}
                 </div>
 
-                <div className="flex-1 flex items-center justify-center mt-4">
-                  <p className={`font-black text-xl text-center leading-tight uppercase tracking-tighter
+                <div className="flex-1 flex items-center justify-center mt-2 min-h-0 px-1">
+                  <p className={`font-black text-sm sm:text-base text-center leading-snug line-clamp-3
                     ${isHovered ? 'text-white' : 'text-gray-900'}
                   `}>
                     {d.thaiLabel}
@@ -134,26 +135,21 @@ export const KidGameplay = ({ onSelect, dynamicDecisions, disabled }: KidGamepla
                 `}>
                   {visual.label}
                 </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Guide Text */}
       <motion.p 
         animate={{ opacity: [0.4, 0.7, 0.4] }}
         transition={{ repeat: Infinity, duration: 2 }}
-        className="mt-12 text-gray-500 font-black text-lg uppercase tracking-widest"
+        className="mt-6 text-gray-700 font-black text-sm sm:text-base uppercase tracking-widest"
       >
         เลือกคำพูดที่คุณต้องการส่ง!
       </motion.p>
-
-      <style jsx>{`
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-      `}</style>
     </div>
   );
 };

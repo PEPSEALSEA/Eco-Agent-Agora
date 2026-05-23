@@ -415,11 +415,17 @@ function NegotiateContent(): React.ReactElement {
   }
 
   return (
-    <div className="flex h-screen bg-slate-950 text-white overflow-hidden relative flex-col lg:flex-row">
+    <div className={`flex h-screen overflow-hidden relative flex-col lg:flex-row ${
+      kidGameplayActive ? 'bg-nintendo-yellow text-gray-900' : 'bg-slate-950 text-white'
+    }`}>
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       
       {/* Mobile Header (Only on small screens) */}
-      <div className="lg:hidden flex items-center justify-between p-4 border-b border-white/10 bg-black/40 z-40">
+      <div className={`lg:hidden flex items-center justify-between p-4 z-40 ${
+        kidGameplayActive
+          ? 'border-b-4 border-gray-900 bg-white/80'
+          : 'border-b border-white/10 bg-black/40'
+      }`}>
         <button onClick={() => router.push('/scenarios')} className="p-2"><ArrowLeft size={20}/></button>
         <h1 className="font-bold text-sm truncate px-4">{scenario?.title}</h1>
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-cyan-400"><Users size={20}/></button>
@@ -546,7 +552,7 @@ function NegotiateContent(): React.ReactElement {
       <main 
         className={`flex-1 flex flex-col items-center relative overflow-hidden cursor-pointer transition-all duration-1000 mx-auto w-full max-w-[1440px] ${
           kidGameplayActive
-            ? (currentVibe === 'Serious' ? 'bg-red-500/20' : currentVibe === 'Happy' ? 'bg-nintendo-yellow/20' : 'bg-blue-500/10')
+            ? (currentVibe === 'Serious' ? 'bg-[#ffd54f]' : currentVibe === 'Happy' ? 'bg-nintendo-yellow' : 'bg-[#ffe566]')
             : (currentVibe === 'Serious' ? 'bg-red-950/40' : currentVibe === 'Happy' ? 'bg-amber-950/20' : 'bg-slate-900/40')
         } ${showPulse ? 'scale-[1.01]' : 'scale-100'}`}
         onClick={advanceMessage}
@@ -554,27 +560,33 @@ function NegotiateContent(): React.ReactElement {
         {/* Vibe Background Layer */}
         <motion.div 
           animate={{ 
-            backgroundColor: currentVibe === 'Serious' ? 'rgba(239, 68, 68, 0.1)' : 
-                             currentVibe === 'Happy' ? 'rgba(248, 204, 0, 0.1)' : 'rgba(0, 0, 0, 0)',
-            opacity: [0.3, 0.5, 0.3]
+            backgroundColor: kidGameplayActive
+              ? (currentVibe === 'Serious' ? 'rgba(248, 113, 113, 0.18)' :
+                 currentVibe === 'Happy' ? 'rgba(251, 191, 36, 0.22)' : 'rgba(56, 189, 248, 0.12)')
+              : (currentVibe === 'Serious' ? 'rgba(239, 68, 68, 0.1)' : 
+                 currentVibe === 'Happy' ? 'rgba(248, 204, 0, 0.1)' : 'rgba(0, 0, 0, 0)'),
+            opacity: kidGameplayActive ? [0.35, 0.55, 0.35] : [0.3, 0.5, 0.3]
           }}
           transition={{ repeat: Infinity, duration: 4 }}
           className="absolute inset-0 pointer-events-none"
         />
 
         {/* Dynamic Pattern Layer */}
-        <div className={`absolute inset-0 opacity-20 pointer-events-none ${
+        <div className={`absolute inset-0 pointer-events-none ${
           kidGameplayActive 
-            ? 'bg-[radial-gradient(#ffffff_2px,transparent_2px)] [background-size:40px_40px]' 
-            : 'bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:100px_100px]'
+            ? 'opacity-[0.14] bg-[radial-gradient(rgba(43,34,26,0.35)_2px,transparent_2px)] [background-size:36px_36px]' 
+            : 'opacity-20 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:100px_100px]'
         }`} />
         {/* Header Layer */}
         <header className="w-full max-w-6xl flex justify-between items-start p-8 z-30 absolute top-0 pointer-events-auto">
           <div>
-            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 drop-shadow-md">
+            <h1 className={kidGameplayActive
+              ? 'text-2xl font-black text-gray-900'
+              : 'text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 drop-shadow-md'
+            }>
               {scenario?.title || 'กำลังเตรียมข้อมูล...'}
             </h1>
-            <p className="text-sm text-gray-300 drop-shadow-md mt-1">
+            <p className={`text-sm mt-1 ${kidGameplayActive ? 'text-gray-800 font-bold' : 'text-gray-300 drop-shadow-md'}`}>
               เฟสปัจจุบัน: {
                 phase === 'rapport' ? 'สานสัมพันธ์' : 
                 phase === 'discovery' ? 'สำรวจความต้องการ' : 
@@ -582,7 +594,11 @@ function NegotiateContent(): React.ReactElement {
               }
             </p>
           </div>
-          <div className="flex items-center space-x-3 bg-black/40 p-2 rounded-2xl backdrop-blur-md border border-white/5">
+          <div className={`flex items-center space-x-3 p-2 rounded-2xl border ${
+            kidGameplayActive
+              ? 'bg-white/90 border-gray-900 shadow-[0_6px_0_rgba(0,0,0,1)]'
+              : 'bg-black/40 backdrop-blur-md border-white/5'
+          }`}>
             {/* Mode Cycle: kid → adult → pro → kid */}
             <button
               onClick={(e) => {
@@ -639,7 +655,9 @@ function NegotiateContent(): React.ReactElement {
         </header>
 
         {/* Character Stage Layer */}
-        <div className="absolute bottom-0 left-0 w-full h-full flex justify-center items-end space-x-4 sm:space-x-12 pb-[22vh] z-10 pointer-events-none">
+        <div className={`absolute bottom-0 left-0 w-full h-full flex justify-center items-end space-x-4 sm:space-x-12 z-10 pointer-events-none ${
+          kidGameplayActive ? 'pb-[38vh] sm:pb-[36vh]' : 'pb-[22vh]'
+        }`}>
           {characters.map((char, i) => {
             const currentMsg = messages[currentMessageIndex];
             const isTalking = currentMsg?.sender === 'ai' && currentMsg?.character_name === char.name;
@@ -673,8 +691,12 @@ function NegotiateContent(): React.ReactElement {
         </div>
 
         {/* UI / Dialogue Layer */}
-        <div className="absolute bottom-8 left-0 w-full z-20 px-4 flex justify-center pointer-events-none">
-          <div className="w-full max-w-4xl pointer-events-auto flex flex-col items-center relative">
+        <div className={`absolute left-0 w-full z-20 px-4 flex justify-center pointer-events-none ${
+          kidGameplayActive ? 'bottom-4 sm:bottom-6' : 'bottom-8'
+        }`}>
+          <div className={`w-full pointer-events-auto flex flex-col items-center relative ${
+            kidGameplayActive ? 'max-w-3xl gap-3' : 'max-w-4xl'
+          }`}>
             
             {error && (
               <div className="absolute -top-16 bg-red-500/10 border border-red-500/20 px-6 py-3 rounded-2xl text-red-400 text-sm flex items-center backdrop-blur-md shadow-lg">
@@ -699,8 +721,8 @@ function NegotiateContent(): React.ReactElement {
                 : 'opacity-100 translate-y-0 relative z-30'
             }`}>
               {kidGameplayActive ? (
-                <div className="w-full flex flex-col items-center">
-                  <div className="bg-white border-4 border-gray-900 px-6 py-2 rounded-full mb-4 text-sm font-black text-gray-900 flex items-center shadow-[0_6px_0_rgba(0,0,0,1)] uppercase tracking-normal">
+                <div className="w-full flex flex-col items-center z-20 relative">
+                  <div className="bg-white border-4 border-gray-900 px-6 py-2 rounded-full mb-3 text-sm font-black text-gray-900 flex items-center shadow-[0_6px_0_rgba(0,0,0,1)] uppercase tracking-normal">
                     <Sparkles size={16} className="mr-2 text-nintendo-yellow" /> เลือกการ์ดการกระทำ!
                   </div>
                   <KidGameplay 
@@ -765,6 +787,7 @@ function NegotiateContent(): React.ReactElement {
 
             {/* Dialogue Box */}
             {(messages.length > 0 || streamingMessage) && (
+              <div className={`w-full relative ${kidGameplayActive ? 'z-30' : ''}`}>
               <DialogueBox 
                 sender={streamingMessage ? 'ai' : (messages[currentMessageIndex]?.sender || 'ai')}
                 characterName={
@@ -780,6 +803,7 @@ function NegotiateContent(): React.ReactElement {
                 isLastMessage={streamingMessage ? true : currentMessageIndex === messages.length - 1}
                 isKidMode={kidGameplayActive}
               />
+              </div>
             )}
           </div>
         </div>
