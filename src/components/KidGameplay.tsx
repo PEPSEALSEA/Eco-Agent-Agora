@@ -59,16 +59,16 @@ export const KidGameplay = ({ onSelect, dynamicDecisions, disabled }: KidGamepla
     <div className="w-full max-w-2xl flex flex-col items-center pointer-events-auto">
       
       {/* Vibe Selector (Mood Aura) */}
-      <div className="mb-10 flex space-x-4 bg-black/40 p-2 rounded-full border-4 border-gray-900 shadow-[0_8px_0_rgba(0,0,0,1)]">
+      <div className="mb-10 flex flex-wrap justify-center gap-2 sm:gap-3 bg-white p-2 sm:p-2.5 rounded-full border-[3px] border-gray-900 shadow-[0_6px_0_#2b221a]">
         {VIBES.map((v) => (
           <button
             key={v.id}
             onClick={() => setSelectedVibe(v.id)}
             disabled={disabled}
-            className={`flex items-center px-6 py-2 rounded-full font-black text-sm uppercase transition-all
+            className={`flex items-center px-5 sm:px-6 py-2 rounded-full font-black text-sm uppercase transition-all border-2 border-gray-900
               ${selectedVibe === v.id 
-                ? `${v.color} text-gray-900 translate-y-1 shadow-none` 
-                : 'bg-white/10 text-white hover:bg-white/20 shadow-[0_4px_0_rgba(0,0,0,1)]'
+                ? `${v.color} text-gray-900 translate-y-0.5 shadow-none` 
+                : 'bg-kids-cream text-gray-900 hover:bg-kids-cream-deep shadow-[0_3px_0_#2b221a]'
               }
             `}
           >

@@ -416,7 +416,7 @@ function NegotiateContent(): React.ReactElement {
 
   return (
     <div className={`flex h-screen overflow-hidden relative flex-col lg:flex-row ${
-      kidGameplayActive ? 'bg-nintendo-yellow text-gray-900' : 'bg-slate-950 text-white'
+      kidGameplayActive ? 'bg-kids-cream text-gray-900' : 'bg-slate-950 text-white'
     }`}>
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       
@@ -426,9 +426,21 @@ function NegotiateContent(): React.ReactElement {
           ? 'border-b-4 border-gray-900 bg-white/80'
           : 'border-b border-white/10 bg-black/40'
       }`}>
-        <button onClick={() => router.push('/scenarios')} className="p-2"><ArrowLeft size={20}/></button>
-        <h1 className="font-bold text-sm truncate px-4">{scenario?.title}</h1>
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-cyan-400"><Users size={20}/></button>
+        <button
+          onClick={() => router.push('/scenarios')}
+          className={`p-2 rounded-lg ${kidGameplayActive ? 'border-2 border-gray-900 bg-white text-gray-900' : ''}`}
+        >
+          <ArrowLeft size={20}/>
+        </button>
+        <h1 className={`font-black text-sm truncate px-4 ${kidGameplayActive ? 'text-gray-900' : 'font-bold'}`}>{scenario?.title}</h1>
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className={`p-2 rounded-lg border-2 border-gray-900 ${
+            kidGameplayActive ? 'bg-white text-gray-900 shadow-[0_3px_0_#2b221a]' : 'text-cyan-400'
+          }`}
+        >
+          <Users size={20}/>
+        </button>
       </div>
 
       {/* Start Overlay */}
@@ -481,26 +493,47 @@ function NegotiateContent(): React.ReactElement {
 
       {/* Sidebar (Responsive) */}
       <aside className={`
-        fixed inset-y-0 left-0 z-[60] w-72 border-r border-white/10 bg-slate-900/95 backdrop-blur-xl transition-transform duration-300 transform lg:relative lg:translate-x-0 lg:flex
+        fixed inset-y-0 left-0 z-[60] w-72 transition-transform duration-300 transform lg:relative lg:translate-x-0 lg:flex
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         flex-col p-6
+        ${kidGameplayActive
+          ? 'border-r-4 border-gray-900 bg-white shadow-[4px_0_0_rgba(43,34,26,0.12)]'
+          : 'border-r border-white/10 bg-slate-900/95 backdrop-blur-xl'
+        }
       `}>
         <div className="flex justify-between items-center mb-8">
           <button 
             onClick={() => router.push('/scenarios')}
-            className="flex items-center text-gray-400 hover:text-white transition-colors text-sm"
+            className={`flex items-center text-sm font-bold transition-colors ${
+              kidGameplayActive
+                ? 'text-gray-900 hover:text-nintendo-red'
+                : 'text-gray-400 hover:text-white'
+            }`}
           >
             <ArrowLeft size={16} className="mr-2" /> ลานฝึกซ้อม
           </button>
-          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-gray-500"><X size={20}/></button>
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className={`lg:hidden ${kidGameplayActive ? 'text-gray-900' : 'text-gray-500'}`}
+          >
+            <X size={20}/>
+          </button>
         </div>
 
         <section className="mb-8">
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center">
-            <Info size={14} className="mr-2 text-cyan-400" /> เป้าหมายภารกิจ
+          <h2 className={`text-xs font-black uppercase tracking-widest mb-4 flex items-center ${
+            kidGameplayActive ? 'text-gray-900' : 'text-gray-500 font-bold'
+          }`}>
+            <Info size={14} className={`mr-2 ${kidGameplayActive ? 'text-nintendo-blue' : 'text-cyan-400'}`} /> เป้าหมายภารกิจ
           </h2>
-          <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
-            <p className="text-xs text-gray-300 leading-relaxed">
+          <div className={`p-4 rounded-xl border-2 ${
+            kidGameplayActive
+              ? 'bg-kids-cream border-gray-900 shadow-[0_4px_0_#2b221a]'
+              : 'bg-cyan-500/5 border border-cyan-500/10'
+          }`}>
+            <p className={`text-xs leading-relaxed font-bold ${
+              kidGameplayActive ? 'text-gray-800' : 'text-gray-300'
+            }`}>
               {scenario?.target_group === 'professional' 
                 ? "บรรลุข้อตกลงราคาที่ยุติธรรมโดยไม่สูญเสียความไว้วางใจ" 
                 : "ทำให้ทุกคนกลับมาทำงานในโครงการก่อนกำหนดเวลา"}
@@ -508,18 +541,31 @@ function NegotiateContent(): React.ReactElement {
           </div>
         </section>
 
-        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center">
-          <Users size={14} className="mr-2 text-purple-400" /> ผู้มีส่วนได้ส่วนเสีย
+        <h2 className={`text-xs uppercase tracking-widest mb-4 flex items-center ${
+          kidGameplayActive ? 'font-black text-gray-900' : 'font-bold text-gray-500'
+        }`}>
+          <Users size={14} className={`mr-2 ${kidGameplayActive ? 'text-nintendo-pink' : 'text-purple-400'}`} /> ผู้มีส่วนได้ส่วนเสีย
         </h2>
         <div className="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar">
           {characters.map((char, i) => (
-            <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all group">
+            <div
+              key={i}
+              className={`p-4 rounded-xl transition-all group ${
+                kidGameplayActive
+                  ? 'bg-white border-[3px] border-gray-900 shadow-[0_5px_0_#2b221a] hover:translate-y-0.5 hover:shadow-[0_3px_0_#2b221a]'
+                  : 'bg-white/5 border border-white/10 hover:border-white/20'
+              }`}
+            >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold mr-3 shadow-lg">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black mr-3 border-2 border-gray-900 ${
+                    kidGameplayActive
+                      ? 'bg-nintendo-blue text-white shadow-[0_3px_0_#2b221a]'
+                      : 'bg-gradient-to-br from-indigo-500 to-purple-600 font-bold shadow-lg'
+                  }`}>
                     {char.name.charAt(0)}
                   </div>
-                  <span className="font-bold text-sm">{char.name}</span>
+                  <span className={`font-black text-sm ${kidGameplayActive ? 'text-gray-900' : 'font-bold'}`}>{char.name}</span>
                 </div>
                 <div className={`w-2 h-2 rounded-full ${
                   char.mood === 'open' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' :
@@ -527,16 +573,20 @@ function NegotiateContent(): React.ReactElement {
                   'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]'
                 }`}></div>
               </div>
-              <p className="text-[10px] text-gray-500 italic mb-1 line-clamp-1">{char.role}</p>
+              <p className={`text-[10px] italic mb-1 line-clamp-1 font-bold ${
+                kidGameplayActive ? 'text-gray-600' : 'text-gray-500'
+              }`}>{char.role}</p>
               
               {char.stats && (
-                <div className="flex justify-between text-[9px] font-bold uppercase mb-1">
-                  <span className="text-green-400">Trust: {char.stats.trust}</span>
-                  <span className="text-red-400">Anger: {char.stats.anger}</span>
+                <div className="flex justify-between text-[9px] font-black uppercase mb-1">
+                  <span className={kidGameplayActive ? 'text-emerald-700' : 'text-green-400'}>Trust: {char.stats.trust}</span>
+                  <span className={kidGameplayActive ? 'text-red-700' : 'text-red-400'}>Anger: {char.stats.anger}</span>
                 </div>
               )}
 
-              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className={`h-1.5 w-full rounded-full overflow-hidden border ${
+                kidGameplayActive ? 'bg-gray-200 border-gray-900' : 'bg-white/5'
+              }`}>
                 <div className={`h-full transition-all duration-500 ${
                   char.mood === 'open' ? 'w-full bg-green-500' :
                   char.mood === 'resistant' ? 'w-1/3 bg-red-500' :
@@ -552,7 +602,7 @@ function NegotiateContent(): React.ReactElement {
       <main 
         className={`flex-1 flex flex-col items-center relative overflow-hidden cursor-pointer transition-all duration-1000 mx-auto w-full max-w-[1440px] ${
           kidGameplayActive
-            ? (currentVibe === 'Serious' ? 'bg-[#ffd54f]' : currentVibe === 'Happy' ? 'bg-nintendo-yellow' : 'bg-[#ffe566]')
+            ? (currentVibe === 'Serious' ? 'bg-[#fce8d4]' : currentVibe === 'Happy' ? 'bg-kids-cream' : 'bg-kids-cream-deep')
             : (currentVibe === 'Serious' ? 'bg-red-950/40' : currentVibe === 'Happy' ? 'bg-amber-950/20' : 'bg-slate-900/40')
         } ${showPulse ? 'scale-[1.01]' : 'scale-100'}`}
         onClick={advanceMessage}
@@ -561,11 +611,11 @@ function NegotiateContent(): React.ReactElement {
         <motion.div 
           animate={{ 
             backgroundColor: kidGameplayActive
-              ? (currentVibe === 'Serious' ? 'rgba(248, 113, 113, 0.18)' :
-                 currentVibe === 'Happy' ? 'rgba(251, 191, 36, 0.22)' : 'rgba(56, 189, 248, 0.12)')
+              ? (currentVibe === 'Serious' ? 'rgba(251, 191, 177, 0.35)' :
+                 currentVibe === 'Happy' ? 'rgba(253, 230, 138, 0.25)' : 'rgba(186, 230, 253, 0.2)')
               : (currentVibe === 'Serious' ? 'rgba(239, 68, 68, 0.1)' : 
                  currentVibe === 'Happy' ? 'rgba(248, 204, 0, 0.1)' : 'rgba(0, 0, 0, 0)'),
-            opacity: kidGameplayActive ? [0.35, 0.55, 0.35] : [0.3, 0.5, 0.3]
+            opacity: kidGameplayActive ? [0.2, 0.35, 0.2] : [0.3, 0.5, 0.3]
           }}
           transition={{ repeat: Infinity, duration: 4 }}
           className="absolute inset-0 pointer-events-none"
@@ -574,7 +624,7 @@ function NegotiateContent(): React.ReactElement {
         {/* Dynamic Pattern Layer */}
         <div className={`absolute inset-0 pointer-events-none ${
           kidGameplayActive 
-            ? 'opacity-[0.14] bg-[radial-gradient(rgba(43,34,26,0.35)_2px,transparent_2px)] [background-size:36px_36px]' 
+            ? 'opacity-[0.08] bg-[radial-gradient(rgba(43,34,26,0.22)_2px,transparent_2px)] [background-size:40px_40px]' 
             : 'opacity-20 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:100px_100px]'
         }`} />
         {/* Header Layer */}
@@ -586,18 +636,28 @@ function NegotiateContent(): React.ReactElement {
             }>
               {scenario?.title || 'กำลังเตรียมข้อมูล...'}
             </h1>
-            <p className={`text-sm mt-1 ${kidGameplayActive ? 'text-gray-800 font-bold' : 'text-gray-300 drop-shadow-md'}`}>
-              เฟสปัจจุบัน: {
-                phase === 'rapport' ? 'สานสัมพันธ์' : 
-                phase === 'discovery' ? 'สำรวจความต้องการ' : 
-                phase === 'bargaining' ? 'ต่อรอง' : 'สรุปข้อตกลง'
-              }
-            </p>
+            {kidGameplayActive ? (
+              <span className="inline-flex mt-2 items-center gap-1.5 bg-white border-2 border-gray-900 text-gray-900 text-xs font-black uppercase tracking-wide px-3 py-1 rounded-full shadow-[0_3px_0_#2b221a]">
+                เฟส: {
+                  phase === 'rapport' ? 'สานสัมพันธ์' :
+                  phase === 'discovery' ? 'สำรวจความต้องการ' :
+                  phase === 'bargaining' ? 'ต่อรอง' : 'สรุปข้อตกลง'
+                }
+              </span>
+            ) : (
+              <p className="text-sm mt-1 text-gray-300 drop-shadow-md">
+                เฟสปัจจุบัน: {
+                  phase === 'rapport' ? 'สานสัมพันธ์' :
+                  phase === 'discovery' ? 'สำรวจความต้องการ' :
+                  phase === 'bargaining' ? 'ต่อรอง' : 'สรุปข้อตกลง'
+                }
+              </p>
+            )}
           </div>
-          <div className={`flex items-center space-x-3 p-2 rounded-2xl border ${
+          <div className={`flex items-center gap-2 p-2 rounded-2xl border ${
             kidGameplayActive
-              ? 'bg-white/90 border-gray-900 shadow-[0_6px_0_rgba(0,0,0,1)]'
-              : 'bg-black/40 backdrop-blur-md border-white/5'
+              ? 'bg-white border-[3px] border-gray-900 shadow-[0_6px_0_#2b221a]'
+              : 'bg-black/40 backdrop-blur-md border-white/5 space-x-3'
           }`}>
             {/* Mode Cycle: kid → adult → pro → kid */}
             <button
@@ -606,12 +666,18 @@ function NegotiateContent(): React.ReactElement {
                 if (scenario?.target_group === 'professional') return;
                 setMode(prev => prev === 'kid' ? 'adult' : prev === 'adult' ? 'pro' : 'kid');
               }}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center ${
+              className={`px-4 py-2 rounded-xl text-sm font-black transition-all flex items-center border-2 ${
                 scenario?.target_group === 'professional' ? 'opacity-60 cursor-default' : ''
               } ${
-                mode === 'kid' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
-                mode === 'adult' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
-                'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                kidGameplayActive
+                  ? (mode === 'kid'
+                    ? 'bg-purple-600 text-white border-gray-900 shadow-[0_4px_0_#2b221a]'
+                    : mode === 'adult'
+                      ? 'bg-white text-gray-900 border-gray-900 hover:bg-gray-50'
+                      : 'bg-white text-gray-900 border-gray-900 hover:bg-gray-50')
+                  : (mode === 'kid' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
+                    mode === 'adult' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                    'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30')
               }`}
               title={scenario?.target_group === 'professional' ? 'สถานการณ์นี้ใช้การพิมพ์อิสระ (โหมดผู้เชี่ยวชาญ)' : undefined}
             >
@@ -621,7 +687,11 @@ function NegotiateContent(): React.ReactElement {
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); setShowLogModal(true); }}
-              className="px-4 py-2 hover:bg-white/10 rounded-xl text-sm font-bold transition-all text-cyan-400 flex items-center"
+              className={`px-4 py-2 rounded-xl text-sm font-black transition-all flex items-center border-2 ${
+                kidGameplayActive
+                  ? 'bg-gray-900 text-white border-gray-900 shadow-[0_4px_0_#2b221a] hover:bg-gray-800'
+                  : 'hover:bg-white/10 text-cyan-400'
+              }`}
               title="ดูบันทึกการสนทนา"
             >
               <ScrollText size={16} className="mr-2"/> ประวัติ
@@ -641,13 +711,15 @@ function NegotiateContent(): React.ReactElement {
                     alert('เกิดข้อผิดพลาดในการจบการเจรจา กรุณาลองใหม่อีกครั้ง');
                     setLoading(false);
                   } finally {
-                    // Note: We don't set loading false here because we are navigating away
-                    // But if navigation fails or stays, we should allow user to try again
                     setTimeout(() => setLoading(false), 5000); 
                   }
                 }
               }}
-              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-xl text-sm font-bold transition-all"
+              className={`px-4 py-2 rounded-xl text-sm font-black transition-all border-2 ${
+                kidGameplayActive
+                  ? 'bg-nintendo-red text-white border-gray-900 shadow-[0_4px_0_#b3000e] hover:bg-red-600'
+                  : 'bg-red-500/20 hover:bg-red-500/40 text-red-200'
+              }`}
             >
               ยุติเซสชัน
             </button>

@@ -20,6 +20,8 @@
   --color-nintendo-pink: #ed47a2;
   --color-cartoon-blue: #bae6fd;
   --color-cartoon-dot: #7dd3fc;
+  --color-kids-cream: #fff8e7;
+  --color-kids-cream-deep: #f5e6c8;
 }
 
 @media (prefers-color-scheme: dark) {
