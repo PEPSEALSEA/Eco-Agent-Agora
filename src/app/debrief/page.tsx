@@ -9,6 +9,26 @@ import { ArrowLeft, RefreshCcw, TrendingUp, Zap, HelpCircle, Trophy, Target, Mes
 import { CartoonLoading } from '@/components/CartoonLoading';
 import Link from 'next/link';
 
+const VIBE_TH: Record<string, string> = {
+  happy: 'ร่าเริง',
+  calm: 'ใจเย็น',
+  serious: 'จริงจัง',
+  neutral: 'เป็นกลาง',
+};
+
+const formatVibeThai = (vibe: string) => {
+  const key = String(vibe || '').trim().toLowerCase();
+  if (!key) return 'ไม่ระบุ';
+  return VIBE_TH[key] || vibe;
+};
+
+const formatIntensityThai = (value: unknown) => {
+  if (value === null || value === undefined || value === '') return 'ไม่ระบุ';
+  const num = Number(value);
+  if (Number.isFinite(num)) return num.toFixed(1);
+  return String(value);
+};
+
 function DebriefContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId');
@@ -93,7 +113,7 @@ function DebriefContent() {
   const buildTranscriptLine = (message: any) => {
     const speaker = message.sender === 'user' ? 'คุณ' : (message.character_name || 'AI');
     const voiceMeta = message.sender === 'user' && isMicrophoneMessage(message)
-      ? ` [MICROPHONE MODE | tone=${getVoiceVibe(message) || 'N/A'} | intensity=${getVoiceIntensity(message) || 'N/A'} | AI voice comment=${getVoiceComment(message) || 'N/A'}]`
+      ? ` [โหมดไมโครโฟน | โทน=${formatVibeThai(getVoiceVibe(message))} | ความเข้ม=${formatIntensityThai(getVoiceIntensity(message))} | ความคิดเห็นจาก AI=${getVoiceComment(message) || 'ไม่ระบุ'}]`
       : '';
     return `[ID: ${message.id}] [${speaker}]${voiceMeta}: ${message.content}`;
   };
@@ -414,14 +434,14 @@ function DebriefContent() {
                           {isUser && isMicrophoneMessage(m) && (
                             <div className="mt-4 bg-cyan-50 border-4 border-cyan-200 p-4 rounded-2xl">
                               <div className="flex flex-wrap items-center gap-2 mb-2">
-                                <span className="inline-flex items-center px-3 py-1 bg-cyan-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest">
-                                  <Mic size={12} className="mr-1" /> Microphone
+                                <span className="inline-flex items-center px-3 py-1 bg-cyan-500 text-white rounded-full text-[10px] font-black tracking-wide">
+                                  <Mic size={12} className="mr-1" /> ส่งด้วยเสียง
                                 </span>
-                                <span className="px-3 py-1 bg-white border-2 border-cyan-200 rounded-full text-[10px] font-black text-cyan-700 uppercase">
-                                  Tone: {getVoiceVibe(m) || 'N/A'}
+                                <span className="px-3 py-1 bg-white border-2 border-cyan-200 rounded-full text-[10px] font-black text-cyan-700">
+                                  โทน: {formatVibeThai(getVoiceVibe(m))}
                                 </span>
-                                <span className="px-3 py-1 bg-white border-2 border-cyan-200 rounded-full text-[10px] font-black text-cyan-700 uppercase">
-                                  Intensity: {getVoiceIntensity(m) || 'N/A'}
+                                <span className="px-3 py-1 bg-white border-2 border-cyan-200 rounded-full text-[10px] font-black text-cyan-700">
+                                  ความเข้ม: {formatIntensityThai(getVoiceIntensity(m))}
                                 </span>
                               </div>
                               {getVoiceComment(m) && (
