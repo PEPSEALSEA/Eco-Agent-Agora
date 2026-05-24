@@ -75,8 +75,10 @@ function NegotiateContent(): React.ReactElement {
   const [angerDebugPreview, setAngerDebugPreview] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const angerDebugSequenceIndex = useRef(0);
+  const angerDebugRoundsCompleted = useRef(0);
 
   const ANGER_DEBUG_KEYS = ['a', 'n', 'g', 'e', 'r'] as const;
+  const ANGER_DEBUG_ROUNDS_REQUIRED = 3;
   const effectiveVibe = angerDebugPreview ? 'Serious' : currentVibe;
 
   const kidGameplayActive =
@@ -150,10 +152,11 @@ function NegotiateContent(): React.ReactElement {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, showLogModal]);
 
-  // Debug: hold Alt and type A-N-G-E-R to toggle anger / red-screen preview
+  // Debug: type A-N-G-E-R three times in a row to toggle anger / red-screen preview
   useEffect(() => {
     const resetSequence = () => {
       angerDebugSequenceIndex.current = 0;
+      angerDebugRoundsCompleted.current = 0;
     };
 
     const triggerAngerPreview = () => {
@@ -175,12 +178,7 @@ function NegotiateContent(): React.ReactElement {
         return;
       }
 
-      if (!e.altKey) {
-        resetSequence();
-        return;
-      }
-
-      if (e.ctrlKey || e.metaKey) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       const key = e.key.toLowerCase();
       if (key.length !== 1) return;
@@ -189,27 +187,26 @@ function NegotiateContent(): React.ReactElement {
       if (key === expected) {
         angerDebugSequenceIndex.current += 1;
         if (angerDebugSequenceIndex.current >= ANGER_DEBUG_KEYS.length) {
-          e.preventDefault();
-          resetSequence();
-          triggerAngerPreview();
+          angerDebugSequenceIndex.current = 0;
+          angerDebugRoundsCompleted.current += 1;
+          if (angerDebugRoundsCompleted.current >= ANGER_DEBUG_ROUNDS_REQUIRED) {
+            e.preventDefault();
+            resetSequence();
+            triggerAngerPreview();
+          }
         }
       } else {
         angerDebugSequenceIndex.current = key === ANGER_DEBUG_KEYS[0] ? 1 : 0;
+        angerDebugRoundsCompleted.current = 0;
       }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Alt') resetSequence();
     };
 
     const handleBlur = () => resetSequence();
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('blur', handleBlur);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
   }, [angerDebugPreview]);
@@ -698,7 +695,7 @@ function NegotiateContent(): React.ReactElement {
         }`} />
         {angerDebugPreview && (
           <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 pointer-events-none px-4 py-2 rounded-full bg-red-600 text-white text-xs font-black border-2 border-gray-900 shadow-[0_4px_0_#2b221a] uppercase tracking-wide">
-            โหมดทดสอบ: ตัวละครโกรธ / พื้นหลังแดง (Alt+ANGER ปิด · Esc ออก)
+            โหมดทดสอบ: ตัวละครโกรธ / พื้นหลังแดง (พิมพ์ anger 3 ครั้งปิด · Esc ออก)
           </div>
         )}
 
