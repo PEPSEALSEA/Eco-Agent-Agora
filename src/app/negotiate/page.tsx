@@ -693,11 +693,7 @@ function NegotiateContent(): React.ReactElement {
             ? 'opacity-[0.08] bg-[radial-gradient(rgba(43,34,26,0.22)_2px,transparent_2px)] [background-size:40px_40px]' 
             : 'opacity-20 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:100px_100px]'
         }`} />
-        {angerDebugPreview && (
-          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 pointer-events-none px-4 py-2 rounded-full bg-red-600 text-white text-xs font-black border-2 border-gray-900 shadow-[0_4px_0_#2b221a] uppercase tracking-wide">
-            โหมดทดสอบ: ตัวละครโกรธ / พื้นหลังแดง (พิมพ์ anger 3 ครั้งปิด · Esc ออก)
-          </div>
-        )}
+        {angerDebugPreview}
 
         {/* Header Layer */}
         <header className="w-full max-w-6xl flex justify-between items-start p-8 z-30 absolute top-0 pointer-events-auto">
