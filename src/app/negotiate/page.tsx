@@ -72,7 +72,12 @@ function NegotiateContent(): React.ReactElement {
   const [currentVibe, setCurrentVibe] = useState<'Happy' | 'Calm' | 'Serious' | string>('Calm');
   const [showPulse, setShowPulse] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [angerDebugPreview, setAngerDebugPreview] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const angerDebugSequenceIndex = useRef(0);
+
+  const ANGER_DEBUG_KEYS = ['a', 'n', 'g', 'e', 'r'] as const;
+  const effectiveVibe = angerDebugPreview ? 'Serious' : currentVibe;
 
   const kidGameplayActive =
     scenario?.target_group === 'kids' && mode === 'kid';
@@ -144,6 +149,70 @@ function NegotiateContent(): React.ReactElement {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, showLogModal]);
+
+  // Debug: hold Alt and type A-N-G-E-R to toggle anger / red-screen preview
+  useEffect(() => {
+    const resetSequence = () => {
+      angerDebugSequenceIndex.current = 0;
+    };
+
+    const triggerAngerPreview = () => {
+      setAngerDebugPreview((prev) => {
+        const next = !prev;
+        if (next) {
+          setShowPulse(true);
+          window.setTimeout(() => setShowPulse(false), 1000);
+        }
+        return next;
+      });
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && angerDebugPreview) {
+        e.preventDefault();
+        setAngerDebugPreview(false);
+        resetSequence();
+        return;
+      }
+
+      if (!e.altKey) {
+        resetSequence();
+        return;
+      }
+
+      if (e.ctrlKey || e.metaKey) return;
+
+      const key = e.key.toLowerCase();
+      if (key.length !== 1) return;
+
+      const expected = ANGER_DEBUG_KEYS[angerDebugSequenceIndex.current];
+      if (key === expected) {
+        angerDebugSequenceIndex.current += 1;
+        if (angerDebugSequenceIndex.current >= ANGER_DEBUG_KEYS.length) {
+          e.preventDefault();
+          resetSequence();
+          triggerAngerPreview();
+        }
+      } else {
+        angerDebugSequenceIndex.current = key === ANGER_DEBUG_KEYS[0] ? 1 : 0;
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') resetSequence();
+    };
+
+    const handleBlur = () => resetSequence();
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [angerDebugPreview]);
 
   // Start sequence typing for new message
   useEffect(() => {
@@ -602,8 +671,8 @@ function NegotiateContent(): React.ReactElement {
       <main 
         className={`flex-1 flex flex-col items-center relative overflow-hidden cursor-pointer transition-all duration-1000 mx-auto w-full max-w-[1440px] ${
           kidGameplayActive
-            ? (currentVibe === 'Serious' ? 'bg-[#fce8d4]' : currentVibe === 'Happy' ? 'bg-kids-cream' : 'bg-kids-cream-deep')
-            : (currentVibe === 'Serious' ? 'bg-red-950/40' : currentVibe === 'Happy' ? 'bg-amber-950/20' : 'bg-slate-900/40')
+            ? (effectiveVibe === 'Serious' ? 'bg-[#fce8d4]' : effectiveVibe === 'Happy' ? 'bg-kids-cream' : 'bg-kids-cream-deep')
+            : (effectiveVibe === 'Serious' ? 'bg-red-950/40' : effectiveVibe === 'Happy' ? 'bg-amber-950/20' : 'bg-slate-900/40')
         } ${showPulse ? 'scale-[1.01]' : 'scale-100'}`}
         onClick={advanceMessage}
       >
@@ -611,10 +680,10 @@ function NegotiateContent(): React.ReactElement {
         <motion.div 
           animate={{ 
             backgroundColor: kidGameplayActive
-              ? (currentVibe === 'Serious' ? 'rgba(251, 191, 177, 0.35)' :
-                 currentVibe === 'Happy' ? 'rgba(253, 230, 138, 0.25)' : 'rgba(186, 230, 253, 0.2)')
-              : (currentVibe === 'Serious' ? 'rgba(239, 68, 68, 0.1)' : 
-                 currentVibe === 'Happy' ? 'rgba(248, 204, 0, 0.1)' : 'rgba(0, 0, 0, 0)'),
+              ? (effectiveVibe === 'Serious' ? 'rgba(251, 191, 177, 0.35)' :
+                 effectiveVibe === 'Happy' ? 'rgba(253, 230, 138, 0.25)' : 'rgba(186, 230, 253, 0.2)')
+              : (effectiveVibe === 'Serious' ? 'rgba(239, 68, 68, 0.1)' : 
+                 effectiveVibe === 'Happy' ? 'rgba(248, 204, 0, 0.1)' : 'rgba(0, 0, 0, 0)'),
             opacity: kidGameplayActive ? [0.2, 0.35, 0.2] : [0.3, 0.5, 0.3]
           }}
           transition={{ repeat: Infinity, duration: 4 }}
@@ -627,6 +696,12 @@ function NegotiateContent(): React.ReactElement {
             ? 'opacity-[0.08] bg-[radial-gradient(rgba(43,34,26,0.22)_2px,transparent_2px)] [background-size:40px_40px]' 
             : 'opacity-20 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:100px_100px]'
         }`} />
+        {angerDebugPreview && (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 pointer-events-none px-4 py-2 rounded-full bg-red-600 text-white text-xs font-black border-2 border-gray-900 shadow-[0_4px_0_#2b221a] uppercase tracking-wide">
+            โหมดทดสอบ: ตัวละครโกรธ / พื้นหลังแดง (Alt+ANGER ปิด · Esc ออก)
+          </div>
+        )}
+
         {/* Header Layer */}
         <header className="w-full max-w-6xl flex justify-between items-start p-8 z-30 absolute top-0 pointer-events-auto">
           <div>
@@ -735,8 +810,9 @@ function NegotiateContent(): React.ReactElement {
             const isTalking = currentMsg?.sender === 'ai' && currentMsg?.character_name === char.name;
             
             // Reactive animation props
-            const isAngry = (char.stats?.anger || 0) > 6;
-            const isHappy = (char.stats?.trust || 0) > 7;
+            const isAngry = angerDebugPreview || (char.stats?.anger || 0) > 6;
+            const isHappy = !angerDebugPreview && (char.stats?.trust || 0) > 7;
+            const displayMood = angerDebugPreview ? 'resistant' : (char.mood || 'neutral');
 
             return (
               <motion.div
@@ -754,7 +830,7 @@ function NegotiateContent(): React.ReactElement {
               >
                 <CharacterAvatar 
                   name={char.name} 
-                  mood={char.mood || 'neutral'} 
+                  mood={displayMood} 
                   isTalking={isTalking} 
                 />
               </motion.div>
