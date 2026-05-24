@@ -89,7 +89,7 @@ export function LandingPage() {
           transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
         >
           <motion.div
-            className="relative w-[min(90vw,26rem)] origin-center scale-[1.2] sm:w-[28rem]"
+            className="relative w-[min(90vw,26rem)] origin-center scale-[2.0] sm:w-[28rem]"
             animate={{ y: [0, -10, 0] }}
             transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
           >
