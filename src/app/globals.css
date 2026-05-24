@@ -22,6 +22,14 @@
   --color-cartoon-dot: #7dd3fc;
   --color-kids-cream: #fff8e7;
   --color-kids-cream-deep: #f5e6c8;
+
+  /* Landing — Eco Agora */
+  --color-agora-deep: #0a2e2a;
+  --color-agora-forest: #134e4a;
+  --color-agora-teal: #2dd4bf;
+  --color-agora-gold: #d4a853;
+  --color-agora-cream: #f7f2ea;
+  --color-agora-ink: #0f1f1c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -87,4 +95,35 @@ body {
   background-image: radial-gradient(rgba(255, 255, 255, 0.05) 3px, transparent 3px);
   background-size: 60px 60px;
   position: relative;
+}
+
+@keyframes landing-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes landing-pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 0.45; }
+  50% { transform: scale(1.08); opacity: 0.85; }
+}
+
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.landing-orbit-slow {
+  animation: landing-orbit 48s linear infinite;
+}
+
+.landing-orbit-reverse {
+  animation: landing-orbit 32s linear infinite reverse;
+}
+
+.landing-pulse-ring {
+  animation: landing-pulse-ring 4s ease-in-out infinite;
+}
+
+.landing-float {
+  animation: landing-float 5s ease-in-out infinite;
 }

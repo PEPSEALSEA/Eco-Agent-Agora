@@ -21,8 +21,8 @@ const mali = Mali({
 });
 
 export const metadata: Metadata = {
-  title: "Wongjra Ja",
-  description: "Negotiation skill training simulator using AI characters.",
+  title: "WongJraJa — วงเจรจาอัจฉริยะ",
+  description: "Multi-agent AI negotiation training platform. Eco-Agent Agora.",
 };
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
