@@ -81,37 +81,27 @@ export function LandingPage() {
           </div>
         </motion.header>
 
-        {/* Hero character */}
+        {/* Hero character — plain PNG */}
         <motion.div
           className="relative flex min-h-0 flex-1 w-full max-w-lg flex-col items-center justify-center"
-          initial={{ opacity: 0, scale: 0.92 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Platform pedestal */}
-          <div
-            className="absolute bottom-[8%] left-1/2 h-[14%] w-[72%] max-w-xs -translate-x-1/2 rounded-[50%] border-4 border-[#2b221a] bg-white/50 shadow-[0_10px_0_#2b221a]"
-            aria-hidden
-          />
-
           <motion.div
-            className="relative z-10 w-[min(88vw,22rem)] sm:w-[24rem]"
+            className="relative w-[min(90vw,26rem)] sm:w-[28rem]"
             animate={{ y: [0, -10, 0] }}
             transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
           >
-            <div className="relative rounded-[2.5rem] border-[6px] border-[#2b221a] bg-white p-3 shadow-[0_14px_0_#2b221a] sm:p-4">
-              <div className="overflow-hidden rounded-[1.75rem] bg-[#9fd7ce]/40">
-                <Image
-                  src={getAssetPath('/HoldHandCharacter.png')}
-                  alt="ตัวละครจับมือ — สัญลักษณ์การเจรจา"
-                  width={480}
-                  height={480}
-                  priority
-                  className="h-auto w-full object-contain mix-blend-screen"
-                  style={{ maxHeight: 'min(48vh, 22rem)' }}
-                />
-              </div>
-            </div>
+            <Image
+              src={getAssetPath('/HoldHandCharacter.png')}
+              alt="ตัวละครจับมือ — สัญลักษณ์การเจรจา"
+              width={512}
+              height={512}
+              priority
+              className="h-auto w-full object-contain"
+              style={{ maxHeight: 'min(52vh, 26rem)' }}
+            />
           </motion.div>
         </motion.div>
 
