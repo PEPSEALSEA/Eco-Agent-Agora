@@ -127,3 +127,19 @@ body {
 .landing-float {
   animation: landing-float 5s ease-in-out infinite;
 }
+
+/* Landing — dimensional teal (bottom #4eb9a7 → lighter toward top #9fd7ce) */
+.landing-atmosphere {
+  background-color: #4eb9a7;
+  background-image:
+    radial-gradient(ellipse 130% 90% at 50% -8%, #9fd7ce 0%, rgba(159, 215, 206, 0.55) 38%, transparent 68%),
+    radial-gradient(ellipse 85% 70% at 92% 62%, rgba(159, 215, 206, 0.75) 0%, transparent 52%),
+    radial-gradient(ellipse 75% 65% at 8% 58%, rgba(110, 201, 184, 0.65) 0%, transparent 50%),
+    radial-gradient(ellipse 110% 55% at 50% 108%, #4eb9a7 0%, #5ec4b3 35%, rgba(78, 185, 167, 0.4) 60%, transparent 78%),
+    conic-gradient(from 210deg at 30% 40%, rgba(255, 255, 255, 0.12) 0deg, transparent 55deg, transparent 320deg, rgba(43, 34, 26, 0.04) 360deg);
+}
+
+.landing-scene {
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
