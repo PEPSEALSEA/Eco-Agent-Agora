@@ -464,94 +464,84 @@ export default function ScenariosPage() {
           )}
         </AnimatePresence>
 
-        {/* Mode Selector — WongJraJa-style prominent tabs */}
-        <section className="mb-12 md:mb-14" aria-label="เลือกโหมดฝึก">
-          <div className="mb-6 flex justify-center">
-            <div className="inline-block -rotate-1 rounded-[2rem] border-[6px] border-[#2b221a] bg-white px-8 py-3 text-center shadow-[0_10px_0_#2b221a] sm:px-12 sm:py-4">
-              <h2
-                className="font-black uppercase tracking-tight text-gray-900"
-                style={{ fontSize: 'clamp(1.5rem, 5vw, 2.25rem)', lineHeight: 1.1 }}
+        {/* Mode switch — segmented control */}
+        <section className="mb-10 flex justify-center md:mb-12" aria-label="สลับโหมด">
+          <div className="relative w-full max-w-3xl rounded-[2.25rem] border-[6px] border-[#2b221a] bg-white p-2 shadow-[0_10px_0_#2b221a] sm:p-2.5">
+            <motion.div
+              layoutId="scenario-mode-pill"
+              className={`absolute top-2 bottom-2 w-[calc(50%-8px)] rounded-[1.65rem] border-4 border-[#2b221a] shadow-[0_6px_0_#2b221a] ${
+                activeTab === 'campaign' ? 'left-2 bg-amber-400' : 'left-[calc(50%+4px)] bg-[#baebd6]'
+              }`}
+              transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+            />
+
+            <div className="relative z-10 grid grid-cols-2 gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('campaign');
+                  setShowLockedAlert(null);
+                }}
+                className="flex items-center justify-center gap-2.5 rounded-[1.65rem] px-3 py-4 transition-colors sm:gap-3 sm:px-5 sm:py-5"
               >
-                เลือกโหมดฝึก
-              </h2>
-              <p className="mt-1.5 text-xs font-black uppercase tracking-[0.22em] text-[#4eb9a7] sm:text-sm">
-                WongJraJa · วงเจรจา
-              </p>
+                <Map
+                  size={26}
+                  strokeWidth={2.5}
+                  className={`shrink-0 sm:w-7 sm:h-7 ${
+                    activeTab === 'campaign' ? 'text-gray-900' : 'text-gray-400'
+                  }`}
+                />
+                <span className="min-w-0 text-left">
+                  <span
+                    className={`block text-base font-black uppercase leading-tight sm:text-xl ${
+                      activeTab === 'campaign' ? 'text-gray-900' : 'text-gray-400'
+                    }`}
+                  >
+                    เนื้อเรื่องหลัก
+                  </span>
+                  <span
+                    className={`block text-[10px] font-black uppercase tracking-wider sm:text-xs ${
+                      activeTab === 'campaign' ? 'text-[#92400e]' : 'text-gray-300'
+                    }`}
+                  >
+                    Campaign
+                  </span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('freeplay');
+                  setShowLockedAlert(null);
+                }}
+                className="flex items-center justify-center gap-2.5 rounded-[1.65rem] px-3 py-4 transition-colors sm:gap-3 sm:px-5 sm:py-5"
+              >
+                <Gamepad2
+                  size={26}
+                  strokeWidth={2.5}
+                  className={`shrink-0 sm:w-7 sm:h-7 ${
+                    activeTab === 'freeplay' ? 'text-[#047857]' : 'text-gray-400'
+                  }`}
+                />
+                <span className="min-w-0 text-left">
+                  <span
+                    className={`block text-base font-black uppercase leading-tight sm:text-xl ${
+                      activeTab === 'freeplay' ? 'text-gray-900' : 'text-gray-400'
+                    }`}
+                  >
+                    ฝึกอิสระ
+                  </span>
+                  <span
+                    className={`block text-[10px] font-black uppercase tracking-wider sm:text-xs ${
+                      activeTab === 'freeplay' ? 'text-[#047857]' : 'text-gray-300'
+                    }`}
+                  >
+                    Freeplay
+                  </span>
+                </span>
+              </button>
             </div>
-          </div>
-
-          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('campaign');
-                setShowLockedAlert(null);
-              }}
-              className={`group relative flex flex-col items-center rounded-[2rem] border-[6px] border-[#2b221a] px-6 py-6 text-center transition-all sm:px-8 sm:py-8 ${
-                activeTab === 'campaign'
-                  ? 'bg-[#fffdf9] shadow-[0_12px_0_#2b221a] -translate-y-1 scale-[1.02]'
-                  : 'bg-white/90 shadow-[0_8px_0_#2b221a] hover:-translate-y-0.5 hover:bg-[#fffdf9] hover:shadow-[0_10px_0_#2b221a]'
-              }`}
-            >
-              {activeTab === 'campaign' && (
-                <span className="absolute top-0 left-0 right-0 h-3 rounded-t-[1.4rem] bg-amber-400 border-b-2 border-[#2b221a]" />
-              )}
-              <div
-                className={`mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border-4 border-[#2b221a] sm:h-16 sm:w-16 ${
-                  activeTab === 'campaign'
-                    ? 'bg-amber-400 text-gray-900 shadow-[0_5px_0_#2b221a]'
-                    : 'bg-gray-100 text-gray-600 group-hover:bg-amber-200'
-                }`}
-              >
-                <Map size={28} strokeWidth={2.5} className="sm:w-8 sm:h-8" />
-              </div>
-              <span className="text-xl font-black uppercase tracking-tight text-gray-900 sm:text-2xl">
-                เนื้อเรื่องหลัก
-              </span>
-              <span
-                className={`mt-2 text-sm font-black uppercase tracking-[0.15em] sm:text-base ${
-                  activeTab === 'campaign' ? 'text-[#d97706]' : 'text-gray-400 group-hover:text-[#d97706]'
-                }`}
-              >
-                Campaign Journal
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('freeplay');
-                setShowLockedAlert(null);
-              }}
-              className={`group relative flex flex-col items-center rounded-[2rem] border-[6px] border-[#2b221a] px-6 py-6 text-center transition-all sm:px-8 sm:py-8 ${
-                activeTab === 'freeplay'
-                  ? 'bg-[#fffdf9] shadow-[0_12px_0_#2b221a] -translate-y-1 scale-[1.02]'
-                  : 'bg-white/90 shadow-[0_8px_0_#2b221a] hover:-translate-y-0.5 hover:bg-[#fffdf9] hover:shadow-[0_10px_0_#2b221a]'
-              }`}
-            >
-              {activeTab === 'freeplay' && (
-                <span className="absolute top-0 left-0 right-0 h-3 rounded-t-[1.4rem] bg-[#baebd6] border-b-2 border-[#2b221a]" />
-              )}
-              <div
-                className={`mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border-4 border-[#2b221a] sm:h-16 sm:w-16 ${
-                  activeTab === 'freeplay'
-                    ? 'bg-[#baebd6] text-[#047857] shadow-[0_5px_0_#2b221a]'
-                    : 'bg-gray-100 text-gray-600 group-hover:bg-[#baebd6]/80'
-                }`}
-              >
-                <Gamepad2 size={28} strokeWidth={2.5} className="sm:w-8 sm:h-8" />
-              </div>
-              <span className="text-xl font-black uppercase tracking-tight text-gray-900 sm:text-2xl">
-                ฝึกเจรจาอิสระ
-              </span>
-              <span
-                className={`mt-2 text-sm font-black uppercase tracking-[0.15em] sm:text-base ${
-                  activeTab === 'freeplay' ? 'text-[#047857]' : 'text-gray-400 group-hover:text-[#047857]'
-                }`}
-              >
-                Freeplay Arcade
-              </span>
-            </button>
           </div>
         </section>
 
