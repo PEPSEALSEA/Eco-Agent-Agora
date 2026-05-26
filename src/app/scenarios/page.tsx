@@ -7,8 +7,9 @@ import {
   Lock, Unlock, Star, Play, Gift, ShieldAlert, Zap, Trophy,
   HelpCircle, User, Compass, Bookmark,
   ChevronRight, X, ArrowLeft, RefreshCw, CheckSquare, Coffee,
-  Gamepad2, Car, Handshake, Briefcase, MessageCircle, Map, type LucideIcon
+  Gamepad2, Map
 } from 'lucide-react';
+import { FreeplayLobby } from '@/components/freeplay/FreeplayLobby';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
 import Link from 'next/link';
 import SyncStatus from '@/components/SyncStatus';
@@ -92,33 +93,6 @@ const getLandmarkInfo = (difficulty: number, index: number) => {
     sealColor: "bg-purple-600 hover:bg-purple-700",
     sealShadow: "shadow-purple-950/50"
   };
-};
-
-type FreeplayCardVisual = {
-  Icon: LucideIcon;
-  accent: string;
-  bg: string;
-};
-
-const getFreeplayCardVisual = (scenario: Scenario, index: number): FreeplayCardVisual => {
-  const title = scenario.title.toLowerCase();
-
-  if (title.includes('รถ') || title.includes('car') || title.includes('มือสอง')) {
-    return { Icon: Car, accent: 'text-amber-800', bg: 'bg-amber-100' };
-  }
-  if (title.includes('กาแฟ') || title.includes('coffee') || title.includes('คาเฟ่')) {
-    return { Icon: Coffee, accent: 'text-stone-800', bg: 'bg-stone-100' };
-  }
-  if (title.includes('เงิน') || title.includes('salary') || title.includes('เดือน')) {
-    return { Icon: Briefcase, accent: 'text-slate-800', bg: 'bg-slate-100' };
-  }
-
-  const defaults: FreeplayCardVisual[] = [
-    { Icon: Handshake, accent: 'text-emerald-800', bg: 'bg-emerald-100' },
-    { Icon: MessageCircle, accent: 'text-sky-800', bg: 'bg-sky-100' },
-    { Icon: Briefcase, accent: 'text-violet-800', bg: 'bg-violet-100' },
-  ];
-  return defaults[index % defaults.length];
 };
 
 export default function ScenariosPage() {
@@ -896,74 +870,12 @@ export default function ScenariosPage() {
 
           </div>
         ) : (
-
-          /* FREEPLAY ARCADE CARDS (LOOSE POLAROID & MEMO Grid) */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
-            {freeplayScenarios.map((scenario, index) => {
-              const visual = getFreeplayCardVisual(scenario, index);
-              const ScenarioIcon = visual.Icon;
-
-              return (
-                <motion.div
-                  key={scenario.id}
-                  whileHover={{ rotate: 1.5, y: -4 }}
-                  className="bg-white border-[5px] border-[#2b221a] p-4 rounded-3xl shadow-[0_8px_0_#2b221a] hover:shadow-[0_12px_0_#2b221a] transition-all cursor-pointer flex flex-col relative overflow-hidden"
-                  onClick={() => startSession(scenario.id)}
-                >
-                  {/* Sticky Tape at top */}
-                  <div className="absolute top-0.5 left-1/3 right-1/3 h-5 bg-amber-200/60 border-x-2 border-b-2 border-black/30 rounded-b-md shadow-inner pointer-events-none z-10"></div>
-
-                  <div className="flex-1 flex flex-col justify-between pt-4">
-                    {/* Upper content */}
-                    <div>
-                      {/* Badge header */}
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="bg-[#baebd6] border-2 border-[#2b221a] text-[#047857] px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider">
-                          {scenario.target_group?.toUpperCase() || 'GENERAL'}
-                        </span>
-                        <Gamepad2 size={16} className="text-[#047857]" strokeWidth={2.5} />
-                      </div>
-
-                      {/* Polaroid sketch image */}
-                      <div className="bg-[#fbf9f4] border-2 border-[#2b221a] rounded-2xl p-3 mb-4 shadow-inner text-center font-black relative overflow-hidden">
-                        <div className={`w-14 h-14 mx-auto rounded-xl border-2 border-[#2b221a] ${visual.bg} flex items-center justify-center shadow-[0_3px_0_#2b221a]`}>
-                          <ScenarioIcon size={28} className={visual.accent} strokeWidth={2.5} />
-                        </div>
-                        <div className="text-[8px] text-gray-400 font-mono mt-2">OPPONENT CAPTURE // 01</div>
-                      </div>
-
-                      {/* Title */}
-                      <h3 className="text-xl font-black text-gray-900 leading-normal break-words mb-2">
-                        {scenario.title}
-                      </h3>
-                      {/* Description */}
-                      <p className="text-gray-500 font-bold text-xs leading-relaxed line-clamp-3">
-                        {scenario.description}
-                      </p>
-                    </div>
-
-                    {/* Dashboard bottom button */}
-                    <div className="mt-6 pt-3 border-t-2 border-dashed border-[#2b221a]/20 flex justify-between items-center">
-                      <div className="flex -space-x-2.5">
-                        {scenario.characters?.map((char: any, i: number) => (
-                          <div
-                            key={i}
-                            className="w-7 h-7 rounded-lg bg-[#fffdf8] border-2 border-black flex items-center justify-center text-[10px] font-black text-gray-900 rotate-6"
-                          >
-                            {char.name?.charAt(0) || '?'}
-                          </div>
-                        ))}
-                      </div>
-
-                      <span className="bg-[#b45309] text-white border-2 border-black rounded-lg px-2.5 py-1 text-[10px] font-black uppercase flex items-center gap-1 group-hover:bg-[#d97706] transition-colors">
-                        เริ่มฝึก <Play size={10} className="fill-current" />
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+          <FreeplayLobby
+            scenarios={freeplayScenarios}
+            sessions={sessions}
+            userId={user?.id}
+            onStart={startSession}
+          />
         )}
 
         {/* Error message block */}
