@@ -7,9 +7,9 @@ import {
   Lock, Unlock, Star, Play, Gift, ShieldAlert, Zap, Trophy,
   HelpCircle, User, Compass, Bookmark,
   ChevronRight, X, ArrowLeft, RefreshCw, CheckSquare, Coffee,
-  Gamepad2, Map
+  Gamepad2, Briefcase, Map
 } from 'lucide-react';
-import { FreeplayLobby } from '@/components/freeplay/FreeplayLobby';
+import { FreeplayArena } from '@/components/FreeplayArena';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
 import Link from 'next/link';
 import SyncStatus from '@/components/SyncStatus';
@@ -870,11 +870,11 @@ export default function ScenariosPage() {
 
           </div>
         ) : (
-          <FreeplayLobby
+
+          <FreeplayArena
             scenarios={freeplayScenarios}
-            sessions={sessions}
-            userId={user?.id}
             onStart={startSession}
+            loading={loading}
           />
         )}
 
