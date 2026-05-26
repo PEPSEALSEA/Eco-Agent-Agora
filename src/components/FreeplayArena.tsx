@@ -313,15 +313,15 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ type: 'spring', stiffness: 280, damping: 26 }}
-            className="relative overflow-hidden rounded-[2.5rem] border-[6px] border-[#2b221a] bg-[#fffdf9] shadow-[0_16px_0_#2b221a]"
+            className="relative overflow-x-hidden rounded-[2.5rem] border-[6px] border-[#2b221a] bg-[#fffdf9] shadow-[0_16px_0_#2b221a]"
             aria-label="เวทีฉากที่เลือก"
           >
             <StageCurtains curtain={theme.curtain} />
 
             <div
-              className={`relative min-h-[440px] bg-gradient-to-b ${theme.stageBg} ${theme.pattern} opacity-100`}
+              className={`relative min-h-[440px] bg-gradient-to-b pb-2 ${theme.stageBg} ${theme.pattern}`}
             >
-              <div className="relative z-[15] grid grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
+              <div className="relative z-[15] grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] lg:items-stretch">
                 {/* Puppet / character side */}
                 <div className="flex flex-col items-center justify-end px-6 pb-8 pt-16 lg:pt-20">
                   <motion.div
@@ -344,8 +344,8 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
                 </div>
 
                 {/* Script / briefing side */}
-                <div className="relative z-[15] flex flex-col justify-between border-t-[5px] border-[#2b221a] bg-[#fffdf8]/95 p-6 sm:p-8 lg:border-l-[5px] lg:border-t-0">
-                  <div>
+                <div className="relative z-[15] flex min-h-0 flex-col gap-6 border-t-[5px] border-[#2b221a] bg-[#fffdf8]/95 p-6 pb-8 sm:p-8 sm:pb-10 lg:border-l-[5px] lg:border-t-0">
+                  <div className="min-h-0 flex flex-col gap-5">
                     <div className="mb-4 flex flex-wrap items-center gap-2">
                       <span
                         className={`flex h-11 w-11 items-center justify-center rounded-xl border-[3px] border-[#2b221a] ${theme.ticketColor} text-gray-900 shadow-[0_4px_0_#2b221a]`}
@@ -381,32 +381,36 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
                     </div>
 
                     {selected.characters && selected.characters.length > 0 && (
-                      <div className="mt-6">
-                        <p className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                      <div className="mt-1 pb-2">
+                        <p className="mb-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500">
                           <Users size={12} strokeWidth={3} />
                           ตัวละครในรายการนี้
                         </p>
-                        <div className="space-y-2">
+                        <ul className="flex flex-col gap-4">
                           {selected.characters.map((char, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center gap-3 rounded-2xl border-[3px] border-[#2b221a] bg-white p-3 shadow-[0_4px_0_#2b221a] -rotate-1 even:rotate-1"
-                            >
-                              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-[#2b221a] bg-nintendo-yellow text-lg font-black">
-                                {char.name?.charAt(0) ?? '?'}
-                              </span>
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-black text-gray-900">
-                                  {char.name}
-                                </p>
-                                <p className="truncate text-[11px] font-bold text-gray-600">
-                                  {char.role}
-                                  {char.personality ? ` · ${char.personality}` : ''}
-                                </p>
+                            <li key={i} className="list-none">
+                              <div className="flex items-start gap-3 rounded-2xl border-[3px] border-[#2b221a] bg-white p-3.5 shadow-[0_4px_0_#2b221a]">
+                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-[#2b221a] bg-nintendo-yellow text-lg font-black">
+                                  {char.name?.charAt(0) ?? '?'}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-black leading-snug text-gray-900 break-words">
+                                    {char.name}
+                                  </p>
+                                  <p className="mt-1 text-[11px] font-bold leading-relaxed text-gray-600 break-words">
+                                    {char.role}
+                                    {char.personality ? (
+                                      <>
+                                        <span className="text-gray-400"> · </span>
+                                        {char.personality}
+                                      </>
+                                    ) : null}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
+                            </li>
                           ))}
-                        </div>
+                        </ul>
                       </div>
                     )}
                   </div>
@@ -417,7 +421,7 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
                     onClick={() => onStart(selected.id)}
                     whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98, y: 3 }}
-                    className="group mt-8 flex w-full items-center justify-between gap-3 rounded-2xl border-[5px] border-[#2b221a] bg-nintendo-red py-4 pl-5 pr-4 text-left font-black text-white shadow-[0_8px_0_#2b221a] transition-colors hover:bg-red-500 disabled:opacity-60"
+                    className="group mt-2 shrink-0 flex w-full items-center justify-between gap-3 rounded-2xl border-[5px] border-[#2b221a] bg-nintendo-red py-4 pl-5 pr-4 text-left font-black text-white shadow-[0_8px_0_#2b221a] transition-colors hover:bg-red-500 disabled:opacity-60"
                   >
                     <span className="flex flex-col">
                       <span className="flex items-center gap-2 text-lg uppercase tracking-wide sm:text-xl">
