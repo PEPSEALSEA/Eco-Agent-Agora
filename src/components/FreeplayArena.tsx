@@ -5,17 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
   Sparkles,
-  Zap,
-  MessageCircle,
+  Mic,
+  Repeat,
   Users,
   ChevronRight,
+  Ticket,
   type LucideIcon,
   Car,
   Coffee,
   Briefcase,
   Handshake,
+  MessageCircle,
   Gamepad2,
-  Mic,
 } from 'lucide-react';
 
 export type FreeplayScenario = {
@@ -26,97 +27,146 @@ export type FreeplayScenario = {
   characters?: { name?: string; role?: string; personality?: string }[];
 };
 
-type BoothTheme = {
+type StageTheme = {
   Icon: LucideIcon;
   emoji: string;
-  scene: string;
-  tagline: string;
-  gradient: string;
-  booth: string;
-  glow: string;
-  sticker: string;
+  venue: string;
+  hook: string;
+  ticketColor: string;
+  stageBg: string;
+  curtain: string;
+  stamp: string;
+  pattern: string;
 };
 
-const getBoothTheme = (scenario: FreeplayScenario, index: number): BoothTheme => {
-  const title = scenario.title.toLowerCase();
+const STAGE_THEMES: StageTheme[] = [
+  {
+    Icon: Handshake,
+    emoji: '🤝',
+    venue: 'โต๊ะเจรจาเปิด',
+    hook: 'ลองประโยคของคุณเอง!',
+    ticketColor: 'bg-emerald-400',
+    stageBg: 'from-[#d4f5e4] via-[#f0fdf4] to-[#ecfdf5]',
+    curtain: 'from-[#b91c1c] via-[#dc2626] to-[#991b1b]',
+    stamp: 'bg-emerald-600',
+    pattern: '[background-image:radial-gradient(#059669_1.5px,transparent_1.5px)] [background-size:14px_14px]',
+  },
+  {
+    Icon: MessageCircle,
+    emoji: '💬',
+    venue: 'สนามคำพูด',
+    hook: 'ไม่มีสคริปต์ ไม่มีด่านล็อก',
+    ticketColor: 'bg-sky-400',
+    stageBg: 'from-[#bae6fd] via-[#e0f2fe] to-[#f0f9ff]',
+    curtain: 'from-[#1d4ed8] via-[#2563eb] to-[#1e40af]',
+    stamp: 'bg-sky-600',
+    pattern: '[background-image:radial-gradient(#0284c7_1.5px,transparent_1.5px)] [background-size:12px_12px]',
+  },
+  {
+    Icon: Briefcase,
+    emoji: '🎯',
+    venue: 'ห้องซ้อมทักษะ',
+    hook: 'เน้นฝึกจริง ไม่กดดันคะแนน',
+    ticketColor: 'bg-violet-400',
+    stageBg: 'from-[#ddd6fe] via-[#ede9fe] to-[#f5f3ff]',
+    curtain: 'from-[#6d28d9] via-[#7c3aed] to-[#5b21b6]',
+    stamp: 'bg-violet-600',
+    pattern: '[background-image:radial-gradient(#7c3aed_1.2px,transparent_1.2px)] [background-size:16px_16px]',
+  },
+];
 
-  if (title.includes('รถ') || title.includes('car') || title.includes('มือสอง')) {
+const getStageTheme = (scenario: FreeplayScenario, index: number): StageTheme => {
+  const t = scenario.title.toLowerCase();
+
+  if (t.includes('รถ') || t.includes('car') || t.includes('มือสอง')) {
     return {
       Icon: Car,
       emoji: '🚗',
-      scene: 'เต็นท์รถมือสอง',
-      tagline: 'ต่อรองราคาให้คุ้ม!',
-      gradient: 'from-amber-300 via-orange-200 to-yellow-100',
-      booth: 'bg-amber-400',
-      glow: 'shadow-[0_0_40px_rgba(251,191,36,0.55)]',
-      sticker: 'bg-amber-500',
+      venue: 'เต็นท์รถมือสอง',
+      hook: 'ต่อรองให้ได้ราคาที่ใจอยากได้!',
+      ticketColor: 'bg-amber-400',
+      stageBg: 'from-[#fde68a] via-[#fef3c7] to-[#fffbeb]',
+      curtain: 'from-[#c2410c] via-[#ea580c] to-[#9a3412]',
+      stamp: 'bg-amber-600',
+      pattern: '[background-image:repeating-linear-gradient(-45deg,transparent,transparent_8px,rgba(217,119,6,0.08)_8px,rgba(217,119,6,0.08)_16px)]',
     };
   }
-  if (title.includes('กาแฟ') || title.includes('coffee') || title.includes('คาเฟ่')) {
+  if (t.includes('กาแฟ') || t.includes('coffee') || t.includes('คาเฟ่')) {
     return {
       Icon: Coffee,
       emoji: '☕',
-      scene: 'ร้านกาแฟยอดฮิต',
-      tagline: 'คุยให้ได้ดีลพิเศษ!',
-      gradient: 'from-stone-300 via-amber-100 to-orange-50',
-      booth: 'bg-stone-400',
-      glow: 'shadow-[0_0_40px_rgba(168,162,158,0.5)]',
-      sticker: 'bg-stone-600',
-    };
-  }
-  if (title.includes('เงิน') || title.includes('salary') || title.includes('เดือน')) {
-    return {
-      Icon: Briefcase,
-      emoji: '💼',
-      scene: 'ห้องประชุม HR',
-      tagline: 'เจรจาให้ได้ใจทั้งสองฝ่าย',
-      gradient: 'from-slate-300 via-blue-100 to-indigo-50',
-      booth: 'bg-slate-500',
-      glow: 'shadow-[0_0_40px_rgba(100,116,139,0.45)]',
-      sticker: 'bg-slate-600',
+      venue: 'ร้านกาแฟยอดฮิต',
+      hook: 'คุยให้ได้ดีลพิเศษ!',
+      ticketColor: 'bg-stone-400',
+      stageBg: 'from-[#d6d3d1] via-[#f5f5f4] to-[#fafaf9]',
+      curtain: 'from-[#78350f] via-[#92400e] to-[#451a03]',
+      stamp: 'bg-stone-600',
+      pattern: '[background-image:radial-gradient(#78716c_1px,transparent_1px)] [background-size:10px_10px]',
     };
   }
 
-  const defaults: BoothTheme[] = [
-    {
-      Icon: Handshake,
-      emoji: '🤝',
-      scene: 'โต๊ะเจรจาเปิด',
-      tagline: 'ลองทักษะของคุณเลย!',
-      gradient: 'from-emerald-300 via-teal-100 to-cyan-50',
-      booth: 'bg-emerald-500',
-      glow: 'shadow-[0_0_40px_rgba(52,211,153,0.5)]',
-      sticker: 'bg-emerald-600',
-    },
-    {
-      Icon: MessageCircle,
-      emoji: '💬',
-      scene: 'สนามฝึกคำพูด',
-      tagline: 'พิมพ์อิสระ ไม่มีสคริปต์!',
-      gradient: 'from-sky-300 via-blue-100 to-indigo-50',
-      booth: 'bg-sky-500',
-      glow: 'shadow-[0_0_40px_rgba(56,189,248,0.5)]',
-      sticker: 'bg-sky-600',
-    },
-    {
-      Icon: Briefcase,
-      emoji: '🎯',
-      scene: 'ด่านทักษะพิเศษ',
-      tagline: 'เน้นฝึกจริง ไม่กดดันคะแนน',
-      gradient: 'from-violet-300 via-purple-100 to-fuchsia-50',
-      booth: 'bg-violet-500',
-      glow: 'shadow-[0_0_40px_rgba(139,92,246,0.45)]',
-      sticker: 'bg-violet-600',
-    },
-  ];
-  return defaults[index % defaults.length];
+  return STAGE_THEMES[index % STAGE_THEMES.length];
 };
+
+const cleanTitle = (title: string) =>
+  title.replace(/^เล่นอิสระ:\s*/i, '').trim();
 
 type FreeplayArenaProps = {
   scenarios: FreeplayScenario[];
   onStart: (scenarioId: string) => void;
   loading?: boolean;
 };
+
+function MarqueeLights() {
+  return (
+    <div className="flex justify-center gap-1.5 sm:gap-2" aria-hidden>
+      {Array.from({ length: 14 }).map((_, i) => (
+        <motion.span
+          key={i}
+          className="h-2.5 w-2.5 rounded-full border-2 border-[#2b221a] sm:h-3 sm:w-3"
+          animate={{
+            backgroundColor: ['#f8cc00', '#e60012', '#00aa4b', '#0087e5', '#f8cc00'],
+            scale: [1, 1.15, 1],
+          }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            delay: i * 0.12,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function StageCurtains({ curtain }: { curtain: string }) {
+  return (
+    <>
+      <div
+        className={`pointer-events-none absolute left-0 top-0 z-10 h-full w-[18%] bg-gradient-to-r ${curtain} opacity-95`}
+        style={{
+          clipPath: 'polygon(0 0, 100% 0, 72% 100%, 0 100%)',
+          boxShadow: 'inset -8px 0 20px rgba(0,0,0,0.25)',
+        }}
+      />
+      <div
+        className={`pointer-events-none absolute right-0 top-0 z-10 h-full w-[18%] bg-gradient-to-l ${curtain} opacity-95`}
+        style={{
+          clipPath: 'polygon(28% 0, 100% 0, 100% 100%, 0 100%)',
+          boxShadow: 'inset 8px 0 20px rgba(0,0,0,0.25)',
+        }}
+      />
+      <div className="pointer-events-none absolute left-[16%] right-[16%] top-0 z-20 flex justify-center">
+        <div className="rounded-b-3xl border-x-[5px] border-b-[5px] border-[#2b221a] bg-nintendo-yellow px-8 py-2 shadow-[0_6px_0_#2b221a]">
+          <p className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 sm:text-xs">
+            ● กำลังถ่ายทอดสด ●
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
 
 export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProps) {
   const [selectedId, setSelectedId] = useState<string | null>(scenarios[0]?.id ?? null);
@@ -131,256 +181,263 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
 
   const selected = scenarios.find((s) => s.id === selectedId) ?? scenarios[0];
   const selectedIndex = selected ? scenarios.findIndex((s) => s.id === selected.id) : 0;
-  const theme = selected ? getBoothTheme(selected, Math.max(0, selectedIndex)) : null;
-  const BoothIcon = theme?.Icon ?? Gamepad2;
+  const theme = selected ? getStageTheme(selected, Math.max(0, selectedIndex)) : null;
+  const StageIcon = theme?.Icon ?? Gamepad2;
 
   return (
-    <div className="mb-12 space-y-8 pb-24 xl:pb-0">
-      {/* Arena header */}
-      <div className="relative overflow-hidden rounded-[2.5rem] border-[6px] border-[#2b221a] bg-[#0f172a] p-6 sm:p-8 shadow-[0_14px_0_#2b221a]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(248,204,0,0.25),transparent_45%),radial-gradient(circle_at_80%_30%,rgba(0,135,229,0.3),transparent_40%),radial-gradient(circle_at_50%_100%,rgba(237,71,162,0.2),transparent_50%)]" />
-        <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:18px_18px]" />
-
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border-[3px] border-[#2b221a] bg-nintendo-yellow px-4 py-1.5 text-[11px] font-black uppercase tracking-wider text-gray-900 shadow-[0_4px_0_#2b221a]">
-              <Gamepad2 size={14} strokeWidth={3} />
-              Freeplay Arena
+    <div className="relative mb-12 space-y-6 sm:space-y-8">
+      {/* Marquee sign */}
+      <header className="relative -rotate-1">
+        <div className="rounded-[2rem] border-[6px] border-[#2b221a] bg-[#fffdf9] px-5 py-6 shadow-[0_12px_0_#2b221a] sm:px-8 sm:py-8">
+          <MarqueeLights />
+          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="mb-1 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#b45309]">
+                <Gamepad2 size={14} strokeWidth={3} />
+                โซนฝึกอิสระ
+              </p>
+              <h2 className="text-[2rem] font-black leading-[0.95] tracking-tight text-gray-900 sm:text-5xl">
+                ลานเกมโชว์
+                <span className="block text-nintendo-blue">เจรจา!</span>
+              </h2>
+              <p className="mt-3 max-w-lg text-sm font-bold leading-relaxed text-gray-600">
+                เลือกตั๋วฉากด้านล่าง ขึ้นเวที แล้วพิมพ์คำพูดของคุณเอง — เหมือนเข้ารายการจริง ไม่ใช่การ์ดท่องจำ
+              </p>
             </div>
-            <h2 className="text-3xl font-black uppercase leading-tight tracking-tight text-white sm:text-4xl">
-              สนามฝึกเจรจา
-              <span className="block text-nintendo-yellow">แบบอิสระ!</span>
-            </h2>
-            <p className="mt-3 text-sm font-bold leading-relaxed text-sky-100/90 sm:text-base">
-              เลือกบูธด้านล่าง ดูฉากและคู่เจรจา แล้วกดเริ่ม — พิมพ์คำพูดได้อิสระ ไม่มีด่านล็อก
-            </p>
-          </div>
-
-          <div className="flex shrink-0 flex-wrap gap-3">
-            {[
-              { icon: <Mic size={18} />, label: 'พิมพ์อิสระ' },
-              { icon: <Zap size={18} />, label: 'ไม่ล็อกด่าน' },
-              { icon: <Sparkles size={18} />, label: 'ฝึกซ้ำได้' },
-            ].map((pill) => (
-              <span
-                key={pill.label}
-                className="flex items-center gap-2 rounded-2xl border-[3px] border-white/20 bg-white/10 px-4 py-2 text-xs font-black text-white backdrop-blur-sm"
-              >
-                {pill.icon}
-                {pill.label}
-              </span>
-            ))}
+            <ul className="flex flex-wrap gap-2 sm:max-w-xs sm:justify-end">
+              {[
+                { icon: Mic, text: 'พิมพ์อิสระ', bg: 'bg-nintendo-pink' },
+                { icon: Repeat, text: 'เล่นซ้ำได้', bg: 'bg-nintendo-green' },
+                { icon: Sparkles, text: 'ไม่ล็อกด่าน', bg: 'bg-nintendo-yellow' },
+              ].map(({ icon: Icon, text, bg }) => (
+                <li
+                  key={text}
+                  className={`flex items-center gap-2 rounded-2xl border-[3px] border-[#2b221a] ${bg} px-3 py-2 text-[11px] font-black text-gray-900 shadow-[0_4px_0_#2b221a]`}
+                >
+                  <Icon size={14} strokeWidth={3} />
+                  {text}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-
-        {/* Floating deco */}
-        <motion.span
-          animate={{ y: [0, -8, 0], rotate: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 3.2 }}
-          className="pointer-events-none absolute right-6 top-6 hidden text-5xl sm:block"
+        <div
+          className="pointer-events-none absolute -right-2 -top-3 rotate-12 rounded-lg border-[3px] border-[#2b221a] bg-nintendo-red px-3 py-1 text-[10px] font-black uppercase text-white shadow-[0_4px_0_#2b221a]"
+          aria-hidden
         >
-          🎮
-        </motion.span>
-        <motion.span
-          animate={{ y: [0, 6, 0], rotate: [0, -6, 0] }}
-          transition={{ repeat: Infinity, duration: 2.8, delay: 0.4 }}
-          className="pointer-events-none absolute bottom-4 right-24 hidden text-3xl sm:block"
-        >
-          ⭐
-        </motion.span>
-      </div>
+          LIVE
+        </div>
+      </header>
 
-      {/* Main stage + booth picker */}
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_320px]">
-        {/* Spotlight stage */}
-        <AnimatePresence mode="wait">
-          {selected && theme && (
-            <motion.div
-              key={selected.id}
-              initial={{ opacity: 0, y: 24, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -16, scale: 0.98 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              className={`relative overflow-hidden rounded-[2.5rem] border-[6px] border-[#2b221a] bg-gradient-to-br ${theme.gradient} shadow-[0_16px_0_#2b221a] ${theme.glow}`}
-            >
-              {/* Comic burst */}
-              <div className="pointer-events-none absolute -right-4 top-6 z-20 rotate-12">
-                <div className={`${theme.sticker} flex h-20 w-20 items-center justify-center rounded-full border-4 border-[#2b221a] text-center text-[10px] font-black uppercase leading-tight text-white shadow-[0_6px_0_#2b221a]`}>
-                  ฝึก
-                  <br />
-                  ได้!
-                </div>
-              </div>
+      {/* Ticket picker */}
+      <section aria-label="เลือกฉากฝึก">
+        <p className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-700">
+          <Ticket size={16} strokeWidth={3} className="text-[#b45309]" />
+          เลือกตั๋วเข้าเวที
+        </p>
+        <div className="flex gap-4 overflow-x-auto pb-3 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:overflow-visible">
+          {scenarios.map((scenario, index) => {
+            const t = getStageTheme(scenario, index);
+            const isActive = selected?.id === scenario.id;
+            const label = cleanTitle(scenario.title);
 
-              <div className="grid min-h-[420px] grid-cols-1 md:grid-cols-2">
-                {/* Scene art */}
-                <div className="relative flex flex-col items-center justify-center p-8 md:p-10">
-                  <div className="absolute inset-4 rounded-[2rem] border-4 border-dashed border-[#2b221a]/15" />
-                  <motion.div
-                    animate={{ scale: [1, 1.06, 1], rotate: [0, 2, -2, 0] }}
-                    transition={{ repeat: Infinity, duration: 4 }}
-                    className="relative z-10 text-[7rem] leading-none drop-shadow-[0_8px_0_rgba(0,0,0,0.15)] sm:text-[8rem]"
+            return (
+              <motion.button
+                key={scenario.id}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => setSelectedId(scenario.id)}
+                whileHover={{ y: -4, rotate: isActive ? -2 : 1 }}
+                whileTap={{ scale: 0.97 }}
+                className={`group relative flex min-w-[148px] shrink-0 flex-col text-left sm:min-w-[160px] ${
+                  isActive ? 'z-10' : 'opacity-90 hover:opacity-100'
+                }`}
+              >
+                {/* Perforated ticket top */}
+                <div
+                  className={`relative rounded-t-2xl border-[4px] border-b-0 border-[#2b221a] px-3 pb-2 pt-3 ${t.ticketColor} shadow-[0_4px_0_#2b221a]`}
+                >
+                  <div
+                    className="absolute -bottom-1 left-2 right-2 flex justify-between"
+                    aria-hidden
                   >
-                    {theme.emoji}
-                  </motion.div>
-                  <p className="relative z-10 mt-2 rounded-full border-[3px] border-[#2b221a] bg-white/90 px-4 py-1 text-xs font-black uppercase tracking-wider text-gray-800 shadow-[0_4px_0_#2b221a]">
-                    {theme.scene}
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <span
+                        key={i}
+                        className="h-2 w-2 rounded-full bg-[#fffdf9] border border-[#2b221a]/30"
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-3xl leading-none drop-shadow-sm">{t.emoji}</span>
+                    <span className="rounded-md border-2 border-[#2b221a] bg-white/90 px-1.5 py-0.5 text-[9px] font-black text-gray-800">
+                      #{String(index + 1).padStart(2, '0')}
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  className={`rounded-b-2xl border-[4px] border-[#2b221a] bg-[#fffdf9] px-3 py-3 shadow-[0_6px_0_#2b221a] transition-colors ${
+                    isActive ? 'ring-4 ring-nintendo-yellow ring-offset-2 ring-offset-[#bae6fd]' : ''
+                  }`}
+                >
+                  <p className="line-clamp-2 text-sm font-black leading-tight text-gray-900">
+                    {label}
                   </p>
-                  <p className="relative z-10 mt-3 text-center text-lg font-black text-gray-900">
-                    {theme.tagline}
+                  <p className="mt-1 text-[9px] font-bold uppercase tracking-wide text-gray-500">
+                    {t.venue}
                   </p>
                 </div>
 
-                {/* Briefing panel */}
-                <div className="flex flex-col justify-between border-t-[5px] border-[#2b221a] bg-[#fffdf8]/95 p-6 md:border-l-[5px] md:border-t-0 md:p-8">
-                  <div>
-                    <div className="mb-3 flex items-center gap-2">
-                      <span className={`flex h-10 w-10 items-center justify-center rounded-xl border-[3px] border-[#2b221a] ${theme.booth} text-white shadow-[0_4px_0_#2b221a]`}>
-                        <BoothIcon size={20} strokeWidth={2.5} />
+                {isActive && (
+                  <motion.span
+                    initial={{ scale: 0, rotate: -20 }}
+                    animate={{ scale: 1, rotate: -12 }}
+                    className={`absolute -right-2 -top-2 z-20 rounded-lg border-[3px] border-[#2b221a] ${t.stamp} px-2 py-0.5 text-[9px] font-black uppercase text-white shadow-[0_3px_0_#2b221a]`}
+                  >
+                    ON AIR
+                  </motion.span>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Main stage */}
+      <AnimatePresence mode="wait">
+        {selected && theme && (
+          <motion.section
+            key={selected.id}
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+            className="relative overflow-hidden rounded-[2.5rem] border-[6px] border-[#2b221a] bg-[#fffdf9] shadow-[0_16px_0_#2b221a]"
+            aria-label="เวทีฉากที่เลือก"
+          >
+            <StageCurtains curtain={theme.curtain} />
+
+            <div
+              className={`relative min-h-[440px] bg-gradient-to-b ${theme.stageBg} ${theme.pattern} opacity-100`}
+            >
+              <div className="relative z-[15] grid grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
+                {/* Puppet / character side */}
+                <div className="flex flex-col items-center justify-end px-6 pb-8 pt-16 lg:pt-20">
+                  <motion.div
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut' }}
+                    className="relative"
+                  >
+                    <div className="absolute -inset-4 rounded-full bg-white/40 blur-2xl" />
+                    <div className="relative rounded-[3rem] border-[5px] border-[#2b221a] bg-white px-8 py-6 shadow-[0_10px_0_#2b221a]">
+                      <span className="block text-center text-[5.5rem] leading-none sm:text-[6.5rem]">
+                        {theme.emoji}
                       </span>
-                      <span className="rounded-lg border-2 border-[#2b221a] bg-nintendo-green px-2 py-0.5 text-[9px] font-black uppercase text-white">
+                    </div>
+                    <div className="absolute -bottom-3 left-1/2 h-4 w-[85%] -translate-x-1/2 rounded-[100%] bg-black/15 blur-sm" />
+                  </motion.div>
+
+                  <p className="mt-6 rounded-full border-[3px] border-[#2b221a] bg-white px-5 py-1.5 text-sm font-black text-gray-900 shadow-[0_4px_0_#2b221a]">
+                    {theme.hook}
+                  </p>
+                </div>
+
+                {/* Script / briefing side */}
+                <div className="relative z-[15] flex flex-col justify-between border-t-[5px] border-[#2b221a] bg-[#fffdf8]/95 p-6 sm:p-8 lg:border-l-[5px] lg:border-t-0">
+                  <div>
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                      <span
+                        className={`flex h-11 w-11 items-center justify-center rounded-xl border-[3px] border-[#2b221a] ${theme.ticketColor} text-gray-900 shadow-[0_4px_0_#2b221a]`}
+                      >
+                        <StageIcon size={22} strokeWidth={2.5} />
+                      </span>
+                      <span className="rounded-lg border-2 border-[#2b221a] bg-nintendo-green px-2.5 py-1 text-[10px] font-black uppercase text-white">
                         เปิดเล่นได้ทันที
+                      </span>
+                      <span className="rounded-lg border-2 border-dashed border-[#2b221a]/40 bg-amber-50 px-2.5 py-1 text-[10px] font-black text-amber-900">
+                        {theme.venue}
                       </span>
                     </div>
 
-                    <h3 className="text-2xl font-black leading-tight text-gray-900 sm:text-3xl">
-                      {selected.title.replace(/^เล่นอิสระ:\s*/i, '')}
+                    <h3 className="text-2xl font-black leading-tight text-gray-900 sm:text-[1.75rem]">
+                      {cleanTitle(selected.title)}
                     </h3>
 
-                    <div className="relative mt-4">
-                      <div className="absolute -left-2 top-4 h-0 w-0 border-y-[10px] border-r-[14px] border-y-transparent border-r-[#2b221a]" />
-                      <div className="rounded-2xl border-[4px] border-[#2b221a] bg-white p-4 shadow-[0_6px_0_#2b221a]">
-                        <p className="text-sm font-bold leading-relaxed text-gray-700">
+                    {/* Pinned note — not a flashcard */}
+                    <div className="relative mt-5 rotate-1">
+                      <div
+                        className="absolute -top-3 left-1/2 z-10 h-8 w-14 -translate-x-1/2 rounded-sm bg-[#cedf9f]/90 border border-[#2b221a]/25 shadow-sm"
+                        aria-hidden
+                      />
+                      <div className="rounded-sm border-[3px] border-[#2b221a] bg-[#fef9c3] p-4 shadow-[4px_4px_0_#2b221a]">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-900/70">
+                          โน้ตผู้จัดรายการ
+                        </p>
+                        <p className="mt-2 text-sm font-bold leading-relaxed text-gray-800">
                           {selected.description}
                         </p>
                       </div>
                     </div>
 
-                    {/* Characters */}
-                    <div className="mt-5">
-                      <p className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                        <Users size={12} />
-                        คู่เจรจาในฉากนี้
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {selected.characters?.map((char, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center gap-2 rounded-xl border-[3px] border-[#2b221a] bg-nintendo-yellow/30 px-3 py-2 shadow-[0_3px_0_#2b221a]"
-                          >
-                            <span className="flex h-8 w-8 items-center justify-center rounded-lg border-2 border-[#2b221a] bg-white text-sm font-black">
-                              {char.name?.charAt(0) ?? '?'}
-                            </span>
-                            <div className="min-w-0">
-                              <p className="truncate text-xs font-black text-gray-900">{char.name}</p>
-                              <p className="truncate text-[9px] font-bold text-gray-600">{char.role}</p>
+                    {selected.characters && selected.characters.length > 0 && (
+                      <div className="mt-6">
+                        <p className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                          <Users size={12} strokeWidth={3} />
+                          ตัวละครในรายการนี้
+                        </p>
+                        <div className="space-y-2">
+                          {selected.characters.map((char, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center gap-3 rounded-2xl border-[3px] border-[#2b221a] bg-white p-3 shadow-[0_4px_0_#2b221a] -rotate-1 even:rotate-1"
+                            >
+                              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-[#2b221a] bg-nintendo-yellow text-lg font-black">
+                                {char.name?.charAt(0) ?? '?'}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-black text-gray-900">
+                                  {char.name}
+                                </p>
+                                <p className="truncate text-[11px] font-bold text-gray-600">
+                                  {char.role}
+                                  {char.personality ? ` · ${char.personality}` : ''}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   <motion.button
                     type="button"
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98, y: 4 }}
                     disabled={loading}
                     onClick={() => onStart(selected.id)}
-                    className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl border-[5px] border-[#2b221a] bg-nintendo-red py-4 text-lg font-black uppercase tracking-wide text-white shadow-[0_8px_0_#2b221a] transition-colors hover:bg-red-500 disabled:opacity-60"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98, y: 3 }}
+                    className="group mt-8 flex w-full items-center justify-between gap-3 rounded-2xl border-[5px] border-[#2b221a] bg-nintendo-red py-4 pl-5 pr-4 text-left font-black text-white shadow-[0_8px_0_#2b221a] transition-colors hover:bg-red-500 disabled:opacity-60"
                   >
-                    <Play size={22} className="fill-current" />
-                    เริ่มฝึกเลย!
-                    <ChevronRight size={22} strokeWidth={3} />
+                    <span className="flex flex-col">
+                      <span className="flex items-center gap-2 text-lg uppercase tracking-wide sm:text-xl">
+                        <Play size={22} className="fill-current" />
+                        ขึ้นเวทีเลย!
+                      </span>
+                      <span className="text-[11px] font-bold text-red-100">
+                        แตะเพื่อเริ่มเจรจาสด
+                      </span>
+                    </span>
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-[3px] border-white/40 bg-white/15 group-hover:bg-white/25">
+                      <ChevronRight size={26} strokeWidth={3} />
+                    </span>
                   </motion.button>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Booth picker — vertical arcade cabinets */}
-        <div className="flex flex-col gap-3">
-          <p className="text-center text-xs font-black uppercase tracking-widest text-gray-600 xl:text-left">
-            เลือกบูธฝึก
-          </p>
-          <div className="flex gap-3 overflow-x-auto pb-2 xl:flex-col xl:overflow-visible xl:pb-0 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#2b221a]/30">
-            {scenarios.map((scenario, index) => {
-              const booth = getBoothTheme(scenario, index);
-              const BoothIco = booth.Icon;
-              const isActive = selected?.id === scenario.id;
-              const shortTitle = scenario.title.replace(/^เล่นอิสระ:\s*/i, '');
-
-              return (
-                <motion.button
-                  key={scenario.id}
-                  type="button"
-                  onClick={() => setSelectedId(scenario.id)}
-                  whileHover={{ scale: 1.03, x: 4 }}
-                  whileTap={{ scale: 0.97 }}
-                  className={`relative flex min-w-[140px] shrink-0 flex-col items-center rounded-[1.75rem] border-[5px] p-4 text-left transition-all xl:min-w-0 xl:flex-row xl:gap-3 xl:p-3 ${
-                    isActive
-                      ? `border-[#2b221a] ${booth.booth} text-white shadow-[0_8px_0_#2b221a] ${booth.glow}`
-                      : 'border-[#2b221a]/40 bg-white text-gray-900 shadow-[0_5px_0_#2b221a]/40 hover:border-[#2b221a]'
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="freeplay-booth-glow"
-                      className="pointer-events-none absolute -inset-1 rounded-[2rem] border-2 border-dashed border-white/50"
-                    />
-                  )}
-                  <span
-                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-[3px] text-3xl ${
-                      isActive ? 'border-white/40 bg-white/20' : 'border-[#2b221a] bg-white'
-                    }`}
-                  >
-                    {booth.emoji}
-                  </span>
-                  <div className="mt-2 min-w-0 flex-1 xl:mt-0">
-                    <p className={`line-clamp-2 text-sm font-black leading-tight ${isActive ? 'text-white' : 'text-gray-900'}`}>
-                      {shortTitle}
-                    </p>
-                    <p className={`mt-0.5 flex items-center gap-1 text-[9px] font-bold uppercase ${isActive ? 'text-white/80' : 'text-gray-500'}`}>
-                      <BoothIco size={10} />
-                      {booth.scene}
-                    </p>
-                  </div>
-                  {isActive && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#2b221a] bg-nintendo-yellow text-[10px] font-black text-gray-900"
-                    >
-                      ✓
-                    </motion.span>
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Quick-start strip for mobile */}
-      {selected && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="fixed bottom-4 left-4 right-4 z-40 xl:hidden"
-        >
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => onStart(selected.id)}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-[4px] border-[#2b221a] bg-nintendo-red py-3.5 font-black text-white shadow-[0_6px_0_#2b221a] active:translate-y-1 active:shadow-none disabled:opacity-60"
-          >
-            <Play size={18} className="fill-current" />
-            เริ่ม: {selected.title.replace(/^เล่นอิสระ:\s*/i, '').slice(0, 24)}
-            {(selected.title.length > 28) && '…'}
-          </button>
-        </motion.div>
-      )}
+            </div>
+          </motion.section>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
