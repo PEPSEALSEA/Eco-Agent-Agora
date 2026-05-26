@@ -7,7 +7,7 @@ import {
   Lock, Unlock, Star, Play, Gift, ShieldAlert, Zap, Trophy,
   HelpCircle, User, Compass, Bookmark,
   ChevronRight, X, ArrowLeft, RefreshCw, CheckSquare, Coffee,
-  Gamepad2, Map
+  Gamepad2, Map 
 } from 'lucide-react';
 import { FreeplayLobby } from '@/components/freeplay/FreeplayLobby';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
