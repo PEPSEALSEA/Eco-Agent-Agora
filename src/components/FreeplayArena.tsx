@@ -17,6 +17,13 @@ import {
   Handshake,
   MessageCircle,
   Gamepad2,
+  Target,
+  UserRound,
+  Code2,
+  ClipboardList,
+  Store,
+  Sprout,
+  Crown,
 } from 'lucide-react';
 
 export type FreeplayScenario = {
@@ -29,7 +36,6 @@ export type FreeplayScenario = {
 
 type StageTheme = {
   Icon: LucideIcon;
-  emoji: string;
   venue: string;
   hook: string;
   ticketColor: string;
@@ -37,12 +43,12 @@ type StageTheme = {
   curtain: string;
   stamp: string;
   pattern: string;
+  mascotBg: string;
 };
 
 const STAGE_THEMES: StageTheme[] = [
   {
     Icon: Handshake,
-    emoji: '🤝',
     venue: 'โต๊ะเจรจาเปิด',
     hook: 'ลองประโยคของคุณเอง!',
     ticketColor: 'bg-emerald-400',
@@ -50,10 +56,10 @@ const STAGE_THEMES: StageTheme[] = [
     curtain: 'from-[#b91c1c] via-[#dc2626] to-[#991b1b]',
     stamp: 'bg-emerald-600',
     pattern: '[background-image:radial-gradient(#059669_1.5px,transparent_1.5px)] [background-size:14px_14px]',
+    mascotBg: 'bg-emerald-100',
   },
   {
     Icon: MessageCircle,
-    emoji: '💬',
     venue: 'สนามคำพูด',
     hook: 'ไม่มีสคริปต์ ไม่มีด่านล็อก',
     ticketColor: 'bg-sky-400',
@@ -61,10 +67,10 @@ const STAGE_THEMES: StageTheme[] = [
     curtain: 'from-[#1d4ed8] via-[#2563eb] to-[#1e40af]',
     stamp: 'bg-sky-600',
     pattern: '[background-image:radial-gradient(#0284c7_1.5px,transparent_1.5px)] [background-size:12px_12px]',
+    mascotBg: 'bg-sky-100',
   },
   {
-    Icon: Briefcase,
-    emoji: '🎯',
+    Icon: Target,
     venue: 'ห้องซ้อมทักษะ',
     hook: 'เน้นฝึกจริง ไม่กดดันคะแนน',
     ticketColor: 'bg-violet-400',
@@ -72,8 +78,119 @@ const STAGE_THEMES: StageTheme[] = [
     curtain: 'from-[#6d28d9] via-[#7c3aed] to-[#5b21b6]',
     stamp: 'bg-violet-600',
     pattern: '[background-image:radial-gradient(#7c3aed_1.2px,transparent_1.2px)] [background-size:16px_16px]',
+    mascotBg: 'bg-violet-100',
   },
 ];
+
+const ICON_STROKE = 2.75;
+
+function FlatIconBox({
+  Icon,
+  size = 22,
+  boxClass = 'h-10 w-10 rounded-lg bg-white',
+  iconClass = 'text-[#2b221a]',
+}: {
+  Icon: LucideIcon;
+  size?: number;
+  boxClass?: string;
+  iconClass?: string;
+}) {
+  return (
+    <span
+      className={`flex shrink-0 items-center justify-center border-[3px] border-[#2b221a] shadow-[0_3px_0_#2b221a] ${boxClass}`}
+    >
+      <Icon size={size} strokeWidth={ICON_STROKE} className={iconClass} aria-hidden />
+    </span>
+  );
+}
+
+function StageMascot({ Icon, bgClass }: { Icon: LucideIcon; bgClass: string }) {
+  return (
+    <div className="relative">
+      <div
+        className={`relative flex h-36 w-36 items-center justify-center rounded-[2rem] border-[5px] border-[#2b221a] sm:h-40 sm:w-40 ${bgClass} shadow-[0_10px_0_#2b221a]`}
+      >
+        <Icon
+          size={72}
+          strokeWidth={2.25}
+          className="text-[#2b221a]"
+          aria-hidden
+        />
+      </div>
+      <div
+        className="absolute -bottom-2 left-1/2 h-3 w-[80%] -translate-x-1/2 rounded-[100%] bg-[#2b221a]/20"
+        aria-hidden
+      />
+    </div>
+  );
+}
+
+type CharacterVisual = { Icon: LucideIcon; tileBg: string; iconColor: string };
+
+function getCharacterVisual(
+  char: { name?: string; role?: string },
+  index: number
+): CharacterVisual {
+  const hay = `${char.name ?? ''} ${char.role ?? ''}`.toLowerCase();
+
+  if (/พัฒน|dev|engineer|โปรแกรม/.test(hay)) {
+    return { Icon: Code2, tileBg: 'bg-nintendo-blue', iconColor: 'text-white' };
+  }
+  if (/ผู้จัดการ|pm|product|หัวหน้า|hr|เฮนเดอร์/.test(hay)) {
+    return { Icon: ClipboardList, tileBg: 'bg-nintendo-pink', iconColor: 'text-white' };
+  }
+  if (/เกษตร|ลุง|ป้า|ชุมชน|แม่บ้าน/.test(hay)) {
+    return { Icon: Sprout, tileBg: 'bg-nintendo-green', iconColor: 'text-white' };
+  }
+  if (/ขาย|เต็นท์|รถ|เฮีย|ค้า/.test(hay)) {
+    return { Icon: Store, tileBg: 'bg-amber-500', iconColor: 'text-[#2b221a]' };
+  }
+  if (/lead|ผู้นำ|boss/.test(hay)) {
+    return { Icon: Crown, tileBg: 'bg-violet-500', iconColor: 'text-white' };
+  }
+
+  const fallbacks: CharacterVisual[] = [
+    { Icon: UserRound, tileBg: 'bg-nintendo-yellow', iconColor: 'text-[#2b221a]' },
+    { Icon: Briefcase, tileBg: 'bg-sky-500', iconColor: 'text-white' },
+    { Icon: Handshake, tileBg: 'bg-emerald-500', iconColor: 'text-white' },
+  ];
+  return fallbacks[index % fallbacks.length];
+}
+
+function CharacterTile({
+  char,
+  index,
+}: {
+  char: { name?: string; role?: string; personality?: string };
+  index: number;
+}) {
+  const { Icon, tileBg, iconColor } = getCharacterVisual(char, index);
+
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border-[3px] border-[#2b221a] bg-white p-3.5 shadow-[0_4px_0_#2b221a]">
+      <FlatIconBox
+        Icon={Icon}
+        size={26}
+        boxClass={`h-12 w-12 rounded-2xl ${tileBg}`}
+        iconClass={iconColor}
+      />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-black leading-snug text-gray-900 break-words">
+          {char.name}
+        </p>
+        <p className="mt-1 text-[11px] font-bold leading-relaxed text-gray-600 break-words">
+          {char.role}
+          {char.personality ? (
+            <>
+              <span className="text-gray-400"> · </span>
+              {char.personality}
+            </>
+          ) : null}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const getStageTheme = (scenario: FreeplayScenario, index: number): StageTheme => {
   const t = scenario.title.toLowerCase();
@@ -81,7 +198,6 @@ const getStageTheme = (scenario: FreeplayScenario, index: number): StageTheme =>
   if (t.includes('รถ') || t.includes('car') || t.includes('มือสอง')) {
     return {
       Icon: Car,
-      emoji: '🚗',
       venue: 'เต็นท์รถมือสอง',
       hook: 'ต่อรองให้ได้ราคาที่ใจอยากได้!',
       ticketColor: 'bg-amber-400',
@@ -89,12 +205,12 @@ const getStageTheme = (scenario: FreeplayScenario, index: number): StageTheme =>
       curtain: 'from-[#c2410c] via-[#ea580c] to-[#9a3412]',
       stamp: 'bg-amber-600',
       pattern: '[background-image:repeating-linear-gradient(-45deg,transparent,transparent_8px,rgba(217,119,6,0.08)_8px,rgba(217,119,6,0.08)_16px)]',
+      mascotBg: 'bg-amber-100',
     };
   }
   if (t.includes('กาแฟ') || t.includes('coffee') || t.includes('คาเฟ่')) {
     return {
       Icon: Coffee,
-      emoji: '☕',
       venue: 'ร้านกาแฟยอดฮิต',
       hook: 'คุยให้ได้ดีลพิเศษ!',
       ticketColor: 'bg-stone-400',
@@ -102,10 +218,12 @@ const getStageTheme = (scenario: FreeplayScenario, index: number): StageTheme =>
       curtain: 'from-[#78350f] via-[#92400e] to-[#451a03]',
       stamp: 'bg-stone-600',
       pattern: '[background-image:radial-gradient(#78716c_1px,transparent_1px)] [background-size:10px_10px]',
+      mascotBg: 'bg-stone-200',
     };
   }
 
-  return STAGE_THEMES[index % STAGE_THEMES.length];
+  const base = STAGE_THEMES[index % STAGE_THEMES.length];
+  return { ...base, mascotBg: base.mascotBg ?? 'bg-white' };
 };
 
 const cleanTitle = (title: string) =>
@@ -269,7 +387,7 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
                     ))}
                   </div>
                   <div className="flex items-start justify-between gap-2">
-                    <span className="text-3xl leading-none drop-shadow-sm">{t.emoji}</span>
+                    <FlatIconBox Icon={t.Icon} size={20} />
                     <span className="rounded-md border-2 border-[#2b221a] bg-white/90 px-1.5 py-0.5 text-[9px] font-black text-gray-800">
                       #{String(index + 1).padStart(2, '0')}
                     </span>
@@ -329,13 +447,7 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
                     transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut' }}
                     className="relative"
                   >
-                    <div className="absolute -inset-4 rounded-full bg-white/40 blur-2xl" />
-                    <div className="relative rounded-[3rem] border-[5px] border-[#2b221a] bg-white px-8 py-6 shadow-[0_10px_0_#2b221a]">
-                      <span className="block text-center text-[5.5rem] leading-none sm:text-[6.5rem]">
-                        {theme.emoji}
-                      </span>
-                    </div>
-                    <div className="absolute -bottom-3 left-1/2 h-4 w-[85%] -translate-x-1/2 rounded-[100%] bg-black/15 blur-sm" />
+                    <StageMascot Icon={StageIcon} bgClass={theme.mascotBg} />
                   </motion.div>
 
                   <p className="mt-6 rounded-full border-[3px] border-[#2b221a] bg-white px-5 py-1.5 text-sm font-black text-gray-900 shadow-[0_4px_0_#2b221a]">
@@ -347,12 +459,14 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
                 <div className="relative z-[15] flex min-h-0 flex-col gap-6 border-t-[5px] border-[#2b221a] bg-[#fffdf8]/95 p-6 pb-8 sm:p-8 sm:pb-10 lg:border-l-[5px] lg:border-t-0">
                   <div className="min-h-0 flex flex-col gap-5">
                     <div className="mb-4 flex flex-wrap items-center gap-2">
-                      <span
-                        className={`flex h-11 w-11 items-center justify-center rounded-xl border-[3px] border-[#2b221a] ${theme.ticketColor} text-gray-900 shadow-[0_4px_0_#2b221a]`}
-                      >
-                        <StageIcon size={22} strokeWidth={2.5} />
-                      </span>
-                      <span className="rounded-lg border-2 border-[#2b221a] bg-nintendo-green px-2.5 py-1 text-[10px] font-black uppercase text-white">
+                      <FlatIconBox
+                        Icon={StageIcon}
+                        size={20}
+                        boxClass={`h-11 w-11 rounded-xl ${theme.ticketColor}`}
+                        iconClass="text-[#2b221a]"
+                      />
+                      <span className="flex items-center gap-1.5 rounded-lg border-[3px] border-[#2b221a] bg-nintendo-green px-2.5 py-1.5 text-[10px] font-black uppercase text-white shadow-[0_3px_0_#2b221a]">
+                        <Play size={12} className="fill-current" strokeWidth={3} />
                         เปิดเล่นได้ทันที
                       </span>
                       <span className="rounded-lg border-2 border-dashed border-[#2b221a]/40 bg-amber-50 px-2.5 py-1 text-[10px] font-black text-amber-900">
@@ -389,25 +503,7 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
                         <ul className="flex flex-col gap-4">
                           {selected.characters.map((char, i) => (
                             <li key={i} className="list-none">
-                              <div className="flex items-start gap-3 rounded-2xl border-[3px] border-[#2b221a] bg-white p-3.5 shadow-[0_4px_0_#2b221a]">
-                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-[3px] border-[#2b221a] bg-nintendo-yellow text-lg font-black">
-                                  {char.name?.charAt(0) ?? '?'}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-black leading-snug text-gray-900 break-words">
-                                    {char.name}
-                                  </p>
-                                  <p className="mt-1 text-[11px] font-bold leading-relaxed text-gray-600 break-words">
-                                    {char.role}
-                                    {char.personality ? (
-                                      <>
-                                        <span className="text-gray-400"> · </span>
-                                        {char.personality}
-                                      </>
-                                    ) : null}
-                                  </p>
-                                </div>
-                              </div>
+                              <CharacterTile char={char} index={i} />
                             </li>
                           ))}
                         </ul>
