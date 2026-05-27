@@ -167,16 +167,16 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
 
   return (
     <div className="mb-12 space-y-6">
-      <section className="space-y-3">
+      <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-700">
-            <Ticket size={15} strokeWidth={3} />
+          <p className="flex items-center gap-2 text-base font-black uppercase tracking-wide text-gray-800 sm:text-lg">
+            <Ticket size={18} strokeWidth={3} />
             เลือกฉากฝึก
           </p>
           <button
             type="button"
             onClick={() => setIsPickerOpen(true)}
-            className="rounded-xl border-[3px] border-[#2b221a] bg-nintendo-yellow px-3 py-1.5 text-[11px] font-black text-gray-900 shadow-[0_3px_0_#2b221a] hover:translate-y-0.5 hover:shadow-[0_2px_0_#2b221a] active:translate-y-1 active:shadow-none"
+            className="rounded-xl border-[3px] border-[#2b221a] bg-nintendo-yellow px-4 py-2 text-sm font-black text-gray-900 shadow-[0_4px_0_#2b221a] hover:translate-y-0.5 hover:shadow-[0_2px_0_#2b221a] active:translate-y-1 active:shadow-none sm:text-base"
           >
             ดูทั้งหมด {scenarios.length} ฉาก
           </button>
@@ -188,6 +188,34 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
               <p className="truncate text-lg font-black text-gray-900">{selected ? cleanTitle(selected.title) : 'ยังไม่ได้เลือกฉาก'}</p>
             </div>
             <IconBox Icon={selected ? theme?.Icon ?? Gamepad2 : Gamepad2} className={`h-12 w-12 rounded-xl ${selected ? theme?.chip ?? 'bg-nintendo-yellow' : 'bg-nintendo-yellow'}`} size={20} />
+          </div>
+        </div>
+        <div className="rounded-2xl border-[4px] border-[#2b221a] bg-white p-4 shadow-[0_6px_0_#2b221a]">
+          <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Quick Decision (แนะนำ 3 ฉาก)</p>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {scenarios.slice(0, 3).map((scenario, i) => {
+              const t = getTheme(scenario, i);
+              const active = selected?.id === scenario.id;
+              return (
+                <button
+                  key={scenario.id}
+                  type="button"
+                  onClick={() => setSelectedId(scenario.id)}
+                  className={`rounded-xl border-[3px] px-3 py-2.5 text-left shadow-[0_4px_0_#2b221a] transition ${
+                    active
+                      ? `${t.chip} border-[#2b221a]`
+                      : 'border-[#2b221a] bg-[#fffdf9] hover:bg-[#fff8e7]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <IconBox Icon={t.Icon} className={`h-8 w-8 rounded-lg ${active ? 'bg-white/80' : 'bg-white'}`} size={14} />
+                    <p className="line-clamp-2 text-sm font-black leading-tight text-gray-900">
+                      {cleanTitle(scenario.title)}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
