@@ -146,6 +146,7 @@ type FreeplayArenaProps = {
 
 export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProps) {
   const [selectedId, setSelectedId] = useState<string | null>(scenarios[0]?.id ?? null);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     setSelectedId((prev) => {
@@ -158,6 +159,13 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
   const selected = scenarios.find((s) => s.id === selectedId) ?? scenarios[0];
   const selectedIndex = selected ? scenarios.findIndex((s) => s.id === selected.id) : 0;
   const theme = selected ? getTheme(selected, Math.max(0, selectedIndex)) : null;
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredScenarios = scenarios.filter((scenario) => {
+    if (!normalizedQuery) return true;
+    const title = cleanTitle(scenario.title).toLowerCase();
+    const desc = (scenario.description ?? '').toLowerCase();
+    return title.includes(normalizedQuery) || desc.includes(normalizedQuery);
+  });
 
   return (
     <div className="mb-12 space-y-6">
@@ -188,13 +196,27 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
       </div>
 
       <section className="space-y-3">
-        <p className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-700">
-          <Ticket size={15} strokeWidth={3} />
-          เลือกฉากฝึก
-        </p>
-        <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {scenarios.map((scenario, index) => {
-            const t = getTheme(scenario, index);
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-700">
+            <Ticket size={15} strokeWidth={3} />
+            เลือกฉากฝึก
+          </p>
+          <span className="rounded-lg border-2 border-[#2b221a]/25 bg-white px-2.5 py-1 text-[10px] font-black text-gray-600">
+            {filteredScenarios.length}/{scenarios.length} ฉาก
+          </span>
+        </div>
+        <div className="rounded-2xl border-[4px] border-[#2b221a] bg-white p-3 shadow-[0_6px_0_#2b221a]">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="ค้นหาชื่อฉากหรือคำอธิบาย..."
+            className="w-full rounded-xl border-[3px] border-[#2b221a] bg-[#fffdf9] px-3 py-2 text-sm font-bold text-gray-700 outline-none focus:bg-[#fff8e7]"
+          />
+        </div>
+        <div className="grid max-h-[22rem] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredScenarios.map((scenario) => {
+            const originalIndex = scenarios.findIndex((s) => s.id === scenario.id);
+            const t = getTheme(scenario, Math.max(0, originalIndex));
             const active = selected?.id === scenario.id;
             return (
               <motion.button
@@ -203,7 +225,7 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
                 onClick={() => setSelectedId(scenario.id)}
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className={`min-w-[180px] rounded-2xl border-[4px] px-4 py-3 text-left shadow-[0_6px_0_#2b221a] transition ${
+                className={`rounded-2xl border-[4px] px-4 py-3 text-left shadow-[0_6px_0_#2b221a] transition ${
                   active
                     ? `border-[#2b221a] ${t.chip} text-gray-900`
                     : 'border-[#2b221a] bg-white text-gray-900 hover:bg-[#fff8e7]'
@@ -211,13 +233,18 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
               >
                 <div className="flex items-center justify-between gap-2">
                   <IconBox Icon={t.Icon} className={`h-9 w-9 rounded-lg ${active ? 'bg-white/80' : 'bg-white'}`} size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-wide">#{String(index + 1).padStart(2, '0')}</span>
+                  <span className="text-[10px] font-black uppercase tracking-wide">#{String(originalIndex + 1).padStart(2, '0')}</span>
                 </div>
                 <p className="mt-2 line-clamp-2 text-sm font-black leading-tight">{cleanTitle(scenario.title)}</p>
                 <p className="mt-1 text-[10px] font-bold uppercase text-gray-700">{t.venue}</p>
               </motion.button>
             );
           })}
+          {filteredScenarios.length === 0 && (
+            <div className="col-span-full rounded-2xl border-[3px] border-dashed border-[#2b221a]/40 bg-[#fffdf9] px-4 py-6 text-center text-sm font-bold text-gray-500">
+              ไม่พบฉากที่ตรงกับคำค้นหา
+            </div>
+          )}
         </div>
       </section>
 
