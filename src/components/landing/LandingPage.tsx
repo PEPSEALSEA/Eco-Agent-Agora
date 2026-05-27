@@ -75,7 +75,7 @@ export function LandingPage() {
             >
               WongJraJa
             </h1>
-            <p className="mt-2 text-sm font-black uppercase tracking-[0.22em] text-[#4eb9a7] sm:text-lg">
+            <p className="mt-2 text-base font-black uppercase tracking-[0.22em] text-[#1f6f63] sm:text-xl">
               วงเจรจา
             </p>
           </div>
