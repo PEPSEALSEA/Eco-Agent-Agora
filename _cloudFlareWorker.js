@@ -644,7 +644,7 @@ function errorResponse(msg, status = 500) {
 async function handleSetupSheets(sheetId, token) {
   const schema = {
     "users": ["id", "email", "created_at", "streak_count", "last_active_date"],
-    "scenarios": ["id", "title", "description", "target_group", "player_role", "characters", "phase_rules", "initial_state", "opening_scene", "mode", "difficulty"],
+    "scenarios": ["id", "title", "description", "preview_img", "target_group", "player_role", "characters", "phase_rules", "initial_state", "opening_scene", "mode", "difficulty"],
     "sessions": ["id", "user_id", "scenario_id", "started_at", "ended_at", "outcome_score", "status", "state", "history_summary", "ai_evaluation", "mode", "stage"],
     "messages": ["id", "session_id", "sender", "character_name", "content", "created_at", "input_mode", "voice_vibe", "voice_intensity", "voice_comment"],
     "feedback_logs": ["id", "session_id", "message_id", "feedback_text", "score", "dimension", "created_at"],

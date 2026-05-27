@@ -27,6 +27,7 @@ export type FreeplayScenario = {
   id: string;
   title: string;
   description: string;
+  preview_img?: string;
   target_group?: string;
   characters?: { name?: string; role?: string; personality?: string }[];
 };
@@ -102,6 +103,23 @@ const getTheme = (scenario: FreeplayScenario, index: number): StageTheme => {
 
 const cleanTitle = (title: string) => title.replace(/^เล่นอิสระ:\s*/i, '').trim();
 
+const normalizePreviewImageUrl = (rawUrl?: string) => {
+  if (!rawUrl) return '';
+  const input = rawUrl.trim();
+  if (!input) return '';
+
+  if (/^https?:\/\/i\.imgur\.com\/.+\.(png|jpg|jpeg|webp|gif)(\?.*)?$/i.test(input)) {
+    return input;
+  }
+
+  const imgurMatch = input.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)(?:\?.*)?$/i);
+  if (imgurMatch?.[1]) {
+    return `https://i.imgur.com/${imgurMatch[1]}.png`;
+  }
+
+  return input;
+};
+
 function IconBox({
   Icon,
   className,
@@ -157,6 +175,7 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
   const selected = scenarios.find((s) => s.id === selectedId) ?? scenarios[0];
   const selectedIndex = selected ? scenarios.findIndex((s) => s.id === selected.id) : 0;
   const theme = selected ? getTheme(selected, Math.max(0, selectedIndex)) : null;
+  const previewImageUrl = normalizePreviewImageUrl(selected?.preview_img);
   const normalizedQuery = query.trim().toLowerCase();
   const filteredScenarios = scenarios.filter((scenario) => {
     if (!normalizedQuery) return true;
@@ -191,7 +210,7 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
           </div>
         </div>
         <div className="rounded-2xl border-[4px] border-[#2b221a] bg-white p-4 shadow-[0_6px_0_#2b221a]">
-          <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Quick Decision (แนะนำ 3 ฉาก)</p>
+          <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-gray-500">Quick Decision แนะนำ 3 ฉาก</p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             {scenarios.slice(0, 3).map((scenario, i) => {
               const t = getTheme(scenario, i);
@@ -309,7 +328,18 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
           >
             <div className={`grid grid-cols-1 gap-0 bg-gradient-to-b ${theme.panel} lg:grid-cols-[0.9fr_1.1fr]`}>
               <div className="flex flex-col items-center justify-center border-b-[5px] border-[#2b221a] px-6 py-8 lg:border-b-0 lg:border-r-[5px]">
-                <IconBox Icon={theme.Icon} className={`h-28 w-28 rounded-[1.6rem] ${theme.iconTile}`} size={56} />
+                {previewImageUrl ? (
+                  <div className="w-full max-w-sm overflow-hidden rounded-[1.6rem] border-[4px] border-[#2b221a] bg-white shadow-[0_8px_0_#2b221a]">
+                    <img
+                      src={previewImageUrl}
+                      alt={cleanTitle(selected.title)}
+                      className="h-[220px] w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : (
+                  <IconBox Icon={theme.Icon} className={`h-28 w-28 rounded-[1.6rem] ${theme.iconTile}`} size={56} />
+                )}
                 <p className={`mt-4 text-sm font-black uppercase tracking-[0.12em] ${theme.accent}`}>{theme.venue}</p>
                 <p className="mt-2 text-center text-sm font-bold text-gray-700">{theme.hook}</p>
               </div>

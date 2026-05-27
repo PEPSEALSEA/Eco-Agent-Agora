@@ -20,6 +20,7 @@ type Scenario = {
   id: string;
   title: string;
   description: string;
+  preview_img?: string;
   target_group: string;
   characters: any[];
   mode?: 'campaign' | 'freeplay';
