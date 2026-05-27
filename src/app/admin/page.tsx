@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { CartoonLoading } from '@/components/CartoonLoading';
 
-const ADMIN_EMAILS = ['sealseapep@gmail.com'];
+const ADMIN_EMAILS = ['sealseapep@gmail.com', 'sealseapep2@gmail.com'];
 
 export default function AdminLandingPage() {
   const { user, loading } = useAuth();

@@ -8,7 +8,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { CartoonLoading } from '@/components/CartoonLoading';
 import { gasFetch } from '@/lib/gas';
 
-const ADMIN_EMAILS = ['sealseapep@gmail.com'];
+const ADMIN_EMAILS = ['sealseapep@gmail.com', 'sealseapep2@gmail.com'];
 
 type SheetRow = Record<string, any>;
 

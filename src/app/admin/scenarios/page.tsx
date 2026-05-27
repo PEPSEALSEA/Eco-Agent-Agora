@@ -8,7 +8,7 @@ import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCa
 import { CartoonLoading } from '@/components/CartoonLoading';
 import Link from 'next/link';
 
-const ADMIN_EMAILS = ['sealseapep@gmail.com'];
+const ADMIN_EMAILS = ['sealseapep@gmail.com', 'sealseapep2@gmail.com'];
 
 type Scenario = {
   id: string;

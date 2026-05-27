@@ -25,7 +25,7 @@ type RealWorldJournal = {
   created_at: string;
 };
 
-const ADMIN_EMAILS = ['sealseapep@gmail.com'];
+const ADMIN_EMAILS = ['sealseapep@gmail.com', 'sealseapep2@gmail.com'];
 
 type Session = {
   id: string;
