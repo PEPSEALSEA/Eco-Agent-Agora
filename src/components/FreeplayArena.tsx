@@ -13,10 +13,7 @@ import {
   Gamepad2,
   Handshake,
   MessageCircle,
-  Mic,
   Play,
-  Repeat,
-  Sparkles,
   Sprout,
   Store,
   Target,
@@ -147,6 +144,7 @@ type FreeplayArenaProps = {
 export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProps) {
   const [selectedId, setSelectedId] = useState<string | null>(scenarios[0]?.id ?? null);
   const [query, setQuery] = useState('');
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   useEffect(() => {
     setSelectedId((prev) => {
@@ -169,84 +167,108 @@ export function FreeplayArena({ scenarios, onStart, loading }: FreeplayArenaProp
 
   return (
     <div className="mb-12 space-y-6">
-      <div className="rounded-[2rem] border-[6px] border-[#2b221a] bg-[#fffdf9] p-5 shadow-[0_10px_0_#2b221a] sm:p-7">
-        <div className="flex flex-wrap items-center gap-2">
-          <IconBox Icon={Gamepad2} className="h-10 w-10 rounded-xl bg-nintendo-yellow" size={20} />
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#b45309]">Freeplay Mode</p>
-        </div>
-        <h2 className="mt-3 text-4xl font-black leading-[0.9] text-gray-900 sm:text-5xl">
-          ฝึกเจรจาอิสระ
-          <span className="block text-nintendo-blue">แบบการ์ตูน</span>
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm font-bold text-gray-600 sm:text-base">
-          เลือกฉากเดียวที่อยากฝึก แล้วโฟกัสที่การพิมพ์จริงทันที โดยลดองค์ประกอบรบกวนสายตาให้ใช้ง่ายขึ้น
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {[
-            { icon: Mic, label: 'พิมพ์อิสระ', bg: 'bg-nintendo-pink' },
-            { icon: Repeat, label: 'เล่นซ้ำได้', bg: 'bg-nintendo-green' },
-            { icon: Sparkles, label: 'ฝึกเร็ว', bg: 'bg-nintendo-yellow' },
-          ].map(({ icon: Icon, label, bg }) => (
-            <span key={label} className={`inline-flex items-center gap-2 rounded-xl border-[3px] border-[#2b221a] ${bg} px-3 py-1.5 text-xs font-black shadow-[0_3px_0_#2b221a]`}>
-              <Icon size={14} strokeWidth={3} />
-              {label}
-            </span>
-          ))}
-        </div>
-      </div>
-
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-700">
             <Ticket size={15} strokeWidth={3} />
             เลือกฉากฝึก
           </p>
-          <span className="rounded-lg border-2 border-[#2b221a]/25 bg-white px-2.5 py-1 text-[10px] font-black text-gray-600">
-            {filteredScenarios.length}/{scenarios.length} ฉาก
-          </span>
+          <button
+            type="button"
+            onClick={() => setIsPickerOpen(true)}
+            className="rounded-xl border-[3px] border-[#2b221a] bg-nintendo-yellow px-3 py-1.5 text-[11px] font-black text-gray-900 shadow-[0_3px_0_#2b221a] hover:translate-y-0.5 hover:shadow-[0_2px_0_#2b221a] active:translate-y-1 active:shadow-none"
+          >
+            ดูทั้งหมด {scenarios.length} ฉาก
+          </button>
         </div>
-        <div className="rounded-2xl border-[4px] border-[#2b221a] bg-white p-3 shadow-[0_6px_0_#2b221a]">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="ค้นหาชื่อฉากหรือคำอธิบาย..."
-            className="w-full rounded-xl border-[3px] border-[#2b221a] bg-[#fffdf9] px-3 py-2 text-sm font-bold text-gray-700 outline-none focus:bg-[#fff8e7]"
-          />
-        </div>
-        <div className="grid max-h-[22rem] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredScenarios.map((scenario) => {
-            const originalIndex = scenarios.findIndex((s) => s.id === scenario.id);
-            const t = getTheme(scenario, Math.max(0, originalIndex));
-            const active = selected?.id === scenario.id;
-            return (
-              <motion.button
-                key={scenario.id}
-                type="button"
-                onClick={() => setSelectedId(scenario.id)}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                className={`rounded-2xl border-[4px] px-4 py-3 text-left shadow-[0_6px_0_#2b221a] transition ${
-                  active
-                    ? `border-[#2b221a] ${t.chip} text-gray-900`
-                    : 'border-[#2b221a] bg-white text-gray-900 hover:bg-[#fff8e7]'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <IconBox Icon={t.Icon} className={`h-9 w-9 rounded-lg ${active ? 'bg-white/80' : 'bg-white'}`} size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-wide">#{String(originalIndex + 1).padStart(2, '0')}</span>
-                </div>
-                <p className="mt-2 line-clamp-2 text-sm font-black leading-tight">{cleanTitle(scenario.title)}</p>
-                <p className="mt-1 text-[10px] font-bold uppercase text-gray-700">{t.venue}</p>
-              </motion.button>
-            );
-          })}
-          {filteredScenarios.length === 0 && (
-            <div className="col-span-full rounded-2xl border-[3px] border-dashed border-[#2b221a]/40 bg-[#fffdf9] px-4 py-6 text-center text-sm font-bold text-gray-500">
-              ไม่พบฉากที่ตรงกับคำค้นหา
+        <div className="rounded-2xl border-[4px] border-[#2b221a] bg-white p-4 shadow-[0_6px_0_#2b221a]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">ฉากที่เลือกตอนนี้</p>
+              <p className="truncate text-lg font-black text-gray-900">{selected ? cleanTitle(selected.title) : 'ยังไม่ได้เลือกฉาก'}</p>
             </div>
-          )}
+            <IconBox Icon={selected ? theme?.Icon ?? Gamepad2 : Gamepad2} className={`h-12 w-12 rounded-xl ${selected ? theme?.chip ?? 'bg-nintendo-yellow' : 'bg-nintendo-yellow'}`} size={20} />
+          </div>
         </div>
       </section>
+
+      <AnimatePresence>
+        {isPickerOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] bg-black/55 p-4 backdrop-blur-sm sm:p-8"
+            onClick={() => setIsPickerOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 12 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.96, y: 12 }}
+              className="mx-auto flex h-full w-full max-w-5xl flex-col rounded-[2rem] border-[6px] border-[#2b221a] bg-[#fffdf9] p-4 shadow-[0_16px_0_#2b221a] sm:p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-lg font-black text-gray-900">เลือกฉากฝึก</p>
+                <button
+                  type="button"
+                  onClick={() => setIsPickerOpen(false)}
+                  className="rounded-lg border-[3px] border-[#2b221a] bg-white px-3 py-1 text-xs font-black text-gray-700 shadow-[0_3px_0_#2b221a]"
+                >
+                  ปิด
+                </button>
+              </div>
+              <div className="mb-4 rounded-2xl border-[4px] border-[#2b221a] bg-white p-3 shadow-[0_6px_0_#2b221a]">
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="ค้นหาชื่อฉากหรือคำอธิบาย..."
+                  className="w-full rounded-xl border-[3px] border-[#2b221a] bg-[#fffdf9] px-3 py-2 text-sm font-bold text-gray-700 outline-none focus:bg-[#fff8e7]"
+                />
+              </div>
+              <div className="mb-3 rounded-lg border-2 border-[#2b221a]/25 bg-white px-2.5 py-1 text-[10px] font-black text-gray-600 w-fit">
+                {filteredScenarios.length}/{scenarios.length} ฉาก
+              </div>
+              <div className="grid flex-1 grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredScenarios.map((scenario) => {
+                  const originalIndex = scenarios.findIndex((s) => s.id === scenario.id);
+                  const t = getTheme(scenario, Math.max(0, originalIndex));
+                  const active = selected?.id === scenario.id;
+                  return (
+                    <motion.button
+                      key={scenario.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedId(scenario.id);
+                        setIsPickerOpen(false);
+                      }}
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`rounded-2xl border-[4px] px-4 py-3 text-left shadow-[0_6px_0_#2b221a] transition ${
+                        active
+                          ? `border-[#2b221a] ${t.chip} text-gray-900`
+                          : 'border-[#2b221a] bg-white text-gray-900 hover:bg-[#fff8e7]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <IconBox Icon={t.Icon} className={`h-9 w-9 rounded-lg ${active ? 'bg-white/80' : 'bg-white'}`} size={16} />
+                        <span className="text-[10px] font-black uppercase tracking-wide">#{String(originalIndex + 1).padStart(2, '0')}</span>
+                      </div>
+                      <p className="mt-2 line-clamp-2 text-sm font-black leading-tight">{cleanTitle(scenario.title)}</p>
+                      <p className="mt-1 text-[10px] font-bold uppercase text-gray-700">{t.venue}</p>
+                    </motion.button>
+                  );
+                })}
+                {filteredScenarios.length === 0 && (
+                  <div className="col-span-full rounded-2xl border-[3px] border-dashed border-[#2b221a]/40 bg-[#fffdf9] px-4 py-6 text-center text-sm font-bold text-gray-500">
+                    ไม่พบฉากที่ตรงกับคำค้นหา
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence mode="wait">
         {selected && theme && (
