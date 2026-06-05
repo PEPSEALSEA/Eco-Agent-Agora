@@ -24,7 +24,11 @@ const VARIANT_COPY = {
   },
 } as const;
 
-const INTRO_MS = 2600;
+const FADE_EASE = [0.45, 0, 0.55, 1] as const;
+const FADE_IN_MS = 700;
+const HOLD_MS = 1400;
+const FADE_OUT_MS = 650;
+const INTRO_MS = FADE_IN_MS + HOLD_MS;
 
 export function LandingIntroOverlay({ show, variant, onComplete }: LandingIntroOverlayProps) {
   const copy = VARIANT_COPY[variant];
@@ -40,9 +44,10 @@ export function LandingIntroOverlay({ show, variant, onComplete }: LandingIntroO
       {show && (
         <motion.div
           key="landing-intro"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: FADE_OUT_MS / 1000, ease: FADE_EASE } }}
+          transition={{ duration: FADE_IN_MS / 1000, ease: FADE_EASE }}
           className="fixed inset-0 z-[10001] overflow-hidden"
           aria-live="polite"
           aria-label="กำลังเข้าสู่แอป"
@@ -61,9 +66,9 @@ export function LandingIntroOverlay({ show, variant, onComplete }: LandingIntroO
           <div className="relative z-10 flex h-full flex-col items-center justify-between px-4 py-6 sm:px-6 sm:py-8">
             <motion.header
               className="shrink-0 pt-2 text-center"
-              initial={{ opacity: 0, y: -28, scale: 0.92 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: FADE_IN_MS / 1000, ease: FADE_EASE }}
             >
               <div className="inline-block -rotate-1 rounded-[2rem] border-[6px] border-[#2b221a] bg-white px-10 py-4 shadow-[0_10px_0_#2b221a] sm:px-14 sm:py-5">
                 <h1
@@ -80,15 +85,11 @@ export function LandingIntroOverlay({ show, variant, onComplete }: LandingIntroO
 
             <motion.div
               className="relative flex min-h-0 flex-1 w-full max-w-lg flex-col items-center justify-center"
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.65, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: FADE_IN_MS / 1000, delay: 0.12, ease: FADE_EASE }}
             >
-              <motion.div
-                className="relative w-[min(88vw,28rem)] origin-center scale-[1.35] sm:w-[30rem] sm:scale-[1.4]"
-                animate={{ y: [0, -12, 0] }}
-                transition={{ repeat: Infinity, duration: 3.2, ease: 'easeInOut' }}
-              >
+              <div className="relative w-[min(88vw,28rem)] origin-center scale-[1.35] sm:w-[30rem] sm:scale-[1.4]">
                 <Image
                   src={getAssetPath('/HoldHandCharacter.png')}
                   alt=""
@@ -98,14 +99,14 @@ export function LandingIntroOverlay({ show, variant, onComplete }: LandingIntroO
                   className="h-auto w-full object-contain"
                   style={{ maxHeight: 'min(52vh, 28rem)' }}
                 />
-              </motion.div>
+              </div>
             </motion.div>
 
             <motion.footer
               className="shrink-0 pb-2 text-center"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35, duration: 0.45 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: FADE_IN_MS / 1000, delay: 0.24, ease: FADE_EASE }}
             >
               <p className="inline-block rounded-full border-4 border-[#2b221a] bg-white/95 px-8 py-3 text-sm font-black text-[#2b221a] shadow-[0_7px_0_#2b221a] sm:px-10 sm:py-3.5 sm:text-lg">
                 {copy.hint}

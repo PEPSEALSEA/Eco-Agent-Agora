@@ -7,7 +7,8 @@ import { motion } from 'framer-motion';
 import { getAssetPath } from '@/lib/gas';
 import { markFromLanding } from '@/lib/landingIntro';
 
-const EXIT_MS = 580;
+const EXIT_MS = 700;
+const FADE_EASE = [0.45, 0, 0.55, 1] as const;
 
 export function LandingPage() {
   const router = useRouter();
@@ -41,24 +42,12 @@ export function LandingPage() {
           enterApp();
         }
       }}
-      animate={
-        exiting
-          ? { scale: 1.06, opacity: 0, filter: 'blur(10px)' }
-          : { scale: 1, opacity: 1, filter: 'blur(0px)' }
-      }
-      transition={{ duration: EXIT_MS / 1000, ease: [0.4, 0, 0.2, 1] }}
+      animate={{ opacity: exiting ? 0 : 1 }}
+      transition={{ duration: EXIT_MS / 1000, ease: FADE_EASE }}
       className="landing-scene relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden cursor-pointer border-0 p-0 text-left outline-none focus-visible:ring-4 focus-visible:ring-[#2b221a]/30"
       aria-label="WongJraJa — แตะเพื่อเข้าสู่แอป"
       disabled={exiting}
     >
-      <motion.div
-        className="pointer-events-none absolute inset-0 z-20 bg-[#9fd7ce]"
-        initial={{ scale: 0, borderRadius: '100%' }}
-        animate={exiting ? { scale: 3, borderRadius: '0%' } : { scale: 0, borderRadius: '100%' }}
-        transition={{ duration: EXIT_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
-        style={{ transformOrigin: '50% 55%' }}
-        aria-hidden
-      />
       {/* Dimensional teal atmosphere (not flat linear) */}
       <div className="landing-atmosphere pointer-events-none absolute inset-0" aria-hidden />
 
@@ -86,9 +75,9 @@ export function LandingPage() {
         {/* Title plaque */}
         <motion.header
           className="shrink-0 pt-1 text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, ease: FADE_EASE }}
         >
           <div className="inline-block -rotate-1 rounded-[2rem] border-[6px] border-[#2b221a] bg-white px-10 py-4 shadow-[0_10px_0_#2b221a] sm:px-14 sm:py-5">
             <h1
@@ -106,9 +95,9 @@ export function LandingPage() {
         {/* Hero character — plain PNG */}
         <motion.div
           className="relative flex min-h-0 flex-1 w-full max-w-lg flex-col items-center justify-center"
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.9, delay: 0.15, ease: FADE_EASE }}
         >
           <motion.div
             className="relative w-[min(95vw,32rem)] origin-center scale-[1.45] sm:w-[34rem] sm:scale-[1.5]"
@@ -132,7 +121,7 @@ export function LandingPage() {
           className="shrink-0 pb-1 text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.45, duration: 0.5 }}
+          transition={{ delay: 0.35, duration: 0.8, ease: FADE_EASE }}
         >
           <motion.p
             className="inline-block rounded-full border-4 border-[#2b221a] bg-white/95 px-8 py-3 text-base font-black text-[#2b221a] shadow-[0_7px_0_#2b221a] sm:px-10 sm:py-4 sm:text-xl"
