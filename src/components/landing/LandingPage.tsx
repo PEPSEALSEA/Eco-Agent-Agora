@@ -1,13 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { getAssetPath } from '@/lib/gas';
+import { markFromLanding } from '@/lib/landingIntro';
+
+const EXIT_MS = 580;
 
 export function LandingPage() {
   const router = useRouter();
+  const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
     const prevHtml = document.documentElement.style.overflow;
@@ -21,11 +25,14 @@ export function LandingPage() {
   }, []);
 
   const enterApp = () => {
-    router.push('/scenarios');
+    if (exiting) return;
+    markFromLanding();
+    setExiting(true);
+    window.setTimeout(() => router.push('/scenarios'), EXIT_MS);
   };
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={enterApp}
       onKeyDown={(e) => {
@@ -34,9 +41,24 @@ export function LandingPage() {
           enterApp();
         }
       }}
+      animate={
+        exiting
+          ? { scale: 1.06, opacity: 0, filter: 'blur(10px)' }
+          : { scale: 1, opacity: 1, filter: 'blur(0px)' }
+      }
+      transition={{ duration: EXIT_MS / 1000, ease: [0.4, 0, 0.2, 1] }}
       className="landing-scene relative h-[100dvh] max-h-[100dvh] w-full overflow-hidden cursor-pointer border-0 p-0 text-left outline-none focus-visible:ring-4 focus-visible:ring-[#2b221a]/30"
       aria-label="WongJraJa — แตะเพื่อเข้าสู่แอป"
+      disabled={exiting}
     >
+      <motion.div
+        className="pointer-events-none absolute inset-0 z-20 bg-[#9fd7ce]"
+        initial={{ scale: 0, borderRadius: '100%' }}
+        animate={exiting ? { scale: 3, borderRadius: '0%' } : { scale: 0, borderRadius: '100%' }}
+        transition={{ duration: EXIT_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
+        style={{ transformOrigin: '50% 55%' }}
+        aria-hidden
+      />
       {/* Dimensional teal atmosphere (not flat linear) */}
       <div className="landing-atmosphere pointer-events-none absolute inset-0" aria-hidden />
 
@@ -121,6 +143,6 @@ export function LandingPage() {
           </motion.p>
         </motion.footer>
       </div>
-    </button>
+    </motion.button>
   );
 }

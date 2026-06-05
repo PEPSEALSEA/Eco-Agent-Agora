@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import {
@@ -15,6 +15,8 @@ import Link from 'next/link';
 import SyncStatus from '@/components/SyncStatus';
 import { CartoonLoading } from '@/components/CartoonLoading';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LandingIntroOverlay } from '@/components/landing/LandingIntroOverlay';
+import { clearFromLanding, shouldPlayLandingIntro } from '@/lib/landingIntro';
 
 type Scenario = {
   id: string;
@@ -107,9 +109,15 @@ export default function ScenariosPage() {
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [shakingNodeId, setShakingNodeId] = useState<string | null>(null);
   const [showLockedAlert, setShowLockedAlert] = useState<string | null>(null);
+  const [showIntro, setShowIntro] = useState(false);
 
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+
+  const handleIntroComplete = useCallback(() => {
+    setShowIntro(false);
+    clearFromLanding();
+  }, []);
 
   const fetchAllData = async () => {
     setSyncStatus('syncing');
@@ -162,6 +170,12 @@ export default function ScenariosPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!authLoading && user && shouldPlayLandingIntro()) {
+      setShowIntro(true);
+    }
+  }, [user, authLoading]);
 
   // Custom Local Storage SWR Cache implementation
   useEffect(() => {
@@ -376,6 +390,7 @@ export default function ScenariosPage() {
 
   return (
     <div className="min-h-screen cartoon-bg-blue text-[#2b221a] p-4 sm:p-8 relative overflow-x-hidden">
+      <LandingIntroOverlay show={showIntro} variant="main" onComplete={handleIntroComplete} />
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
       <SyncStatus status={syncStatus} />
 

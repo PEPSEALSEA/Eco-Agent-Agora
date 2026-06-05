@@ -1,18 +1,31 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { useGoogleLogin } from '@react-oauth/google';
 import { gasPost } from '@/lib/gas';
 import { CartoonLoading } from '@/components/CartoonLoading';
+import { LandingIntroOverlay } from '@/components/landing/LandingIntroOverlay';
+import { shouldPlayLandingIntro } from '@/lib/landingIntro';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('กำลังเชื่อมต่อกับดวงดาว...');
   const [error, setError] = useState<string | null>(null);
+  const [showIntro, setShowIntro] = useState(false);
   const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
+
+  const handleIntroComplete = useCallback(() => {
+    setShowIntro(false);
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && !user && shouldPlayLandingIntro()) {
+      setShowIntro(true);
+    }
+  }, [authLoading, user]);
 
   // Auto-redirect if already logged in
   useEffect(() => {
@@ -97,6 +110,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center cartoon-bg-blue p-4 relative overflow-x-hidden">
+      <LandingIntroOverlay show={showIntro} variant="login" onComplete={handleIntroComplete} />
       <CartoonLoading isOpen={loading || authLoading} message={loadingMessage} />
 
       <div className="w-full max-w-md bg-white border-[6px] border-gray-900 p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-[0_15px_0_rgba(0,0,0,1)] -rotate-1 relative z-10">
