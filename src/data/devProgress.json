@@ -122,7 +122,11 @@
       "effort": "2-3 ชม.",
       "deadline": "2026-06-08",
       "files": "_cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": 2.5,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "p0-2",
@@ -139,7 +143,13 @@
       "effort": "1-2 ชม.",
       "deadline": "2026-06-08",
       "files": "negotiate/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": 1.5,
+      "spanDays": 1,
+      "parallelGroup": "p0-core",
+      "dependsOn": [
+        "p0-1"
+      ]
     },
     {
       "id": "p0-3",
@@ -154,9 +164,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 ชม.",
-      "deadline": "2026-06-09",
+      "deadline": "2026-06-08",
       "files": "_cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": 1,
+      "spanDays": 1,
+      "parallelGroup": "p0-core",
+      "dependsOn": [
+        "p0-1"
+      ]
     },
     {
       "id": "p0-4",
@@ -173,7 +189,14 @@
       "effort": "2 ชม.",
       "deadline": "2026-06-09",
       "files": "debrief/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": 2,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p0-2",
+        "p0-3"
+      ]
     },
     {
       "id": "p0-5",
@@ -188,9 +211,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 ชม.",
-      "deadline": "2026-06-10",
+      "deadline": "2026-06-09",
       "files": "debrief/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": 1,
+      "spanDays": 1,
+      "parallelGroup": "p0-debrief",
+      "dependsOn": [
+        "p0-4"
+      ]
     },
     {
       "id": "p0-6",
@@ -205,9 +234,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "30 นาที",
-      "deadline": "2026-06-10",
+      "deadline": "2026-06-09",
       "files": ".env.example",
-      "notes": ""
+      "notes": "",
+      "planHours": 0.5,
+      "spanDays": 1,
+      "parallelGroup": "p0-debrief",
+      "dependsOn": [
+        "p0-4"
+      ]
     },
     {
       "id": "p1-7",
@@ -222,9 +257,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-06-11",
+      "deadline": "2026-06-10",
       "files": "admin/scenarios",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p0-6"
+      ]
     },
     {
       "id": "p1-7b",
@@ -239,9 +280,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-06-12",
+      "deadline": "2026-06-11",
       "files": "admin/scenarios",
-      "notes": "ต่อจาก p1-7"
+      "notes": "ต่อจาก p1-7",
+      "planHours": 4,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p1-7"
+      ]
     },
     {
       "id": "p1-8",
@@ -256,9 +303,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-06-15",
+      "deadline": "2026-06-12",
       "files": "admin/scenarios",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p1-7b"
+      ]
     },
     {
       "id": "p1-9",
@@ -273,9 +326,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-06-16",
+      "deadline": "2026-06-15",
       "files": "admin/scenarios",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p1-8"
+      ]
     },
     {
       "id": "p1-10",
@@ -290,9 +349,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-06-17",
+      "deadline": "2026-06-16",
       "files": "admin/scenarios",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p1-9"
+      ]
     },
     {
       "id": "p1-11",
@@ -307,9 +372,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-06-18",
+      "deadline": "2026-06-17",
       "files": "admin/scenarios",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p1-10"
+      ]
     },
     {
       "id": "p1-12",
@@ -324,9 +395,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "3-4 ชม.",
-      "deadline": "2026-06-19",
+      "deadline": "2026-06-18",
       "files": "_cloudFlareWorker.js, profile/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": 3.5,
+      "spanDays": 1,
+      "parallelGroup": "progression",
+      "dependsOn": [
+        "p1-11"
+      ]
     },
     {
       "id": "p1-13",
@@ -341,9 +418,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "2 ชม.",
-      "deadline": "2026-06-22",
+      "deadline": "2026-06-18",
       "files": "AuthProvider.tsx, _cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": 2,
+      "spanDays": 1,
+      "parallelGroup": "progression",
+      "dependsOn": [
+        "p1-11"
+      ]
     },
     {
       "id": "p1-14",
@@ -358,9 +441,16 @@
       "status": "todo",
       "actionable": true,
       "effort": "3-4 ชม.",
-      "deadline": "2026-06-23",
+      "deadline": "2026-06-19",
       "files": "negotiate/page.tsx, KidGameplay.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": 3.5,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p1-12",
+        "p1-13"
+      ]
     },
     {
       "id": "p1-15",
@@ -375,9 +465,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-06-24",
+      "deadline": "2026-06-22",
       "files": "scenarios/, negotiate/",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p1-14"
+      ]
     },
     {
       "id": "p1-15b",
@@ -392,9 +488,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-06-25",
+      "deadline": "2026-06-23",
       "files": "scenarios/, negotiate/",
-      "notes": "ต่อจาก p1-15"
+      "notes": "ต่อจาก p1-15",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p1-15"
+      ]
     },
     {
       "id": "p2-16",
@@ -409,9 +511,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "2-4 ชม.",
-      "deadline": "2026-06-26",
+      "deadline": "2026-06-24",
       "files": "ReignsSystem.tsx, negotiate/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": 3,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p1-15b"
+      ]
     },
     {
       "id": "p2-17",
@@ -426,9 +534,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "2 ชม.",
-      "deadline": "2026-06-29",
+      "deadline": "2026-06-25",
       "files": "admin/scenarios/page.tsx, _cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": 2,
+      "spanDays": 1,
+      "parallelGroup": "admin-tools",
+      "dependsOn": [
+        "p2-16"
+      ]
     },
     {
       "id": "p2-18",
@@ -443,9 +557,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "2 ชม.",
-      "deadline": "2026-06-30",
+      "deadline": "2026-06-25",
       "files": "admin/, _cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": 2,
+      "spanDays": 1,
+      "parallelGroup": "admin-tools",
+      "dependsOn": [
+        "p2-16"
+      ]
     },
     {
       "id": "p2-19",
@@ -460,9 +580,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-01",
+      "deadline": "2026-06-26",
       "files": "CharacterAvatar.tsx, admin/scenarios",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p2-18"
+      ]
     },
     {
       "id": "p2-20",
@@ -477,9 +603,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-02",
+      "deadline": "2026-06-29",
       "files": "scenarios/page.tsx, campaign_redesign_plan.md",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p2-19"
+      ]
     },
     {
       "id": "p2-20b",
@@ -494,9 +626,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-03",
+      "deadline": "2026-06-30",
       "files": "scenarios/page.tsx, campaign_redesign_plan.md",
-      "notes": "ต่อจาก p2-20"
+      "notes": "ต่อจาก p2-20",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p2-20"
+      ]
     },
     {
       "id": "p2-20c",
@@ -511,9 +649,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-06",
+      "deadline": "2026-07-01",
       "files": "scenarios/page.tsx, campaign_redesign_plan.md",
-      "notes": "ต่อจาก p2-20"
+      "notes": "ต่อจาก p2-20",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p2-20b"
+      ]
     },
     {
       "id": "p2-21",
@@ -528,9 +672,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-07",
+      "deadline": "2026-07-02",
       "files": "negotiate/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p2-20c"
+      ]
     },
     {
       "id": "p2-22",
@@ -545,9 +695,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "3 ชม.",
-      "deadline": "2026-07-08",
+      "deadline": "2026-07-03",
       "files": "_cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": 3,
+      "spanDays": 1,
+      "parallelGroup": "worker-hardening",
+      "dependsOn": [
+        "p2-21"
+      ]
     },
     {
       "id": "p2-23",
@@ -562,9 +718,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "3 ชม.",
-      "deadline": "2026-07-09",
+      "deadline": "2026-07-03",
       "files": "_cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": 3,
+      "spanDays": 1,
+      "parallelGroup": "worker-hardening",
+      "dependsOn": [
+        "p2-21"
+      ]
     },
     {
       "id": "p2-24",
@@ -579,9 +741,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 ชม.",
-      "deadline": "2026-07-10",
+      "deadline": "2026-07-06",
       "files": "page.tsx, AuthProvider.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": 1,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p2-23"
+      ]
     },
     {
       "id": "p3-25",
@@ -596,9 +764,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-13",
+      "deadline": "2026-07-07",
       "files": "_cloudFlareWorker.js, gemini.ts",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p2-24"
+      ]
     },
     {
       "id": "p3-25b",
@@ -613,9 +787,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-14",
+      "deadline": "2026-07-08",
       "files": "_cloudFlareWorker.js, gemini.ts",
-      "notes": "ต่อจาก p3-25"
+      "notes": "ต่อจาก p3-25",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p3-25"
+      ]
     },
     {
       "id": "p3-26",
@@ -630,9 +810,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-15",
+      "deadline": "2026-07-09",
       "files": "PythonAudioSystem/, VoiceRecorder.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p3-25b"
+      ]
     },
     {
       "id": "p3-26b",
@@ -647,9 +833,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-16",
+      "deadline": "2026-07-10",
       "files": "PythonAudioSystem/, VoiceRecorder.tsx",
-      "notes": "ต่อจาก p3-26"
+      "notes": "ต่อจาก p3-26",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p3-26"
+      ]
     },
     {
       "id": "p3-26c",
@@ -664,9 +856,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-17",
+      "deadline": "2026-07-13",
       "files": "PythonAudioSystem/, VoiceRecorder.tsx",
-      "notes": "ต่อจาก p3-26"
+      "notes": "ต่อจาก p3-26",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p3-26b"
+      ]
     },
     {
       "id": "p3-27",
@@ -681,9 +879,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-20",
+      "deadline": "2026-07-14",
       "files": "negotiate/page.tsx, _cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": 6,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p3-26c"
+      ]
     },
     {
       "id": "p3-27b",
@@ -698,9 +902,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-21",
+      "deadline": "2026-07-15",
       "files": "negotiate/page.tsx, _cloudFlareWorker.js",
-      "notes": "ต่อจาก p3-27"
+      "notes": "ต่อจาก p3-27",
+      "planHours": 4,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p3-27"
+      ]
     },
     {
       "id": "p3-28",
@@ -717,7 +927,11 @@
       "effort": "3-5 วัน",
       "deadline": null,
       "files": "supabase_schema.sql",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "p3-29",
@@ -732,9 +946,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-22",
+      "deadline": "2026-07-16",
       "files": "admin/campaign-analytics/page.tsx",
-      "notes": "ขยายจาก baseline ที่มีอยู่"
+      "notes": "ขยายจาก baseline ที่มีอยู่",
+      "planHours": 5,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p3-27b"
+      ]
     },
     {
       "id": "p3-29b",
@@ -749,9 +969,15 @@
       "status": "todo",
       "actionable": true,
       "effort": "1 วัน",
-      "deadline": "2026-07-23",
+      "deadline": "2026-07-17",
       "files": "admin/campaign-analytics/page.tsx",
-      "notes": "ขยายจาก baseline ที่มีอยู่ · ต่อจาก p3-29"
+      "notes": "ขยายจาก baseline ที่มีอยู่ · ต่อจาก p3-29",
+      "planHours": 4,
+      "spanDays": 1,
+      "parallelGroup": null,
+      "dependsOn": [
+        "p3-29"
+      ]
     },
     {
       "id": "d1-1.1",
@@ -768,7 +994,11 @@
       "effort": "—",
       "deadline": null,
       "files": "LandingPage.tsx, landingIntro.ts",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d1-1.2",
@@ -785,7 +1015,11 @@
       "effort": "—",
       "deadline": null,
       "files": "login/page.tsx, AuthProvider.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d1-1.3",
@@ -802,7 +1036,11 @@
       "effort": "—",
       "deadline": null,
       "files": "AuthProvider.tsx, page.tsx",
-      "notes": "localStorage อย่างเดียว ไม่ validate server-side; landing ไม่เช็ค auth"
+      "notes": "localStorage อย่างเดียว ไม่ validate server-side; landing ไม่เช็ค auth",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d1-1.4",
@@ -819,7 +1057,11 @@
       "effort": "—",
       "deadline": null,
       "files": "AuthProvider.tsx → GAS",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d1-1.5",
@@ -836,7 +1078,11 @@
       "effort": "—",
       "deadline": null,
       "files": "scenarios/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d1-1.6",
@@ -853,7 +1099,11 @@
       "effort": "—",
       "deadline": null,
       "files": "gas.ts, SyncStatus.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d1-1.7",
@@ -870,7 +1120,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/scenarios",
-      "notes": "มีปุ่ม seed แต่ professional ทั้งหมด ไม่มี kids"
+      "notes": "มีปุ่ม seed แต่ professional ทั้งหมด ไม่มี kids",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.1",
@@ -887,7 +1141,11 @@
       "effort": "—",
       "deadline": null,
       "files": "scenarios/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.2",
@@ -904,7 +1162,11 @@
       "effort": "—",
       "deadline": null,
       "files": "scenarios/page.tsx",
-      "notes": "locked alert บอก \"ด่านที่ 1\" แต่ logic ใช้ด่านก่อนหน้า"
+      "notes": "locked alert บอก \"ด่านที่ 1\" แต่ logic ใช้ด่านก่อนหน้า",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.3",
@@ -921,7 +1183,11 @@
       "effort": "—",
       "deadline": null,
       "files": "outcome_score 40/65/85",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.4",
@@ -938,7 +1204,11 @@
       "effort": "—",
       "deadline": null,
       "files": "scenarios/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.5",
@@ -955,7 +1225,11 @@
       "effort": "—",
       "deadline": null,
       "files": "campaign_redesign_plan.md",
-      "notes": "มี plan ยังไม่ implement"
+      "notes": "มี plan ยังไม่ implement",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.6",
@@ -972,7 +1246,11 @@
       "effort": "—",
       "deadline": null,
       "files": "FreeplayArena.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.7",
@@ -989,7 +1267,11 @@
       "effort": "—",
       "deadline": null,
       "files": "KidGameplay.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.8",
@@ -1006,7 +1288,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/scenarios",
-      "notes": "ไม่มี scenario target_group: kids ใน seed"
+      "notes": "ไม่มี scenario target_group: kids ใน seed",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.9",
@@ -1023,7 +1309,11 @@
       "effort": "—",
       "deadline": null,
       "files": "StrategyBlocks.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.10",
@@ -1040,7 +1330,11 @@
       "effort": "—",
       "deadline": null,
       "files": "negotiate/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d2-2.11",
@@ -1057,7 +1351,11 @@
       "effort": "—",
       "deadline": null,
       "files": "negotiate/page.tsx",
-      "notes": "kid → adult → pro"
+      "notes": "kid → adult → pro",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.1",
@@ -1074,7 +1372,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js, gemini.ts",
-      "notes": "get_context → Gemini → process_result"
+      "notes": "get_context → Gemini → process_result",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.2",
@@ -1091,7 +1393,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "AI เปลี่ยน phase ได้ แต่ label UI ไม่ตรง"
+      "notes": "AI เปลี่ยน phase ได้ แต่ label UI ไม่ตรง",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.3",
@@ -1108,7 +1414,11 @@
       "effort": "—",
       "deadline": null,
       "files": "negotiate/page.tsx",
-      "notes": "UI: rapport/discovery/bargaining/closing vs Seed: opening/conflict/negotiation/resolution"
+      "notes": "UI: rapport/discovery/bargaining/closing vs Seed: opening/conflict/negotiation/resolution",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.4",
@@ -1125,7 +1435,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js L607-654",
-      "notes": "BLOCKER #1"
+      "notes": "BLOCKER #1",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.5",
@@ -1142,7 +1456,11 @@
       "effort": "—",
       "deadline": null,
       "files": "negotiate/page.tsx",
-      "notes": "UI มี แต่ data ไม่ update เพราะ 3.4"
+      "notes": "UI มี แต่ data ไม่ update เพราะ 3.4",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.6",
@@ -1159,7 +1477,11 @@
       "effort": "—",
       "deadline": null,
       "files": "CharacterAvatar.tsx",
-      "notes": "ขึ้นกับ trust/anger ที่ไม่ update"
+      "notes": "ขึ้นกับ trust/anger ที่ไม่ update",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.7",
@@ -1176,7 +1498,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "Binary 100/0 เท่านั้น ไม่มี nuanced score"
+      "notes": "Binary 100/0 เท่านั้น ไม่มี nuanced score",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.8",
@@ -1193,7 +1519,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "end_session ไม่ set outcome_score"
+      "notes": "end_session ไม่ set outcome_score",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.9",
@@ -1210,7 +1540,11 @@
       "effort": "—",
       "deadline": null,
       "files": "negotiate/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.10",
@@ -1227,7 +1561,11 @@
       "effort": "—",
       "deadline": null,
       "files": "phase_turn_count + turn_total",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.11",
@@ -1244,7 +1582,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "turn_limit/fail_conditions ใน prompt แต่ server ไม่ enforce"
+      "notes": "turn_limit/fail_conditions ใน prompt แต่ server ไม่ enforce",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.12",
@@ -1261,7 +1603,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.13",
@@ -1278,7 +1624,11 @@
       "effort": "—",
       "deadline": null,
       "files": "negotiate/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.14",
@@ -1295,7 +1645,11 @@
       "effort": "—",
       "deadline": null,
       "files": "DialogueBox.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d3-3.15",
@@ -1312,7 +1666,11 @@
       "effort": "—",
       "deadline": null,
       "files": "gemini.ts",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d4-4.1",
@@ -1329,7 +1687,11 @@
       "effort": "—",
       "deadline": null,
       "files": "negotiate/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d4-4.2",
@@ -1346,7 +1708,11 @@
       "effort": "—",
       "deadline": null,
       "files": "StrategyBlocks.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d4-4.3",
@@ -1363,7 +1729,11 @@
       "effort": "—",
       "deadline": null,
       "files": "KidGameplay.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d4-4.4",
@@ -1380,7 +1750,11 @@
       "effort": "—",
       "deadline": null,
       "files": "VoiceRecorder.tsx → Gemini multimodal",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d4-4.5",
@@ -1397,7 +1771,11 @@
       "effort": "—",
       "deadline": null,
       "files": "ReignsSystem.tsx",
-      "notes": "Component สร้างแล้ว แต่ไม่ได้ render"
+      "notes": "Component สร้างแล้ว แต่ไม่ได้ render",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d4-4.6",
@@ -1414,7 +1792,11 @@
       "effort": "—",
       "deadline": null,
       "files": "negotiate/page.tsx",
-      "notes": "setCurrentDynamicDecisions ไม่เคยถูกเรียก"
+      "notes": "setCurrentDynamicDecisions ไม่เคยถูกเรียก",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d4-4.7",
@@ -1431,7 +1813,11 @@
       "effort": "—",
       "deadline": null,
       "files": "PythonAudioSystem/",
-      "notes": "Engine พร้อม แต่ frontend ไม่เรียก"
+      "notes": "Engine พร้อม แต่ frontend ไม่เรียก",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d5-5.1",
@@ -1448,7 +1834,11 @@
       "effort": "—",
       "deadline": null,
       "files": "DialogueBox.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d5-5.2",
@@ -1465,7 +1855,11 @@
       "effort": "—",
       "deadline": null,
       "files": "CharacterAvatar.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d5-5.3",
@@ -1482,7 +1876,11 @@
       "effort": "—",
       "deadline": null,
       "files": "negotiate/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d5-5.4",
@@ -1499,7 +1897,11 @@
       "effort": "—",
       "deadline": null,
       "files": "CartoonLoading.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d5-5.5",
@@ -1516,7 +1918,11 @@
       "effort": "—",
       "deadline": null,
       "files": "SyncStatus.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d5-5.6",
@@ -1533,7 +1939,11 @@
       "effort": "—",
       "deadline": null,
       "files": "CharacterAvatar.tsx",
-      "notes": "รองรับ imageUrl แต่ scenario ส่วนใหญ่ไม่มี"
+      "notes": "รองรับ imageUrl แต่ scenario ส่วนใหญ่ไม่มี",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d5-5.7",
@@ -1550,7 +1960,11 @@
       "effort": "—",
       "deadline": null,
       "files": "negotiate/page.tsx",
-      "notes": "negotiate sidebar อาจแออัด"
+      "notes": "negotiate sidebar อาจแออัด",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d6-6.1",
@@ -1567,7 +1981,11 @@
       "effort": "—",
       "deadline": null,
       "files": "debrief/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d6-6.2",
@@ -1584,7 +2002,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js generate_evaluation",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d6-6.3",
@@ -1601,7 +2023,11 @@
       "effort": "—",
       "deadline": null,
       "files": "debrief/page.tsx",
-      "notes": "ต้องกดปุ่ม \"สร้างบทวิเคราะห์\" เอง"
+      "notes": "ต้องกดปุ่ม \"สร้างบทวิเคราะห์\" เอง",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d6-6.4",
@@ -1618,7 +2044,11 @@
       "effort": "—",
       "deadline": null,
       "files": "debrief/page.tsx",
-      "notes": "state เดียว overwrite ทุก message"
+      "notes": "state เดียว overwrite ทุก message",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d6-6.5",
@@ -1635,7 +2065,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "สร้างตอน save_evaluation เท่านั้น"
+      "notes": "สร้างตอน save_evaluation เท่านั้น",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d6-6.6",
@@ -1652,7 +2086,11 @@
       "effort": "—",
       "deadline": null,
       "files": "debrief/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d6-6.7",
@@ -1669,7 +2107,11 @@
       "effort": "—",
       "deadline": null,
       "files": "debrief/page.tsx handleReanalyze",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d7-7.1",
@@ -1686,7 +2128,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/scenarios/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d7-7.2",
@@ -1703,7 +2149,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/scenarios/page.tsx",
-      "notes": "Stub — alert \"จะพร้อมเร็วๆ นี้\""
+      "notes": "Stub — alert \"จะพร้อมเร็วๆ นี้\"",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d7-7.3",
@@ -1720,7 +2170,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/scenarios/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d7-7.4",
@@ -1737,7 +2191,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/scenarios/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d7-7.5",
@@ -1754,7 +2212,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/scenarios/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d7-7.6",
@@ -1771,7 +2233,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/settings",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d7-7.7",
@@ -1788,7 +2254,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/scenarios",
-      "notes": "BLOCKER #2"
+      "notes": "BLOCKER #2",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d7-7.8",
@@ -1805,7 +2275,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/scenarios",
-      "notes": "ต้องสร้างผ่าน admin"
+      "notes": "ต้องสร้างผ่าน admin",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d7-7.9",
@@ -1822,7 +2296,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/scenarios",
-      "notes": "ไม่มีเลย"
+      "notes": "ไม่มีเลย",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d7-7.10",
@@ -1839,7 +2317,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/",
-      "notes": "Hardcoded email list"
+      "notes": "Hardcoded email list",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d8-8.1",
@@ -1856,7 +2338,11 @@
       "effort": "—",
       "deadline": null,
       "files": "gemini.ts",
-      "notes": "gemini-2.5-flash"
+      "notes": "gemini-2.5-flash",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d8-8.2",
@@ -1873,7 +2359,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "3-layer template"
+      "notes": "3-layer template",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d8-8.3",
@@ -1890,7 +2380,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "Coach + 5-skill radar"
+      "notes": "Coach + 5-skill radar",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d8-8.4",
@@ -1907,7 +2401,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "Minimal JSON feedback"
+      "notes": "Minimal JSON feedback",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d8-8.5",
@@ -1924,7 +2422,11 @@
       "effort": "—",
       "deadline": null,
       "files": "VoiceRecorder.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d8-8.6",
@@ -1941,7 +2443,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "Parse ได้ แต่ไม่ apply (ดู 3.4)"
+      "notes": "Parse ได้ แต่ไม่ apply (ดู 3.4)",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d8-8.7",
@@ -1958,7 +2464,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js, gemini.ts",
-      "notes": "Worker ส่ง geminiApiKey ไป browser — security risk"
+      "notes": "Worker ส่ง geminiApiKey ไป browser — security risk",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d8-8.8",
@@ -1975,7 +2485,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d8-8.9",
@@ -1992,7 +2506,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js buildPhaseContextBlock",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d9-9.1",
@@ -2009,7 +2527,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d9-9.2",
@@ -2026,7 +2548,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "7 tables"
+      "notes": "7 tables",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d9-9.3",
@@ -2043,7 +2569,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d9-9.4",
@@ -2060,7 +2590,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d9-9.5",
@@ -2077,7 +2611,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d9-9.6",
@@ -2094,7 +2632,11 @@
       "effort": "—",
       "deadline": null,
       "files": "gas.ts localStorage",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d9-9.7",
@@ -2111,7 +2653,11 @@
       "effort": "—",
       "deadline": null,
       "files": "supabase_schema.sql",
-      "notes": "มี SQL แต่ zero import ใน src/"
+      "notes": "มี SQL แต่ zero import ใน src/",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d9-9.8",
@@ -2128,7 +2674,11 @@
       "effort": "—",
       "deadline": null,
       "files": "Vercel + GitHub Actions",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d9-9.9",
@@ -2145,7 +2695,11 @@
       "effort": "—",
       "deadline": null,
       "files": ".env",
-      "notes": "ต้อง set 5+ env vars"
+      "notes": "ต้อง set 5+ env vars",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d10-10.1",
@@ -2162,7 +2716,11 @@
       "effort": "—",
       "deadline": null,
       "files": "profile/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d10-10.2",
@@ -2179,7 +2737,11 @@
       "effort": "—",
       "deadline": null,
       "files": "profile/page.tsx",
-      "notes": "BLOCKER #3"
+      "notes": "BLOCKER #3",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d10-10.3",
@@ -2196,7 +2758,11 @@
       "effort": "—",
       "deadline": null,
       "files": "profile/page.tsx recharts",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d10-10.4",
@@ -2213,7 +2779,11 @@
       "effort": "—",
       "deadline": null,
       "files": "profile/page.tsx, AuthProvider.tsx",
-      "notes": "แสดง streak_count แต่ไม่มี code update"
+      "notes": "แสดง streak_count แต่ไม่มี code update",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d10-10.5",
@@ -2230,7 +2800,11 @@
       "effort": "—",
       "deadline": null,
       "files": "outcome_score",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d10-10.6",
@@ -2247,7 +2821,11 @@
       "effort": "—",
       "deadline": null,
       "files": "profile/page.tsx",
-      "notes": "5 รายการล่าสุด → debrief"
+      "notes": "5 รายการล่าสุด → debrief",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d10-10.7",
@@ -2264,7 +2842,11 @@
       "effort": "—",
       "deadline": null,
       "files": "profile/page.tsx",
-      "notes": "CRUD บันทึกการใช้จริง"
+      "notes": "CRUD บันทึกการใช้จริง",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d10-10.8",
@@ -2281,7 +2863,11 @@
       "effort": "—",
       "deadline": null,
       "files": "admin/campaign-analytics/page.tsx",
-      "notes": ""
+      "notes": "",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d10-10.9",
@@ -2298,7 +2884,11 @@
       "effort": "—",
       "deadline": null,
       "files": "_cloudFlareWorker.js",
-      "notes": "evaluation มี skill scores แต่ไม่ write skill_progress"
+      "notes": "evaluation มี skill scores แต่ไม่ write skill_progress",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     },
     {
       "id": "d10-10.10",
@@ -2315,7 +2905,11 @@
       "effort": "—",
       "deadline": null,
       "files": "profile/page.tsx",
-      "notes": "คำนวณจาก skills แต่ skills ว่าง"
+      "notes": "คำนวณจาก skills แต่ skills ว่าง",
+      "planHours": null,
+      "spanDays": null,
+      "parallelGroup": null,
+      "dependsOn": null
     }
   ],
   "blockers": [

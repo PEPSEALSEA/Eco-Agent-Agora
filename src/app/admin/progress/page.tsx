@@ -33,15 +33,19 @@ import {
   TaskStatus,
   downloadProgressJson,
   formatDeadline,
+  getDayPlanLoad,
   getPhaseProgress,
   getProgressStats,
+  getTaskSpan,
   importProgressJson,
-  isDueSoon,
-  isOverdue,
+  isDueSoonTask,
+  isOverdueTask,
   loadStore,
   mergeTasks,
+  PLAN_DAY_CAPACITY,
   resetStore,
   seed,
+  taskCoversDay,
   updateTaskOverride,
   STATUS_COLORS,
   STATUS_LABELS,
@@ -87,11 +91,6 @@ function enumerateDays(start: string, end: string): string[] {
     d = addDays(d, 1);
   }
   return days;
-}
-
-function getTaskSpan(task: DevTask): { start: string; end: string } | null {
-  if (!task.deadline) return null;
-  return { start: task.deadline, end: task.deadline };
 }
 
 const BOARD_COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'partial', 'done'];
@@ -144,18 +143,20 @@ export default function AdminProgressPage() {
   const stats = useMemo(() => getProgressStats(tasks), [tasks]);
   const todayStr = new Date().toISOString().slice(0, 10);
 
+  const todayLoad = useMemo(() => getDayPlanLoad(tasks, todayStr), [tasks, todayStr]);
+
   const todayTasks = useMemo(
-    () => tasks.filter((t) => t.actionable && t.deadline === todayStr && t.status !== 'done' && t.status !== 'skipped'),
+    () => tasks.filter((t) => t.actionable && taskCoversDay(t, todayStr) && t.status !== 'done' && t.status !== 'skipped'),
     [tasks, todayStr]
   );
 
   const overdueTasks = useMemo(
-    () => tasks.filter((t) => t.actionable && isOverdue(t.deadline, t.status)),
+    () => tasks.filter((t) => t.actionable && isOverdueTask(t)),
     [tasks]
   );
 
   const soonTasks = useMemo(
-    () => tasks.filter((t) => t.actionable && isDueSoon(t.deadline, t.status, 3) && !isOverdue(t.deadline, t.status)),
+    () => tasks.filter((t) => t.actionable && isDueSoonTask(t, 3) && !isOverdueTask(t)),
     [tasks]
   );
 
@@ -276,7 +277,7 @@ export default function AdminProgressPage() {
 
         {/* Today / Overdue / Soon */}
         <div className="grid lg:grid-cols-3 gap-4">
-          <FocusPanel title="วันนี้" icon={<Calendar size={18} />} tasks={todayTasks} empty="ยังไม่ได้วางงานวันนี้" onPatch={patchTask} />
+          <FocusPanel title={`วันนี้${todayLoad.hours ? ` · ${todayLoad.hours}h` : ''}`} icon={<Calendar size={18} />} tasks={todayTasks} empty="ยังไม่ได้วางงานวันนี้" onPatch={patchTask} />
           <FocusPanel title="เลยวัน" icon={<AlertTriangle size={18} />} tasks={overdueTasks} empty="ไม่มีงานค้างเลย!" tone="red" onPatch={patchTask} />
           <FocusPanel title="3 วันถัดไป" icon={<Clock size={18} />} tasks={soonTasks} empty="ไม่มีงานในช่วงนี้" tone="yellow" onPatch={patchTask} />
         </div>
@@ -297,6 +298,7 @@ export default function AdminProgressPage() {
         {/* Homework Gantt — รายการงานแนวตั้ง + แถบวัน */}
         <HomeworkGanttChart
           tasks={filtered}
+          allTasks={tasks}
           todayStr={todayStr}
           expandedTask={expandedTask}
           setExpandedTask={setExpandedTask}
@@ -431,12 +433,14 @@ export default function AdminProgressPage() {
 
 function HomeworkGanttChart({
   tasks,
+  allTasks,
   todayStr,
   expandedTask,
   setExpandedTask,
   onPatch,
 }: {
   tasks: DevTask[];
+  allTasks: DevTask[];
   todayStr: string;
   expandedTask: string | null;
   setExpandedTask: (id: string | null) => void;
@@ -482,6 +486,8 @@ function HomeworkGanttChart({
                 {label}
               </span>
             ))}
+            <span className="text-gray-500">· max {PLAN_DAY_CAPACITY}h/วัน</span>
+            <span className="text-violet-700">⇄ = ทำคู่กัน</span>
           </div>
         </div>
 
@@ -525,6 +531,8 @@ function HomeworkGanttChart({
                 const isToday = day === todayStr;
                 const dow = new Date(day + 'T12:00:00').getDay();
                 const isWeekend = dow === 0 || dow === 6;
+                const load = getDayPlanLoad(allTasks, day);
+                const overloaded = load.hours > PLAN_DAY_CAPACITY;
                 return (
                   <div
                     key={day}
@@ -532,6 +540,7 @@ function HomeworkGanttChart({
                       isToday ? 'bg-nintendo-yellow/40 ring-2 ring-inset ring-nintendo-blue' : isWeekend ? 'bg-gray-100' : 'bg-white'
                     }`}
                     style={{ width: DAY_WIDTH }}
+                    title={load.hours > 0 ? `${load.hours}h / ${PLAN_DAY_CAPACITY}h · ${load.tasks.length} งาน` : undefined}
                   >
                     <span className={`text-[9px] font-bold leading-none ${isToday ? 'text-nintendo-blue' : 'text-gray-400'}`}>
                       {THAI_DOW[dow]}
@@ -539,6 +548,11 @@ function HomeworkGanttChart({
                     <span className={`text-[11px] font-black leading-tight ${isToday ? 'text-gray-900' : 'text-gray-700'}`}>
                       {parseInt(day.slice(8), 10)}
                     </span>
+                    {load.hours > 0 && (
+                      <span className={`text-[8px] font-black leading-none mt-0.5 ${overloaded ? 'text-nintendo-red' : 'text-gray-500'}`}>
+                        {load.hours}h
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -647,7 +661,7 @@ function GanttTaskRow({
   onPatch: (id: string, patch: Parameters<typeof updateTaskOverride>[1]) => void;
 }) {
   const span = getTaskSpan(task)!;
-  const overdue = isOverdue(task.deadline, task.status);
+  const overdue = isOverdueTask(task);
   const offsetDays = daysBetween(timelineStart, span.start);
   const durationDays = daysBetween(span.start, span.end) + 1;
   const barLeft = offsetDays * DAY_WIDTH + 3;
@@ -685,6 +699,11 @@ function GanttTaskRow({
                   {task.priority}
                 </span>
               )}
+              {task.parallelGroup && (
+                <span className="text-[9px] font-black px-1 py-0.5 rounded shrink-0 bg-violet-100 text-violet-800 border border-violet-400" title="ทำคู่กัน">
+                  ⇄
+                </span>
+              )}
             </div>
             <GanttTooltip
               text={task.title}
@@ -707,7 +726,7 @@ function GanttTaskRow({
           <GanttTooltip
             text={task.title}
             prefix={task.code}
-            meta={`${span.start.slice(5)} · ${STATUS_LABELS[task.status]}`}
+            meta={`${span.start.slice(5)}${durationDays > 1 ? `–${span.end.slice(5)}` : ''} · ${task.planHours ?? '?'}h · ${STATUS_LABELS[task.status]}`}
             className={`absolute top-1/2 -translate-y-1/2 h-6 rounded-lg border-2 shadow-[0_2px_0_rgba(0,0,0,0.15)] flex items-center px-1.5 overflow-hidden cursor-pointer transition-all hover:brightness-105 ${
               STATUS_BAR_COLORS[task.status]
             } ${overdue ? 'ring-2 ring-nintendo-red ring-offset-1' : ''}`}
@@ -727,8 +746,15 @@ function GanttTaskRow({
       {expanded && (
         <div className="px-4 pb-3 ml-[240px] space-y-2 border-t border-dashed border-gray-200 pt-2">
           <p className="text-[11px] font-bold text-gray-600">
-            {task.domain} · {task.effort} · วันที่ทำ {formatDeadline(task.deadline)}
+            {task.domain} · {task.effort}
+            {task.planHours != null && ` · ~${task.planHours}h`}
+            {(task.spanDays ?? 1) > 1 && ` · ${task.spanDays} วัน`}
+            {task.parallelGroup && ' · ทำคู่กัน'}
+            {' · เริ่ม '}{formatDeadline(task.deadline)}
           </p>
+          {task.dependsOn?.length ? (
+            <p className="text-[10px] font-bold text-amber-700">หลังจาก: {task.dependsOn.join(', ')}</p>
+          ) : null}
           <p className="text-[10px] font-mono text-gray-500">{task.files}</p>
           {task.notes && (
             <p className="text-[11px] font-bold text-gray-700 flex items-start gap-1">
@@ -834,7 +860,13 @@ function FocusPanel({
               </button>
               <div className="min-w-0">
                 <p className="text-xs font-black truncate text-gray-900">{t.code} · {t.title}</p>
-                <p className="text-[10px] font-bold text-gray-600">{formatDeadline(t.deadline)}</p>
+                <p className="text-[10px] font-bold text-gray-600">
+                  {t.planHours != null && `${t.planHours}h`}
+                  {t.parallelGroup && ' · ⇄ คู่กัน'}
+                  {(t.spanDays ?? 1) > 1 && ` · ${t.spanDays} วัน`}
+                  {t.planHours != null && ' · '}
+                  {formatDeadline(t.deadline)}
+                </p>
               </div>
             </li>
           ))}
@@ -885,7 +917,7 @@ function TaskCard({
   onToggle: () => void;
   onPatch: (id: string, patch: Parameters<typeof updateTaskOverride>[1]) => void;
 }) {
-  const overdue = isOverdue(task.deadline, task.status);
+  const overdue = isOverdueTask(task);
   return (
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`bg-white border-4 rounded-xl p-3 shadow-[0_4px_0_#2b221a] text-gray-900 ${overdue ? 'border-nintendo-red' : 'border-gray-900'}`}>
       <div className="flex items-start gap-2">
@@ -952,7 +984,7 @@ function TaskRow({
   onToggle: () => void;
   onPatch: (id: string, patch: Parameters<typeof updateTaskOverride>[1]) => void;
 }) {
-  const overdue = isOverdue(task.deadline, task.status);
+  const overdue = isOverdueTask(task);
   return (
     <div className={`bg-white border-4 rounded-2xl overflow-hidden shadow-[0_4px_0_#2b221a] text-gray-900 ${overdue ? 'border-nintendo-red' : 'border-gray-900'}`}>
       <div className="flex items-center gap-3 p-3">
