@@ -1,4 +1,4 @@
-import seedData from '../../dev-progress.json';
+import seedData from '@/data/devProgress.json';
 
 export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'partial' | 'skipped';
 export type AuditStatus = 'done' | 'partial' | 'missing' | 'bug';
@@ -126,7 +126,7 @@ export function exportProgressJson(tasks: DevTask[]): string {
   return JSON.stringify(payload, null, 2);
 }
 
-export function downloadProgressJson(tasks: DevTask[], filename = 'dev-progress.json'): void {
+export function downloadProgressJson(tasks: DevTask[], filename = 'devProgress.json'): void {
   const blob = new Blob([exportProgressJson(tasks)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

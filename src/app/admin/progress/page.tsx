@@ -157,7 +157,7 @@ export default function AdminProgressPage() {
                 Dev Progress
               </h1>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-                Local · dev-progress.json · solo planner
+                Local · src/data/devProgress.json · solo planner
               </p>
             </div>
           </div>
@@ -167,7 +167,7 @@ export default function AdminProgressPage() {
               type="button"
               onClick={() => downloadProgressJson(tasks)}
               className="flex items-center gap-2 px-4 py-2.5 bg-white border-4 border-gray-900 rounded-xl font-black text-xs uppercase shadow-[0_4px_0_#2b221a] hover:translate-y-0.5 active:shadow-none"
-              title="ดาวน์โหลด JSON ไปแทนที่ dev-progress.json"
+              title="ดาวน์โหลด JSON ไปแทนที่ src/data/devProgress.json"
             >
               <Download size={16} /> Export
             </button>
@@ -202,7 +202,7 @@ export default function AdminProgressPage() {
         {/* Local storage note */}
         <div className="bg-nintendo-yellow/30 border-4 border-dashed border-gray-900 rounded-2xl px-5 py-3 text-sm font-bold text-gray-700">
           บันทึกใน <code className="bg-white px-1.5 py-0.5 rounded border-2 border-gray-900">localStorage</code> ของเครื่องคุณ — ไม่ขึ้น cloud.
-          กด <strong>Export</strong> แล้ววางทับ <code className="bg-white px-1.5 py-0.5 rounded border-2 border-gray-900">dev-progress.json</code> ถ้าอยากเก็บใน repo
+          กด <strong>Export</strong> แล้ววางทับ <code className="bg-white px-1.5 py-0.5 rounded border-2 border-gray-900">src/data/devProgress.json</code> ถ้าอยากเก็บใน repo
         </div>
 
         {/* Stats */}
