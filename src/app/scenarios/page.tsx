@@ -28,6 +28,7 @@ type Scenario = {
   mode?: 'campaign' | 'freeplay';
   difficulty?: number;
   phase_rules?: any;
+  initial_state?: any;
 };
 
 type SessionRow = {
@@ -286,6 +287,18 @@ export default function ScenariosPage() {
 
     try {
       const scenario = scenarios.find(s => s.id === scenarioId);
+      const firstPhase = scenario?.phase_rules?.phases?.[0];
+      const firstPhaseId = typeof firstPhase === 'string'
+        ? firstPhase
+        : (firstPhase?.id || firstPhase?.name || 'opening');
+      const initialState = {
+        ...(scenario?.initial_state || {}),
+        current_phase: scenario?.initial_state?.current_phase || firstPhaseId,
+        phase_turn_count: scenario?.initial_state?.phase_turn_count ?? 0,
+        turn_total: scenario?.initial_state?.turn_total ?? 0,
+        unlocked_characters: scenario?.initial_state?.unlocked_characters
+          || (scenario?.characters || []).map((c: any) => c.id).filter(Boolean),
+      };
       const sessionData = {
         id: sessionId,
         user_id: user.id,
@@ -293,7 +306,8 @@ export default function ScenariosPage() {
         status: 'ongoing',
         started_at: new Date().toISOString(),
         mode: scenario?.mode || 'campaign',
-        stage: scenario?.mode === 'campaign' ? (scenario?.difficulty || 1) : ''
+        stage: scenario?.mode === 'campaign' ? (scenario?.difficulty || 1) : '',
+        state: JSON.stringify(initialState),
       };
 
       const result = await gasPost('create', 'sessions', sessionData);

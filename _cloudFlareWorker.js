@@ -11,6 +11,9 @@ const SYSTEM_INSTRUCTION_TEMPLATE = `
 # LAYER 1: Scenario Config (Immutable)
 {{scenario_config}}
 
+# LAYER 1.5: Active Phase Requirements (สำคัญ — อ่านก่อนตอบทุกครั้ง)
+{{current_phase_context}}
+
 # LAYER 2: Runtime State (Current)
 {{runtime_state}}
 
@@ -23,10 +26,10 @@ Summary of previous turns: {{history_summary}}
 3. **DO NOT PARROT/COPY**: ห้ามทวนคำพูดของผู้ใช้หรือลอกประโยคที่ผู้ใช้ป้อนมาโดยเด็ดขาด! ให้ตอบกลับอย่างเป็นธรรมชาติในมุมมองและนิสัยของตัวละครนั้นๆ คุณมีความคิดเป็นของตัวเอง
 4. **Natural Conversation**: ใช้ภาษาพูดที่เป็นธรรมชาติ หลีกเลี่ยงการพูดเป็นแพทเทิร์นหุ่นยนต์ มีการโต้แย้ง เห็นด้วย หรือเสนอทางเลือกใหม่ตามบุคลิกของตัวละคร
 5. **Phase & Game Over**: 
-   - 'none': ดำเนินการเจรจาปกติ
-   - 'advance_to_next_phase': เมื่อผู้ใช้ทำตาม win_condition ของ Phase ปัจจุบันสำเร็จ
-   - 'game_over_win': เมื่อผู้ใช้ทำตามเป้าหมายหลักสำเร็จทั้งหมด (ปิดดีลได้, หาข้อสรุปได้) และไม่มี Phase ถัดไป
-   - 'game_over_fail': เมื่อการเจรจาล้มเหลวอย่างรุนแรง หรือละเมิด fail_condition
+   - 'none': ดำเนินการเจรจาปกติ — ผู้เล่นยังไม่ทำตาม advance_condition ของ Phase ปัจจุบัน
+   - 'advance_to_next_phase': เมื่อผู้ใช้ทำตาม advance_condition ของ Phase ปัจจุบันสำเร็จ (ดู LAYER 1.5)
+   - 'game_over_win': เมื่อผู้ใช้ทำตาม win_condition หลักสำเร็จ และอยู่ใน Phase สุดท้ายแล้ว
+   - 'game_over_fail': เมื่อการเจรจาล้มเหลวอย่างรุนแรง หรือละเมิด fail_conditions หรือเกิน turn_limit ของ phase
 6. **Structured JSON**: คุณต้องตอบกลับเป็น JSON format ตามโครงสร้างด้านล่างนี้เสมอ
 
 # RESPONSE FORMAT (JSON ONLY)
@@ -367,6 +370,148 @@ async function handleGetNegotiationData(sheetId, sessionId, token) {
 }
 
 /**
+ * --- PHASE HELPERS ---
+ */
+
+function getPhaseId(phase) {
+  if (!phase) return null;
+  return typeof phase === 'string' ? phase : (phase.id || phase.name || null);
+}
+
+function normalizePhase(phase, index) {
+  if (typeof phase === 'string') {
+    return {
+      id: phase,
+      name: phase,
+      description: '',
+      turn_limit: 5,
+      advance_condition: '',
+      ai_behavior: ''
+    };
+  }
+  return {
+    id: phase.id || `phase_${index + 1}`,
+    name: phase.name || phase.id || `Phase ${index + 1}`,
+    description: phase.description || '',
+    turn_limit: phase.turn_limit ?? 5,
+    advance_condition: phase.advance_condition || '',
+    ai_behavior: phase.ai_behavior || ''
+  };
+}
+
+function normalizePhaseRules(phaseRules) {
+  const rules = phaseRules || {};
+  const phases = Array.isArray(rules.phases) ? rules.phases.map(normalizePhase) : [];
+  const failConditions = rules.fail_conditions
+    || (rules.fail_condition ? [rules.fail_condition] : []);
+  return {
+    phases,
+    win_condition: rules.win_condition || '',
+    fail_conditions: failConditions
+  };
+}
+
+function findPhaseIndex(phases, currentPhaseId) {
+  if (!currentPhaseId) return -1;
+  return phases.findIndex(p => String(getPhaseId(p)) === String(currentPhaseId));
+}
+
+function buildInitialState(scenario) {
+  const phaseRules = normalizePhaseRules(scenario.phase_rules);
+  const firstPhaseId = phaseRules.phases[0] ? getPhaseId(phaseRules.phases[0]) : 'opening';
+  const defaults = {
+    current_phase: firstPhaseId,
+    phase_turn_count: 0,
+    turn_total: 0,
+    unlocked_characters: (scenario.characters || []).map(c => c.id).filter(Boolean),
+    phase_flags: {},
+    relationships: {},
+    resolved_issues: [],
+    pending_issues: [],
+    agreements: {},
+    score: 0
+  };
+  const custom = typeof scenario.initial_state === 'string'
+    ? JSON.parse(scenario.initial_state || '{}')
+    : (scenario.initial_state || {});
+  return { ...defaults, ...custom, current_phase: custom.current_phase || defaults.current_phase };
+}
+
+function buildPhaseContextBlock(scenario, state) {
+  const phaseRules = normalizePhaseRules(scenario.phase_rules);
+  const phases = phaseRules.phases;
+  const currentId = state.current_phase || (phases[0] ? getPhaseId(phases[0]) : null);
+  const currentIndex = findPhaseIndex(phases, currentId);
+  const currentPhase = currentIndex >= 0 ? phases[currentIndex] : null;
+  const nextPhase = currentIndex >= 0 && currentIndex < phases.length - 1 ? phases[currentIndex + 1] : null;
+
+  const lines = [
+    `## Global Win Condition: ${phaseRules.win_condition || 'ไม่ได้กำหนด'}`,
+    `## Global Fail Conditions: ${phaseRules.fail_conditions.length ? phaseRules.fail_conditions.join(' | ') : 'ไม่ได้กำหนด'}`,
+    `## Current Phase ID: ${currentId || 'unknown'}`,
+    `## Phase Turn: ${state.phase_turn_count ?? 0}${currentPhase?.turn_limit ? ` / limit ${currentPhase.turn_limit}` : ''}`,
+    `## Total Turns: ${state.turn_total ?? 0}`,
+  ];
+
+  if (currentPhase) {
+    lines.push(`### ชื่อเฟส: ${currentPhase.name}`);
+    lines.push(`### คำอธิบายเฟส: ${currentPhase.description || 'ไม่ได้กำหนด'}`);
+    lines.push(`### Advance Condition (ต้องทำสำเร็จเพื่อไปเฟสถัดไป): ${currentPhase.advance_condition || 'ไม่ได้กำหนด'}`);
+    lines.push(`### AI Behavior ในเฟสนี้: ${currentPhase.ai_behavior || 'ไม่ได้กำหนด'}`);
+  }
+
+  if (nextPhase) {
+    lines.push(`### Next Phase: ${getPhaseId(nextPhase)} (${nextPhase.name})`);
+  } else if (phases.length > 0) {
+    lines.push(`### Next Phase: NONE — เฟสสุดท้าย เมื่อสำเร็จ advance_condition ให้ใช้ game_over_win`);
+  }
+
+  if (scenario.opening_scene && (state.turn_total === 0 || state.turn_total === undefined)) {
+    lines.push(`## Opening Scene: ${scenario.opening_scene}`);
+  }
+
+  if (scenario.player_role) {
+    lines.push(`## Player Role: ${JSON.stringify(scenario.player_role)}`);
+  }
+
+  if (phases.length > 0) {
+    lines.push(`## All Phases Overview:`);
+    phases.forEach((p, i) => {
+      const marker = getPhaseId(p) === currentId ? '→' : ' ';
+      lines.push(`${marker} ${i + 1}. [${getPhaseId(p)}] ${p.name}: advance="${p.advance_condition || '-'}" turn_limit=${p.turn_limit}`);
+    });
+  }
+
+  return lines.join('\n');
+}
+
+function buildSystemPrompt(scenario, state, historySummary) {
+  const scenarioForPrompt = {
+    title: scenario.title,
+    description: scenario.description,
+    target_group: scenario.target_group,
+    player_role: scenario.player_role,
+    characters: scenario.characters,
+    phase_rules: normalizePhaseRules(scenario.phase_rules),
+    opening_scene: scenario.opening_scene
+  };
+
+  return SYSTEM_INSTRUCTION_TEMPLATE
+    .replace('{{scenario_config}}', JSON.stringify(scenarioForPrompt, null, 2))
+    .replace('{{current_phase_context}}', buildPhaseContextBlock(scenario, state))
+    .replace('{{runtime_state}}', JSON.stringify(state, null, 2))
+    .replace('{{history_summary}}', historySummary || 'None yet.');
+}
+
+function ensureSessionState(scenario, session) {
+  let state = typeof session.state === 'string' ? JSON.parse(session.state || '{}') : (session.state || {});
+  if (!state.current_phase) {
+    state = buildInitialState(scenario);
+  }
+  return state;
+}
+
+/**
  * --- GEMINI CHAT LOGIC ---
  */
 
@@ -377,12 +522,8 @@ async function handleChatAction(env, data, token) {
   const { scenario, session, messages } = context;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
-  const state = typeof session.state === 'string' ? JSON.parse(session.state || "{}") : (session.state || {});
-  
-  const systemPrompt = SYSTEM_INSTRUCTION_TEMPLATE
-    .replace('{{scenario_config}}', JSON.stringify(scenario, null, 2))
-    .replace('{{runtime_state}}', JSON.stringify(state, null, 2))
-    .replace('{{history_summary}}', session.history_summary || 'None yet.');
+  const state = ensureSessionState(scenario, session);
+  const systemPrompt = buildSystemPrompt(scenario, state, session.history_summary);
 
   const contents = messages.slice(-10).map(m => ({
     role: m.sender === 'user' ? 'user' : 'model',
@@ -443,11 +584,8 @@ async function handleGetChatContext(env, data, token) {
   if (context.error) return context;
   const { scenario, session, messages } = context;
 
-  const state = typeof session.state === 'string' ? JSON.parse(session.state || "{}") : (session.state || {});
-  const systemPrompt = SYSTEM_INSTRUCTION_TEMPLATE
-    .replace('{{scenario_config}}', JSON.stringify(scenario, null, 2))
-    .replace('{{runtime_state}}', JSON.stringify(state, null, 2))
-    .replace('{{history_summary}}', session.history_summary || 'None yet.');
+  const state = ensureSessionState(scenario, session);
+  const systemPrompt = buildSystemPrompt(scenario, state, session.history_summary);
 
   const history = messages.slice(-10).map(m => ({
     role: m.sender === 'user' ? 'user' : 'model',
@@ -475,13 +613,17 @@ async function handleProcessChatResult(env, data, token) {
   let gameOver = false;
   let outcome = null;
 
+  if (userText && !String(userText).startsWith('[System:')) {
+    state.phase_turn_count = (state.phase_turn_count || 0) + 1;
+    state.turn_total = (state.turn_total || 0) + 1;
+  }
+
   if (aiResponse.phase_event === 'advance_to_next_phase') {
-    const phases = scenario.phase_rules?.phases || [];
-    let currentIndex = phases.findIndex(p => String(p.id || p.name) === String(state.current_phase));
+    const phases = normalizePhaseRules(scenario.phase_rules).phases;
+    const currentIndex = findPhaseIndex(phases, state.current_phase);
 
     if (currentIndex !== -1 && currentIndex < phases.length - 1) {
-      const nextPhase = phases[currentIndex + 1];
-      state.current_phase = typeof nextPhase === 'object' ? (nextPhase.id || nextPhase.name) : nextPhase;
+      state.current_phase = getPhaseId(phases[currentIndex + 1]);
       state.phase_turn_count = 0;
     } else {
       gameOver = true;

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, BarChart3, Database, RefreshCcw, TrendingUp, Trophy, Users } from 'lucide-react';
+import { ArrowLeft, BarChart3, Database, RefreshCcw, TrendingUp, Trophy, Users, ListTodo } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { CartoonLoading } from '@/components/CartoonLoading';
 import { gasFetch } from '@/lib/gas';
@@ -251,13 +251,23 @@ export default function CampaignAnalyticsPage() {
             </h1>
           </div>
 
-          <button
-            onClick={loadData}
-            className="flex items-center bg-nintendo-yellow text-gray-900 border-4 border-gray-900 px-5 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_7px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 font-black"
-          >
-            <RefreshCcw size={20} className="mr-2" />
-            รีเฟรช
-          </button>
+          <div className="flex gap-3">
+            <Link
+              href="/admin/progress"
+              prefetch={false}
+              className="flex items-center bg-nintendo-yellow text-gray-900 border-4 border-gray-900 px-4 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_7px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 font-black"
+              title="Dev Progress"
+            >
+              <ListTodo size={20} />
+            </Link>
+            <button
+              onClick={loadData}
+              className="flex items-center bg-nintendo-yellow text-gray-900 border-4 border-gray-900 px-5 py-3 rounded-2xl hover:translate-y-1 transition-all shadow-[0_7px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 font-black"
+            >
+              <RefreshCcw size={20} className="mr-2" />
+              รีเฟรช
+            </button>
+          </div>
         </header>
 
         {error && (

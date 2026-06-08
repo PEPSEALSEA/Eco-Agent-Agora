@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { gasFetch, gasPost, uuid } from '@/lib/gas';
-import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCap, Settings, FileJson, Copy, Check, Database, Loader2, BarChart3 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, ArrowLeft, Users, Briefcase, GraduationCap, Settings, FileJson, Copy, Check, Database, Loader2, BarChart3, ListTodo } from 'lucide-react';
 import { CartoonLoading } from '@/components/CartoonLoading';
 import Link from 'next/link';
 
@@ -22,6 +22,63 @@ type Scenario = {
   opening_scene?: string;
   mode?: 'campaign' | 'freeplay';
   difficulty?: number;
+};
+
+type PhaseConfig = {
+  id: string;
+  name: string;
+  description: string;
+  turn_limit: number;
+  advance_condition: string;
+  ai_behavior: string;
+};
+
+const createDefaultPhase = (id: string, name: string): PhaseConfig => ({
+  id,
+  name,
+  description: '',
+  turn_limit: 4,
+  advance_condition: '',
+  ai_behavior: '',
+});
+
+const normalizePhases = (phases: any[]): PhaseConfig[] => {
+  if (!Array.isArray(phases)) return [];
+  return phases.map((p, i) => {
+    if (typeof p === 'string') return createDefaultPhase(p, p);
+    return {
+      id: p.id || `phase_${i + 1}`,
+      name: p.name || p.id || `Phase ${i + 1}`,
+      description: p.description || '',
+      turn_limit: p.turn_limit ?? 4,
+      advance_condition: p.advance_condition || '',
+      ai_behavior: p.ai_behavior || '',
+    };
+  });
+};
+
+const normalizeScenarioForSave = (scenario: Scenario): Scenario => {
+  const phases = normalizePhases(scenario.phase_rules?.phases || []);
+  const failInput = scenario.phase_rules?.fail_conditions
+    || (scenario.phase_rules?.fail_condition
+      ? String(scenario.phase_rules.fail_condition).split('|').map(s => s.trim()).filter(Boolean)
+      : []);
+
+  return {
+    ...scenario,
+    phase_rules: {
+      ...scenario.phase_rules,
+      phases,
+      fail_conditions: failInput,
+      win_condition: scenario.phase_rules?.win_condition || '',
+    },
+    initial_state: {
+      ...(scenario.initial_state || {}),
+      current_phase: scenario.initial_state?.current_phase || phases[0]?.id || 'opening',
+      phase_turn_count: scenario.initial_state?.phase_turn_count ?? 0,
+      turn_total: scenario.initial_state?.turn_total ?? 0,
+    },
+  };
 };
 
 export default function AdminScenariosPage() {
@@ -89,11 +146,28 @@ export default function AdminScenariosPage() {
       characters: [
         { id: 'char_1', name: 'ตัวละคร 1', role: 'บทบาท...', agenda: 'เป้าหมาย...', personality: 'นิสัย...' }
       ],
-      phase_rules: {
-        phases: ['opening', 'conflict', 'negotiation', 'resolution'],
-        win_condition: 'ทั้งสองฝ่ายตกลงกันได้',
-        fail_condition: 'turn > 20'
+      player_role: {
+        id: 'player',
+        name: 'ผู้เล่น',
+        role: 'Project Leader',
+        objective: 'ไกล่เกลี่ยให้ทุกฝ่ายตกลงกันได้',
       },
+      phase_rules: {
+        phases: [
+          createDefaultPhase('opening', 'เปิดบทสนทนา'),
+          createDefaultPhase('conflict', 'รับมือประเด็นร้อน'),
+          createDefaultPhase('negotiation', 'แลกเปลี่ยนข้อเสนอ'),
+          createDefaultPhase('resolution', 'สรุปข้อตกลง'),
+        ],
+        win_condition: 'ทั้งสองฝ่ายตกลงกันได้',
+        fail_conditions: ['turn_total > 20'],
+      },
+      initial_state: {
+        current_phase: 'opening',
+        phase_turn_count: 0,
+        turn_total: 0,
+      },
+      opening_scene: 'ห้องประชุมทีม — บรรยากาศตึงเครียดเล็กน้อย...',
       mode: 'freeplay',
       difficulty: 1
     };
@@ -102,7 +176,8 @@ export default function AdminScenariosPage() {
   };
 
   const handleEdit = (scenario: Scenario) => {
-    setEditForm({ ...scenario });
+    const normalized = normalizeScenarioForSave(scenario);
+    setEditForm(normalized);
     setEditingId(scenario.id);
   };
 
@@ -110,8 +185,9 @@ export default function AdminScenariosPage() {
     if (!editForm) return;
     setLoading(true);
     try {
+      const payload = normalizeScenarioForSave(editForm);
       const action = editingId === 'new' ? 'create' : 'update';
-      const result = await gasPost(action as any, 'scenarios', editForm, { id: editForm.id });
+      const result = await gasPost(action as any, 'scenarios', payload, { id: payload.id });
       if (result.error) throw new Error(result.error);
       
       // Refresh list
@@ -153,6 +229,38 @@ export default function AdminScenariosPage() {
     if (!editForm) return;
     const newChars = editForm.characters.filter((_, i) => i !== index);
     setEditForm({ ...editForm, characters: newChars });
+  };
+
+  const getPhases = (): PhaseConfig[] => normalizePhases(editForm?.phase_rules?.phases || []);
+
+  const handleAddPhase = () => {
+    if (!editForm) return;
+    const phases = getPhases();
+    const nextIndex = phases.length + 1;
+    const newPhase = createDefaultPhase(`phase_${nextIndex}`, `เฟส ${nextIndex}`);
+    setEditForm({
+      ...editForm,
+      phase_rules: { ...editForm.phase_rules, phases: [...phases, newPhase] },
+    });
+  };
+
+  const handlePhaseChange = (index: number, field: keyof PhaseConfig, value: string | number) => {
+    if (!editForm) return;
+    const phases = [...getPhases()];
+    phases[index] = { ...phases[index], [field]: value };
+    setEditForm({
+      ...editForm,
+      phase_rules: { ...editForm.phase_rules, phases },
+    });
+  };
+
+  const handleRemovePhase = (index: number) => {
+    if (!editForm) return;
+    const phases = getPhases().filter((_, i) => i !== index);
+    setEditForm({
+      ...editForm,
+      phase_rules: { ...editForm.phase_rules, phases },
+    });
   };
 
   const handleImportJson = () => {
@@ -211,13 +319,37 @@ export default function AdminScenariosPage() {
           {
             id: "opening",
             name: "เข้าใจปัญหา",
-            description: "Leader รับฟัง...",
+            description: "Leader รับฟังมุมมองทั้งสองฝ่ายโดยไม่รีบสรุป",
             turn_limit: 4,
-            advance_condition: "player ได้ถาม...",
-            ai_behavior: "ตัวละครทั้งคู่อธิบาย..."
+            advance_condition: "player ถามคำถามเปิดอย่างน้อย 2 ข้อ และทั้ง char_A, char_B อธิบายปัญหาหลักแล้ว",
+            ai_behavior: "ตัวละครทั้งคู่อธิบายปัญหา ยังไม่เสนอทางออกสุดท้าย"
+          },
+          {
+            id: "conflict",
+            name: "รับมือประเด็นร้อน",
+            description: "จัดการอารมณ์และความกังวลที่ซ่อนอยู่",
+            turn_limit: 5,
+            advance_condition: "player รับรู้ความรู้สึกของทั้งสองฝ่าย และลด anger ของอย่างน้อย 1 ตัวละคร",
+            ai_behavior: "ตัวละครแสดงความกังวลชัดขึ้น แต่ยังเปิดรับการคุย"
+          },
+          {
+            id: "negotiation",
+            name: "แลกเปลี่ยนข้อเสนอ",
+            description: "หาทางออกที่ยอมรับได้ทั้งสองฝ่าย",
+            turn_limit: 6,
+            advance_condition: "มีข้อเสนอที่ทั้งสองฝ่ายยอมรับได้อย่างน้อย 1 ข้อ",
+            ai_behavior: "ตัวละครเสนอทางเลือกและต่อรองอย่างสมเหตุสมผล"
+          },
+          {
+            id: "resolution",
+            name: "สรุปข้อตกลง",
+            description: "ปิดดีลและยืนยันขั้นตอนถัดไป",
+            turn_limit: 3,
+            advance_condition: "player สรุปข้อตกลงและทั้งสองฝ่ายยืนยัน",
+            ai_behavior: "ตัวละครสรุปและยืนยันข้อตกลงร่วมกัน"
           }
         ],
-        win_condition: "มี agreements >= 1 ข้อ...",
+        win_condition: "มี agreements >= 1 ข้อ และทั้งสองฝ่ายยืนยันข้อตกลง",
         fail_conditions: [
           "turn_total > 22",
           "char_A.anger >= 9"
@@ -274,6 +406,13 @@ export default function AdminScenariosPage() {
           </div>
 
           <div className="flex space-x-4">
+            <button 
+              onClick={() => router.push('/admin/progress')}
+              className="p-4 bg-nintendo-yellow border-4 border-gray-900 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 text-gray-900"
+              title="Dev Progress Planner"
+            >
+              <ListTodo size={24} />
+            </button>
             <button 
               onClick={() => router.push('/admin/campaign-analytics')}
               className="p-4 bg-white border-4 border-gray-900 rounded-2xl hover:translate-y-1 transition-all shadow-[0_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-2 text-gray-900"
@@ -438,68 +577,156 @@ export default function AdminScenariosPage() {
                   />
                 </div>
 
-                <div className="bg-nintendo-blue/5 border-4 border-gray-900 p-6 rounded-[2rem]">
-                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter mb-4 flex items-center">
-                    <Settings size={20} className="mr-2" /> กฎของเฟส (Phase Rules)
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                      <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เฟสการเจรจา (คั่นด้วยเครื่องหมายจุลภาค)</label>
-                      <input 
-                        value={
-                          Array.isArray(editForm.phase_rules?.phases) 
-                            ? editForm.phase_rules.phases.map((p: any) => typeof p === 'string' ? p : (p.name || p.id)).join(', ') 
-                            : ''
-                        }
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const newNames = val.split(',').map(s => s.trim()).filter(s => s);
-                          const oldPhases = Array.isArray(editForm.phase_rules?.phases) ? editForm.phase_rules.phases : [];
-                          
-                          // Try to preserve object structures if they exist
-                          const updatedPhases = newNames.map((name, i) => {
-                            const old = oldPhases[i];
-                            if (old && typeof old === 'object') {
-                              return { ...old, name: name }; // Update name but keep rest
-                            }
-                            return name; // Or just return string
-                          });
+                <div>
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 ml-2">ฉากเปิด (Opening Scene)</label>
+                  <textarea
+                    value={editForm.opening_scene || ''}
+                    onChange={(e) => setEditForm({ ...editForm, opening_scene: e.target.value })}
+                    rows={2}
+                    placeholder="บรรยายฉากเริ่มต้นที่ AI จะใช้เปิดบทสนทนา..."
+                    className="w-full bg-gray-50 border-4 border-gray-900 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white outline-none transition-all shadow-[inset_0_4px_0_rgba(0,0,0,0.05)]"
+                  />
+                </div>
 
-                          setEditForm({ 
-                            ...editForm, 
-                            phase_rules: { 
-                              ...editForm.phase_rules, 
-                              phases: updatedPhases 
-                            } 
-                          });
-                        }}
-                        placeholder="เช่น opening, conflict, negotiation, resolution (สำหรับข้อมูลที่ซับซ้อน แนะนำให้ใช้ JSON Editor)"
+                <div className="bg-nintendo-yellow/10 border-4 border-gray-900 p-6 rounded-[2rem]">
+                  <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter mb-4">บทบาทผู้เล่น (Player Role)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      placeholder="ชื่อผู้เล่น"
+                      value={editForm.player_role?.name || ''}
+                      onChange={(e) => setEditForm({ ...editForm, player_role: { ...editForm.player_role, name: e.target.value } })}
+                      className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none"
+                    />
+                    <input
+                      placeholder="บทบาท (Role)"
+                      value={editForm.player_role?.role || ''}
+                      onChange={(e) => setEditForm({ ...editForm, player_role: { ...editForm.player_role, role: e.target.value } })}
+                      className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none"
+                    />
+                    <div className="md:col-span-2">
+                      <textarea
+                        placeholder="เป้าหมายของผู้เล่น (Objective)"
+                        value={editForm.player_role?.objective || ''}
+                        onChange={(e) => setEditForm({ ...editForm, player_role: { ...editForm.player_role, objective: e.target.value } })}
+                        rows={2}
                         className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none"
                       />
                     </div>
+                  </div>
+                </div>
+
+                <div className="bg-nintendo-blue/5 border-4 border-gray-900 p-6 rounded-[2rem]">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter flex items-center">
+                      <Settings size={20} className="mr-2" /> กฎของเฟส (Phase Rules)
+                    </h3>
+                    <button
+                      onClick={handleAddPhase}
+                      className="bg-nintendo-green text-white border-4 border-gray-900 px-4 py-2 rounded-xl font-black uppercase text-xs tracking-widest flex items-center"
+                    >
+                      <Plus size={14} className="mr-1" /> เพิ่มเฟส
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เงื่อนไขชนะ (Win Condition)</label>
-                      <input 
-                        value={typeof editForm.phase_rules?.win_condition === 'string' ? editForm.phase_rules.win_condition : JSON.stringify(editForm.phase_rules?.win_condition || '')}
-                        onChange={(e) => setEditForm({ 
-                          ...editForm, 
-                          phase_rules: { ...editForm.phase_rules, win_condition: e.target.value } 
+                      <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เงื่อนไขชนะรวม (Win Condition)</label>
+                      <input
+                        value={editForm.phase_rules?.win_condition || ''}
+                        onChange={(e) => setEditForm({
+                          ...editForm,
+                          phase_rules: { ...editForm.phase_rules, win_condition: e.target.value }
                         })}
                         className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เงื่อนไขแพ้ (Fail Condition)</label>
-                      <input 
-                        value={typeof editForm.phase_rules?.fail_condition === 'string' ? editForm.phase_rules.fail_condition : (Array.isArray(editForm.phase_rules?.fail_conditions) ? editForm.phase_rules.fail_conditions.join(' | ') : '')}
-                        onChange={(e) => setEditForm({ 
-                          ...editForm, 
-                          phase_rules: { ...editForm.phase_rules, fail_condition: e.target.value } 
+                      <label className="block text-[10px] font-black text-gray-400 uppercase mb-2">เงื่อนไขแพ้ (Fail Conditions — คั่นด้วย |)</label>
+                      <input
+                        value={Array.isArray(editForm.phase_rules?.fail_conditions)
+                          ? editForm.phase_rules.fail_conditions.join(' | ')
+                          : (editForm.phase_rules?.fail_condition || '')}
+                        onChange={(e) => setEditForm({
+                          ...editForm,
+                          phase_rules: {
+                            ...editForm.phase_rules,
+                            fail_conditions: e.target.value.split('|').map(s => s.trim()).filter(Boolean),
+                          }
                         })}
-                        placeholder="เช่น turn > 20"
+                        placeholder="เช่น turn_total > 20 | char_A.anger >= 9"
                         className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                    {getPhases().map((phase, index) => (
+                      <div key={index} className="bg-white border-4 border-gray-900 p-5 rounded-2xl relative">
+                        <button
+                          onClick={() => handleRemovePhase(index)}
+                          className="absolute -top-3 -right-3 w-8 h-8 bg-white border-4 border-gray-900 rounded-lg text-gray-400 hover:text-nintendo-pink flex items-center justify-center"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <p className="text-[10px] font-black text-nintendo-blue uppercase mb-3">เฟสที่ {index + 1}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] font-black uppercase text-gray-400 px-1">Phase ID</label>
+                            <input
+                              value={phase.id}
+                              onChange={(e) => handlePhaseChange(index, 'id', e.target.value)}
+                              className="w-full bg-gray-50 border-2 border-gray-900 rounded-lg px-3 py-2 font-bold text-sm outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black uppercase text-gray-400 px-1">ชื่อเฟส</label>
+                            <input
+                              value={phase.name}
+                              onChange={(e) => handlePhaseChange(index, 'name', e.target.value)}
+                              className="w-full bg-gray-50 border-2 border-gray-900 rounded-lg px-3 py-2 font-bold text-sm outline-none"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 px-1">คำอธิบายเฟส</label>
+                            <textarea
+                              value={phase.description}
+                              onChange={(e) => handlePhaseChange(index, 'description', e.target.value)}
+                              rows={2}
+                              className="w-full bg-gray-50 border-2 border-gray-900 rounded-lg px-3 py-2 font-bold text-sm outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black uppercase text-gray-400 px-1">Turn Limit</label>
+                            <input
+                              type="number"
+                              value={phase.turn_limit}
+                              onChange={(e) => handlePhaseChange(index, 'turn_limit', parseInt(e.target.value) || 1)}
+                              className="w-full bg-gray-50 border-2 border-gray-900 rounded-lg px-3 py-2 font-bold text-sm outline-none"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 px-1">Advance Condition (เงื่อนไขผ่านเฟส)</label>
+                            <textarea
+                              value={phase.advance_condition}
+                              onChange={(e) => handlePhaseChange(index, 'advance_condition', e.target.value)}
+                              rows={2}
+                              placeholder="AI จะ advance_to_next_phase เมื่อผู้เล่นทำสิ่งนี้สำเร็จ"
+                              className="w-full bg-gray-50 border-2 border-gray-900 rounded-lg px-3 py-2 font-bold text-sm outline-none"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="text-[10px] font-black uppercase text-gray-400 px-1">AI Behavior (พฤติกรรม AI ในเฟสนี้)</label>
+                            <textarea
+                              value={phase.ai_behavior}
+                              onChange={(e) => handlePhaseChange(index, 'ai_behavior', e.target.value)}
+                              rows={2}
+                              placeholder="ตัวละครควรทำอะไรในเฟสนี้"
+                              className="w-full bg-gray-50 border-2 border-gray-900 rounded-lg px-3 py-2 font-bold text-sm outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -572,6 +799,25 @@ export default function AdminScenariosPage() {
                               placeholder="นิสัย (Personality)"
                               value={char.personality}
                               onChange={(e) => handleCharChange(index, 'personality', e.target.value)}
+                              className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none focus:border-nintendo-blue"
+                            />
+                          </div>
+                          <div className="md:col-span-2 space-y-2">
+                             <label className="text-[10px] font-black uppercase text-gray-400 px-2">ความกังวลที่ซ่อน (Hidden Concern)</label>
+                             <textarea
+                              placeholder="สิ่งที่ตัวละครไม่พูดออกมาตรงๆ"
+                              value={char.hidden_concern || ''}
+                              onChange={(e) => handleCharChange(index, 'hidden_concern', e.target.value)}
+                              rows={2}
+                              className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none focus:border-nintendo-blue"
+                            />
+                          </div>
+                          <div className="md:col-span-2 space-y-2">
+                             <label className="text-[10px] font-black uppercase text-gray-400 px-2">เงื่อนไขปลดล็อก (Unlock Condition)</label>
+                             <input
+                              placeholder="ตัวละครจะเปิดใจเมื่อ..."
+                              value={char.unlock_condition || ''}
+                              onChange={(e) => handleCharChange(index, 'unlock_condition', e.target.value)}
                               className="w-full bg-white border-4 border-gray-900 rounded-xl px-4 py-3 font-bold text-gray-900 outline-none focus:border-nintendo-blue"
                             />
                           </div>

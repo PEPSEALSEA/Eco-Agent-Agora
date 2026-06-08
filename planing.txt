@@ -1,0 +1,549 @@
+================================================================================
+WongJraJa (วงเจรจา) / Eco-Agent Agora — PROJECT PLANNING
+Solo Developer · อัปเดตจาก codebase audit
+================================================================================
+
+================================================================================
+1. ภาพรวมโปรเจกต์
+================================================================================
+
+WongJraJa = เกมฝึกทักษะการเจรจา
+ผู้เล่นคุยกับ AI ตัวละครหลายคน → ชนะ/แพ้ → ได้ feedback หลังจบ
+
+Tech Stack:
+- Frontend: Next.js 16 (static export) + React 19 + Tailwind + Framer Motion
+- Backend: Cloudflare Worker → Google Sheets (ไม่ใช่ Supabase แม้มี schema)
+- AI: Gemini 2.5 Flash (client-side + server evaluation)
+- Voice: Gemini multimodal (Python Audio มีแต่ยังไม่เชื่อม)
+- Deploy: Vercel + GitHub Actions (basePath: /Eco-Agent-Agora)
+
+สถานะโดยรวม: โครงสร้างครบ ~70%
+- UI และ user journey หลักทำได้แล้ว
+- Logic หลังบ้านหลายส่วนยังไม่เชื่อมครบ
+
+Core Loop ที่ต้องสมบูรณ์:
+  เลือกด่าน → คุยเจรจา → ชนะ/แพ้ → Debrief → ปลดล็อกด่านถัดไป
+
+Flow ที่เล่นจบได้ (ถ้า config backend ครบ):
+  Landing → Login → เลือกด่าน → คุย AI → Win/Lose → Debrief (กด eval เอง)
+
+สิ่งที่ UI มีแต่ logic ยังไม่ทำงาน:
+  Trust/Anger · Dynamic Decisions · Reigns Swipe · XP/Streak · Auto Debrief
+
+
+================================================================================
+2. SYSTEM ARCHITECTURE — 4 ชั้น
+================================================================================
+
+┌─────────────────────────────────────────────────────────┐
+│  🎨 PRESENTATION LAYER    สิ่งที่ผู้เล่นเห็นและสัมผัส      │
+├─────────────────────────────────────────────────────────┤
+│  🎮 GAMEPLAY LAYER        กลไกเกม + กฎการเล่น           │
+├─────────────────────────────────────────────────────────┤
+│  🧠 INTELLIGENCE LAYER    AI + วิเคราะห์ + feedback     │
+├─────────────────────────────────────────────────────────┤
+│  📦 DATA & INFRA LAYER    เก็บข้อมูล + backend + deploy  │
+└─────────────────────────────────────────────────────────┘
+
+Hub Diagram (มองจากศูนย์กลาง):
+
+                         ┌──────────────────┐
+                         │  Scenario Hub    │
+                         │  (เลือกด่าน)      │
+                         └────────┬─────────┘
+              ┌──────────────────┼──────────────────┐
+              │                  │                  │
+     ┌────────▼────────┐ ┌────────▼────────┐ ┌───────▼───────┐
+     │ Campaign System │ │ Freeplay System │ │ Admin CMS     │
+     │ map·stars·lock  │ │ arena·catalog   │ │ สร้างเนื้อหา   │
+     └────────┬────────┘ └────────┬────────┘ └───────┬───────┘
+              │                   │                   │
+              └───────────────────┼───────────────────┘
+                                  │
+                    ┌─────────────▼─────────────┐
+                    │   NEGOTIATION ENGINE      │  ← ศูนย์กลาง
+                    │   (core ของทุกอย่าง)       │
+                    └─────────────┬─────────────┘
+           ┌──────────────────────┼──────────────────────┐
+           │                      │                      │
+  ┌────────▼────────┐   ┌────────▼────────┐   ┌────────▼────────┐
+  │ Input Systems   │   │ Phase & State   │   │ Dialogue System │
+  │ text/strategy   │   │ trust·anger     │   │ avatar·vibe     │
+  │ reigns·voice    │   │ phase rules     │   │ narrator        │
+  │ kid mode        │   │                 │   │                 │
+  └────────┬────────┘   └────────┬────────┘   └────────┬────────┘
+           │                      │                      │
+           └──────────────────────┼──────────────────────┘
+                                  │
+                    ┌─────────────▼─────────────┐
+                    │      Gemini AI Layer      │
+                    │  prompt · response · eval │
+                    └─────────────┬─────────────┘
+                                  │
+           ┌──────────────────────┼──────────────────────┐
+           │                      │                      │
+  ┌────────▼────────┐   ┌────────▼────────┐   ┌────────▼────────┐
+  │ Outcome System  │   │ Session Store   │   │ Voice Analysis  │
+  │ win·fail·score  │   │ GAS · messages  │   │ Python Audio    │
+  └────────┬────────┘   └─────────────────┘   └─────────────────┘
+           │
+  ┌────────▼────────┐   ┌─────────────────┐   ┌─────────────────┐
+  │ Debrief System  │──▶│ AI Evaluation   │   │ Progress / XP     │
+  │ feedback·log    │   │ What-If         │   │ Profile·Analytics │
+  └─────────────────┘   └─────────────────┘   └─────────────────┘
+
+
+================================================================================
+3. 10 DOMAINS — รายการระบบทั้งหมด
+================================================================================
+
+Domain 1: Entry & Identity (3 ระบบ)
+Domain 2: Game Modes (4 ระบบ)
+Domain 3: Negotiation Core (5 ระบบ) — หัวใจ
+Domain 4: Input Systems (5 ระบบ)
+Domain 5: Presentation (5 ระบบ)
+Domain 6: Learning & Feedback (4 ระบบ)
+Domain 7: Content (5 ระบบ)
+Domain 8: Intelligence (5 ระบบ)
+Domain 9: Data & Infra (6 ระบบ)
+Domain 10: Player Meta (5 ระบบ)
+
+รวม ~47 ระบบย่อย
+Negotiation Engine + Content + Debrief = 3 กลุ่มที่ define โปรเจกต์
+
+
+================================================================================
+4. MASTER CHECKLIST — ทุกระบบ (audit จาก codebase จริง)
+================================================================================
+
+สัญลักษณ์:
+  [✓] = ทำแล้ว (Done)
+  [!] = มีแต่ไม่สมบูรณ์ (Partial)
+  [ ] = ยังไม่ทำ (Missing)
+  [X] = มี bug (Broken)
+
+--------------------------------------------------------------------------------
+Domain 1: Entry & Identity
+--------------------------------------------------------------------------------
+
+[✓] 1.1  Landing Page                    LandingPage.tsx, landingIntro.ts
+[✓] 1.2  Google OAuth Login              login/page.tsx, AuthProvider.tsx
+[!] 1.3  Auth Guard                      localStorage อย่างเดียว ไม่ validate server-side
+[✓] 1.4  User Upsert to Backend          AuthProvider → GAS
+[✓] 1.5  Scenario Hub                    scenarios/page.tsx
+[✓] 1.6  SWR Cache                       gas.ts, SyncStatus.tsx
+[!] 1.7  Dev Seed Scenarios              มีปุ่ม seed แต่ professional ทั้งหมด ไม่มี kids
+
+TODO:
+[ ] 1.3  Redirect ไป login ก่อนเข้า hub (landing ไม่เช็ค auth)
+[ ] 1.7  เพิ่ม seed scenario กลุ่ม kids อย่างน้อย 1 ด่าน
+
+--------------------------------------------------------------------------------
+Domain 2: Game Modes
+--------------------------------------------------------------------------------
+
+[✓] 2.1  Campaign Map                    scenarios/page.tsx
+[✓] 2.2  Campaign Unlock Logic           getScenarioStatus()
+[✓] 2.3  Star Rating (1-3 ดาว)           outcome_score 40/65/85
+[✓] 2.4  Campaign Dossier/Preview        scenarios/page.tsx
+[!] 2.5  Adventure Map Redesign          มี plan ใน campaign_redesign_plan.md ยังไม่ implement
+[✓] 2.6  Freeplay Arena                  FreeplayArena.tsx
+[✓] 2.7  Kid Mode UI                     KidGameplay.tsx
+[ ] 2.8  Kid Mode Content                ไม่มี scenario target_group: kids ใน seed
+[✓] 2.9  Adult Mode (Strategy)           StrategyBlocks.tsx
+[✓] 2.10 Pro Mode (Free Text)            negotiate/page.tsx
+[✓] 2.11 Mode Switcher                   kid → adult → pro
+
+TODO:
+[ ] 2.5  Campaign map winding path (nice to have)
+[ ] 2.8  สร้าง kids scenario 1 เรื่องใน Admin/CMS
+[ ] 2.2  แก้ข้อความ locked alert (บอก "ด่านที่ 1" แต่ logic ใช้ด่านก่อนหน้า)
+
+--------------------------------------------------------------------------------
+Domain 3: Negotiation Core (หัวใจ — สำคัญที่สุด)
+--------------------------------------------------------------------------------
+
+[✓] 3.1  Negotiation Engine              get_context → Gemini → process_result
+[!] 3.2  Phase System                    AI เปลี่ยน phase ได้ แต่ label UI ไม่ตรง
+[X]  3.3  Phase Label Mapping             UI: rapport/discovery/bargaining/closing
+                                         Seed: opening/conflict/negotiation/resolution
+[X]  3.4  State Delta (trust/anger)     Prompt ขอ state_delta แต่ handleProcessChatResult
+                                         ไม่ apply (_cloudFlareWorker.js L607-654)
+[!] 3.5  Trust/Anger UI Sidebar          UI มี แต่ data ไม่ update เพราะ 3.4
+[!] 3.6  Character Mood (avatar)         ขึ้นกับ trust/anger ที่ไม่ update
+[!] 3.7  Outcome Win/Fail                Binary 100/0 เท่านั้น ไม่มี nuanced score
+[!] 3.8  Manual End Session              end_session ไม่ set outcome_score
+[✓] 3.9  Narrator System                 แสดง narrator จาก AI
+[✓] 3.10 Turn Counter                    phase_turn_count + turn_total
+[ ] 3.11 Fail Condition Enforcement      turn_limit/fail_conditions ใน prompt แต่ server ไม่ enforce
+[✓] 3.12 Opening Scene Trigger           System message เริ่มบทสนทนา
+[✓] 3.13 Game Over Modal                 Win/Fail modal + ไป debrief
+[✓] 3.14 Message Queue + Typing          DialogueBox typing + click advance
+[✓] 3.15 Streaming Response              Gemini stream แสดงทีละคำ
+
+TODO P0 (ทำก่อน):
+[X] 3.4  Apply state_delta ใน handleProcessChatResult (copy logic จาก handleChatAction L567-571)
+[X] 3.3  แก้ phase label ให้ dynamic จาก phase_rules แทน hardcode
+[ ] 3.8  Set outcome_score ตอน end_session
+[ ] 3.7  Scoring แบบ granular (ไม่ใช่แค่ 100/0)
+
+TODO P1:
+[ ] 3.11 Server-side enforce turn_limit และ fail_conditions
+[ ] 3.5-3.6 ทดสอบ trust/anger UI หลัง fix 3.4
+
+--------------------------------------------------------------------------------
+Domain 4: Input Systems
+--------------------------------------------------------------------------------
+
+[✓] 4.1  Text Input (Pro)                negotiate/page.tsx
+[✓] 4.2  Strategy Blocks (Adult)         StrategyBlocks.tsx
+[✓] 4.3  Kid Card Deck                   KidGameplay.tsx
+[✓] 4.4  Voice Recorder                  VoiceRecorder.tsx → Gemini multimodal
+[ ] 4.5  Reigns Swipe                    Component สร้างแล้ว แต่ไม่ได้ render (ReignsSystem.tsx)
+[ ] 4.6  Dynamic AI Decisions            setCurrentDynamicDecisions ไม่เคยถูกเรียก
+[ ] 4.7  Python Audio Analysis           Engine พร้อม แต่ frontend ไม่เรียก
+
+TODO:
+[ ] 4.6  Parse dynamic_decisions จาก AI response → ส่งให้ KidGameplay/Reigns
+[ ] 4.5  Wire Reigns เข้า adult mode หรือลบ dead code
+[ ] 4.7  Optional Phase 3 — เชื่อม Python Audio
+
+--------------------------------------------------------------------------------
+Domain 5: Presentation
+--------------------------------------------------------------------------------
+
+[✓] 5.1  Dialogue Box                    DialogueBox.tsx
+[✓] 5.2  Character Avatar                CharacterAvatar.tsx (emoji mood)
+[✓] 5.3  Vibe Background                 negotiate/page.tsx
+[✓] 5.4  Cartoon Loading                 CartoonLoading.tsx
+[✓] 5.5  Sync Status Indicator           SyncStatus.tsx
+[!] 5.6  Character Portrait Images       รองรับ imageUrl แต่ scenario ส่วนใหญ่ไม่มี
+[!] 5.7  Responsive Mobile               negotiate sidebar อาจแออัด
+
+TODO:
+[ ] 5.6  เพิ่ม portrait image ให้ตัวละครใน campaign scenarios
+[ ] 5.7  Mobile UX polish หน้า negotiate
+
+--------------------------------------------------------------------------------
+Domain 6: Learning & Feedback
+--------------------------------------------------------------------------------
+
+[✓] 6.1  Debrief Page                    debrief/page.tsx
+[✓] 6.2  AI Evaluation Generator         worker generate_evaluation
+[ ] 6.3  Auto Evaluation on End          ต้องกดปุ่ม "สร้างบทวิเคราะห์" เอง
+[!] 6.4  What-If Engine                  state เดียว overwrite ทุก message
+[!] 6.5  Feedback Logs                   สร้างตอน save_evaluation เท่านั้น
+[✓] 6.6  Voice Metadata Display          debrief/page.tsx
+[✓] 6.7  Re-analyze Button               handleReanalyze
+
+TODO P0:
+[ ] 6.3  Auto-trigger generate_evaluation เมื่อเข้า debrief ครั้งแรก
+[ ] 6.4  What-if แยก state ต่อ message
+
+TODO P2:
+[ ] 6.5  Per-turn micro-feedback ระหว่างเล่น (optional)
+
+--------------------------------------------------------------------------------
+Domain 7: Content & Admin CMS
+--------------------------------------------------------------------------------
+
+[✓] 7.1  Scenario CRUD (Create/Read/Update)  admin/scenarios/page.tsx
+[ ] 7.2  Scenario Delete                     Stub — alert "จะพร้อมเร็วๆ นี้"
+[✓] 7.3  Phase Rules Editor                  advance_condition, turn_limit, ai_behavior
+[✓] 7.4  Character Editor                    name, role, agenda, personality
+[✓] 7.5  JSON Import/Export                  admin
+[✓] 7.6  DB Setup (Sheets sync)              admin/settings
+[!] 7.7  Campaign Content (3 ด่าน)          มี seed 4 ด่าน professional content อาจยังไม่ balance
+[!] 7.8  Freeplay Content                    ต้องสร้างผ่าน admin
+[ ] 7.9  Kids Content                        ไม่มีเลย
+[!] 7.10 Admin Auth                          Hardcoded email list
+
+TODO P0 (Content):
+[ ] 7.7  เขียน/ปรับ campaign 3 ด่านให้เล่นจบได้ + phase rules ชัด
+[ ] 7.9  สร้าง kids scenario 1 เรื่อง
+[ ] 7.8  Freeplay 3 สถานการณ์
+
+TODO P1:
+[ ] 7.2  Implement delete ใน worker + admin
+[ ] 7.10 Admin role ใน users sheet แทน hardcode email
+
+--------------------------------------------------------------------------------
+Domain 8: Intelligence (AI)
+--------------------------------------------------------------------------------
+
+[✓] 8.1  Gemini Client Integration         gemini.ts (gemini-2.5-flash)
+[✓] 8.2  System Prompt (Negotiation)       _cloudFlareWorker.js 3-layer template
+[✓] 8.3  Evaluation Prompt                 Coach + 5-skill radar
+[✓] 8.4  What-If Prompt                    Minimal JSON feedback
+[✓] 8.5  Voice Analysis Prompt             VoiceRecorder.tsx inline
+[!] 8.6  State Delta Parser                Parse ได้ แต่ไม่ apply (ดู 3.4)
+[!] 8.7  API Key to Client                 Worker ส่ง geminiApiKey ไป browser — security risk
+[✓] 8.8  History Summary                   สะสมใน session
+[✓] 8.9  Phase Context Block               buildPhaseContextBlock
+
+TODO:
+[ ] 8.6  Fix state_delta apply (เชื่อมกับ 3.4)
+[ ] 8.7  Phase 3 — ย้าย Gemini call ทั้งหมดไป server-side
+
+--------------------------------------------------------------------------------
+Domain 9: Data & Infrastructure
+--------------------------------------------------------------------------------
+
+[✓] 9.1  Cloudflare Worker Backend         _cloudFlareWorker.js
+[✓] 9.2  Google Sheets Storage             7 tables
+[✓] 9.3  Session CRUD
+[✓] 9.4  Message Log
+[✓] 9.5  Optimized Read (get_negotiation_data)
+[✓] 9.6  SWR Cache Layer                   localStorage
+[ ] 9.7  Supabase Schema                   มี SQL แต่ zero import ใน src/
+[✓] 9.8  Static Export Deploy              Vercel + GitHub Actions
+[!] 9.9  Env Config                        ต้อง set 5+ env vars
+
+TODO:
+[ ] 9.7  ตัดสินใจ: ลบ Supabase schema หรือ migrate Phase 4
+[ ] 9.9  สร้าง .env.example ให้ครบ
+
+Env ที่ต้อง config:
+  NEXT_PUBLIC_GAS_URL
+  NEXT_PUBLIC_GAS_SECRET_KEY
+  NEXT_PUBLIC_GEMINI_API_KEY
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID
+  Worker env: SHEET_ID, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, GEMINI_API_KEY, SECRET_KEY
+
+--------------------------------------------------------------------------------
+Domain 10: Player Meta (Progression)
+--------------------------------------------------------------------------------
+
+[✓] 10.1 Profile Page                     profile/page.tsx
+[!] 10.2 Skill Progress (5 skills)        UI แสดงได้ แต่ไม่มี code เขียน XP
+[✓] 10.3 Skill Radar Chart                recharts radar
+[ ] 10.4 Streak System                     แสดง streak_count แต่ไม่มี code update
+[✓] 10.5 Star Rating (Campaign)           จาก outcome_score
+[✓] 10.6 Session History                  5 รายการล่าสุด → debrief
+[✓] 10.7 Real-World Journal               CRUD บันทึกการใช้จริง
+[✓] 10.8 Campaign Analytics (Admin)       admin/campaign-analytics
+[ ] 10.9 XP from Evaluation               evaluation มี skill scores แต่ไม่ write skill_progress
+[!] 10.10 Level Calculation               คำนวณจาก skills แต่ skills ว่าง
+
+5 Skills:
+  - opening_conversation (การเริ่มสนทนา)
+  - handling_pushback (รับมือแรงต้าน)
+  - finding_common_ground (การหาจุดร่วม)
+  - empathy_expression (ความเห็นอกเห็นใจ)
+  - logical_argument (ตรรกะและเหตุผล)
+
+TODO P1:
+[ ] 10.9 หลัง save_evaluation → upsert skill_progress ตาม skills_assessment
+[ ] 10.4 Update streak ตอน login/play (เช็ค last_active_date)
+[ ] 10.2 Default skill level 1 ถ้ายังไม่มี data
+
+
+================================================================================
+5. สรุปตัวเลข
+================================================================================
+
+Done:     52 ระบบ (58%)
+Partial:  22 ระบบ (25%)
+Missing:  12 ระบบ (13%)
+Bug:       4 ระบบ (4%)
+
+
+================================================================================
+6. IMPLEMENTATION PLAN — 4 Phase (Solo)
+================================================================================
+
+--------------------------------------------------------------------------------
+Phase 0: Fix Critical Bugs (สัปดาห์ 1)
+เป้าหมาย: เกมรู้สึก "มีชีวิต" — trust/anger เปลี่ยน, phase แสดงถูก, score ไม่หาย
+--------------------------------------------------------------------------------
+
+#  | Task                                          | ระบบ  | Effort
+---|-----------------------------------------------|-------|----------
+1  | Apply state_delta ใน handleProcessChatResult  | 3.4   | 2-3 ชม.
+2  | Phase label dynamic จาก phase_rules           | 3.3   | 1-2 ชม.
+3  | end_session set outcome_score                 | 3.8   | 1 ชม.
+4  | Auto eval เมื่อเข้า debrief                   | 6.3   | 2 ชม.
+5  | What-if แยก state ต่อ message                 | 6.4   | 1 ชม.
+6  | สร้าง .env.example                            | 9.9   | 30 นาที
+
+Deliverable: เล่น 1 ด่าน → trust/anger เปลี่ยน → debrief auto วิเคราะห์ → score ถูกต้อง
+
+--------------------------------------------------------------------------------
+Phase 1: Content + Core Loop (สัปดาห์ 2-4)
+เป้าหมาย: Campaign 3 ด่านเล่นจบได้ + progression ทำงาน
+--------------------------------------------------------------------------------
+
+#  | Task                                          | ระบบ  | Effort
+---|-----------------------------------------------|-------|----------
+7  | เขียน Campaign ด่าน 1                         | 7.7   | 1-2 วัน
+8  | เขียน Campaign ด่าน 2                         | 7.7   | 1 วัน
+9  | เขียน Campaign ด่าน 3                         | 7.7   | 1 วัน
+10 | Freeplay 3 scenarios                          | 7.8   | 1 วัน
+11 | Kids scenario 1 เรื่อง                        | 7.9   | 1 วัน
+12 | XP write จาก evaluation → skill_progress      | 10.9  | 3-4 ชม.
+13 | Streak update on login                        | 10.4  | 2 ชม.
+14 | Dynamic decisions จาก AI response             | 4.6   | 3-4 ชม.
+15 | Playtest ทั้ง campaign + แก้ balance          | —     | 2 วัน
+
+Deliverable: Campaign 3 ด่าน + Freeplay 3 + Kids 1 → เล่นจบ → ได้ XP + ดาว + streak
+
+--------------------------------------------------------------------------------
+Phase 2: Polish + Complete Features (สัปดาห์ 5-7)
+เป้าหมาย: ทุก input mode ทำงาน + admin ครบ + UX ดี
+--------------------------------------------------------------------------------
+
+#  | Task                                          | ระบบ  | Effort
+---|-----------------------------------------------|-------|----------
+16 | Wire Reigns Swipe หรือลบ dead code            | 4.5   | 2-4 ชม.
+17 | Scenario delete ใน worker + admin             | 7.2   | 2 ชม.
+18 | Admin role จาก sheet แทน hardcode             | 7.10  | 2 ชม.
+19 | Character portrait images                     | 5.6   | 1 วัน
+20 | Campaign map redesign (winding path)          | 2.5   | 2-3 วัน
+21 | Mobile UX negotiate                           | 5.7   | 1 วัน
+22 | Server-side turn_limit enforcement            | 3.11  | 3 ชม.
+23 | Granular scoring (ไม่ใช่ 100/0)               | 3.7   | 3 ชม.
+24 | Auth guard บน landing                         | 1.3   | 1 ชม.
+
+Deliverable: แอป polish พร้อม demo / ส่งงาน
+
+--------------------------------------------------------------------------------
+Phase 3: Advanced (สัปดาห์ 8+)
+เป้าหมาย: Differentiation + security
+--------------------------------------------------------------------------------
+
+#  | Task                                          | ระบบ  | Effort
+---|-----------------------------------------------|-------|----------
+25 | ย้าย Gemini calls ไป server-side              | 8.7   | 1-2 วัน
+26 | Python Audio integration                      | 4.7   | 2-3 วัน
+27 | Per-turn micro-feedback                       | 6.5   | 2 วัน
+28 | Supabase migration (ถ้าจำเป็น)                | 9.7   | 3-5 วัน
+29 | Campaign analytics dashboard ขยาย             | 10.8  | 1-2 วัน
+
+
+================================================================================
+7. PRIORITY MATRIX
+================================================================================
+
+                    IMPACT สูง
+                        |
+    +-------------------+-------------------+
+    |  P0 ทำทันที        |  P1 ทำ Phase 1      |
+    |                   |                   |
+    |  • state_delta 🐛 |  • Content 3 ด่าน  |
+    |  • auto debrief   |  • XP/Streak write  |
+    |  • phase labels   |  • dynamic decisions|
+    |  • end_session    |  • scenario delete  |
+    |    score          |  • portrait images  |
+    |                   |                   |
+ E  +-------------------+-------------------+  E
+ F  |  P3 ไม่ต้องทำ      |  P2 ทำ Phase 2      |  F
+ F  |                   |                   |
+ O  |  • Supabase       |  • Campaign map     |  O
+ R  |  • Python Audio   |    redesign         |  R
+ T  |  • Server Gemini  |  • Reigns swipe     |  R
+    |                   |  • Mobile UX        |  T
+    |                   |  • turn_limit       |
+    +-------------------+-------------------+
+                        |
+                    IMPACT ต่ำ
+
+
+================================================================================
+8. SOLO WEEKLY SCHEDULE
+================================================================================
+
+สัปดาห์ | โฟกัส              | ของที่ต้องได้
+--------|--------------------|------------------------------------------
+W1      | Bug fixes          | trust/anger ทำงาน + auto debrief
+W2      | Content            | Campaign ด่าน 1 เล่นจบได้
+W3      | Content            | Campaign ด่าน 2-3 + Freeplay 1
+W4      | Progression        | XP + streak + dynamic decisions
+W5      | Content            | Kids scenario + Freeplay 2-3
+W6      | Polish             | Portrait + mobile + delete
+W7      | Polish             | Campaign map redesign
+W8      | Test               | Playtest 10 รอบ + fix balance
+
+
+================================================================================
+9. 3 สิ่งที่ BLOCK ทุกอย่าง (ทำวันนี้)
+================================================================================
+
+1. [X] state_delta ไม่ apply
+   → trust/anger/mood/avatar ไม่ทำงาน → เกมรู้สึก "dead"
+   → Fix: _cloudFlareWorker.js handleProcessChatResult
+
+2. [ ] ไม่มี content จริง
+   → ระบบครบแต่ไม่มี scenario ที่ balance → เล่นแล้วไม่ fun
+   → Fix: เขียน campaign 3 ด่าน + freeplay 3 + kids 1
+
+3. [ ] XP/Streak ไม่ write
+   → profile ว่าง → ไม่มี motivation กลับมาเล่น
+   → Fix: upsert skill_progress หลัง evaluation + update streak on login
+
+
+================================================================================
+10. KEY FILE INDEX
+================================================================================
+
+Landing          src/app/page.tsx, src/components/landing/
+Auth             src/app/login/page.tsx, src/components/AuthProvider.tsx
+Hub              src/app/scenarios/page.tsx
+Negotiate        src/app/negotiate/page.tsx
+Debrief          src/app/debrief/page.tsx
+Profile          src/app/profile/page.tsx
+Admin            src/app/admin/
+Backend          _cloudFlareWorker.js
+Client API       src/lib/gas.ts, src/lib/gemini.ts
+Audio (orphan)   PythonAudioSystem/
+DB schema (unused) supabase_schema.sql
+Campaign redesign plan  campaign_redesign_plan.md.resolved
+
+
+================================================================================
+11. สิ่งที่ตัดออกจาก MVP (อย่าทำตอนนี้)
+================================================================================
+
+- Migrate GAS → Supabase
+- Cloudflare Worker แยก (ถ้า GAS + Gemini ทำงานได้อยู่แล้ว)
+- Campaign analytics ละเอียด (หลังมี user จริง)
+- Voice analysis ซับซ้อน (text ก่อน voice polish ทีหลัง)
+- Freeplay หลายสิบ scenario (3-5 อันพอ)
+- Profile / streak / badge เต็ม (Phase 3)
+- Reigns Swipe (ตัดสินใจ wire หรือลบ ใน Phase 2)
+
+
+================================================================================
+12. BACKEND ARCHITECTURE (ปัจจุบัน)
+================================================================================
+
+Frontend (Next.js static)
+    ↓
+gas.ts (gasFetch / gasPost)
+    ↓
+Cloudflare Worker (_cloudFlareWorker.js)
+    ↓
+Google Sheets (7 tables)
+    ├── users
+    ├── scenarios
+    ├── sessions
+    ├── messages
+    ├── feedback_logs
+    ├── skill_progress
+    └── real_world_journals
+
+AI Path (Negotiation):
+  get_chat_context (worker) → Gemini (browser) → process_chat_result (worker)
+
+AI Path (Evaluation):
+  generate_evaluation (worker) → save_evaluation (worker)
+
+Voice Path (ปัจจุบัน):
+  VoiceRecorder → Gemini multimodal (browser)
+
+Voice Path (ยังไม่เชื่อม):
+  PythonAudioSystem (Whisper + librosa) on :8000/analyze
+
+
+================================================================================
+END OF PLANNING DOCUMENT
+================================================================================
