@@ -579,6 +579,63 @@ function HomeworkGanttChart({
   );
 }
 
+function GanttTooltip({
+  text,
+  prefix,
+  meta,
+  onlyIfTruncated,
+  className,
+  style,
+  onClick,
+  children,
+}: {
+  text: string;
+  prefix?: string;
+  meta?: string;
+  onlyIfTruncated?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const [tip, setTip] = useState<{ x: number; y: number } | null>(null);
+
+  const showTip = () => {
+    if (onlyIfTruncated) {
+      const el = anchorRef.current;
+      if (!el) return;
+      const truncated = el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight;
+      if (!truncated) return;
+    }
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setTip({ x: rect.left, y: rect.bottom + 6 });
+  };
+
+  return (
+    <div
+      ref={anchorRef}
+      className={className}
+      style={style}
+      onMouseEnter={showTip}
+      onMouseLeave={() => setTip(null)}
+      onClick={onClick}
+    >
+      {children}
+      {tip && (
+        <div className="fixed z-[9999] max-w-xs sm:max-w-sm pointer-events-none" style={{ left: tip.x, top: tip.y }}>
+          <div className="bg-gray-900 text-white text-xs font-bold px-3 py-2.5 rounded-xl border-4 border-gray-900 shadow-[0_6px_0_#2b221a] leading-snug whitespace-normal">
+            {prefix && <span className="font-black text-nintendo-yellow">{prefix} · </span>}
+            {text}
+            {meta && <span className="block text-[10px] font-bold text-gray-300 mt-1">{meta}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GanttTaskRow({
   task,
   timelineStart,
@@ -621,7 +678,7 @@ function GanttTaskRow({
               <Circle size={16} className="text-gray-400" />
             )}
           </button>
-          <button type="button" onClick={onToggle} className="flex-1 min-w-0 text-left">
+          <div role="button" tabIndex={0} onClick={onToggle} onKeyDown={(e) => e.key === 'Enter' && onToggle()} className="flex-1 min-w-0 text-left cursor-pointer">
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-black bg-gray-100 text-gray-800 px-1 py-0.5 rounded border border-gray-900 shrink-0">
                 {task.code}
@@ -632,8 +689,15 @@ function GanttTaskRow({
                 </span>
               )}
             </div>
-            <p className="text-[11px] font-bold text-gray-900 truncate leading-tight mt-0.5">{task.title}</p>
-          </button>
+            <GanttTooltip
+              text={task.title}
+              prefix={task.code}
+              onlyIfTruncated
+              className="min-w-0 text-[11px] font-bold text-gray-900 truncate leading-tight mt-0.5"
+            >
+              {task.title}
+            </GanttTooltip>
+          </div>
         </div>
 
         {/* Bar track */}
@@ -643,18 +707,23 @@ function GanttTaskRow({
               <div key={i} className="shrink-0 border-r border-gray-100 h-full" style={{ width: DAY_WIDTH }} />
             ))}
           </div>
-          <div
+          <GanttTooltip
+            text={task.title}
+            prefix={task.code}
+            meta={`${span.start.slice(5)} → ${span.end.slice(5)} · ${STATUS_LABELS[task.status]}`}
             className={`absolute top-1/2 -translate-y-1/2 h-6 rounded-lg border-2 shadow-[0_2px_0_rgba(0,0,0,0.15)] flex items-center px-1.5 overflow-hidden cursor-pointer transition-all hover:brightness-105 ${
               STATUS_BAR_COLORS[task.status]
             } ${overdue ? 'ring-2 ring-nintendo-red ring-offset-1' : ''}`}
             style={{ left: barLeft, width: Math.max(barWidth, 20) }}
             onClick={onToggle}
-            title={`${task.title} · ${span.start.slice(5)} → ${span.end.slice(5)}`}
           >
-            <span className={`text-[9px] font-black truncate drop-shadow-sm ${task.status === 'done' ? 'text-white' : 'text-gray-900'}`}>
+            <span
+              className={`text-[9px] font-black truncate drop-shadow-sm ${task.status === 'done' ? 'text-white' : 'text-gray-900'}`}
+              style={{ width: Math.max(barWidth, 20) - 12 }}
+            >
               {task.status === 'done' ? '✓' : STATUS_LABELS[task.status]}
             </span>
-          </div>
+          </GanttTooltip>
         </div>
       </div>
 
