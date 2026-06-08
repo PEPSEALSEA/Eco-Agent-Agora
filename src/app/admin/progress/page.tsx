@@ -51,7 +51,51 @@ import {
 
 const ADMIN_EMAILS = ['sealseapep@gmail.com', 'sealseapep2@gmail.com'];
 
-type ViewMode = 'board' | 'timeline' | 'phases' | 'domains' | 'all';
+type ViewMode = 'gantt' | 'board' | 'timeline' | 'phases' | 'domains' | 'all';
+
+const DAY_WIDTH = 34;
+const LABEL_WIDTH = 240;
+const ROW_HEIGHT = 40;
+
+const STATUS_BAR_COLORS: Record<TaskStatus, string> = {
+  todo: 'bg-slate-300 border-slate-500',
+  in_progress: 'bg-nintendo-yellow border-gray-900',
+  done: 'bg-nintendo-green border-gray-900',
+  partial: 'bg-sky-400 border-sky-700',
+  skipped: 'bg-gray-200 border-gray-300 opacity-40',
+};
+
+const THAI_DOW = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function daysBetween(start: string, end: string): number {
+  const a = new Date(start + 'T12:00:00');
+  const b = new Date(end + 'T12:00:00');
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
+function enumerateDays(start: string, end: string): string[] {
+  const days: string[] = [];
+  let d = start;
+  while (d <= end) {
+    days.push(d);
+    d = addDays(d, 1);
+  }
+  return days;
+}
+
+function getTaskSpan(task: DevTask): { start: string; end: string } | null {
+  const week = task.weekId ? seed.weeks.find((w) => w.id === task.weekId) : null;
+  if (task.deadline && week) return { start: week.start, end: task.deadline };
+  if (task.deadline) return { start: addDays(task.deadline, -1), end: task.deadline };
+  if (week) return { start: week.start, end: week.end };
+  return null;
+}
 
 const BOARD_COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'partial', 'done'];
 
@@ -61,7 +105,7 @@ export default function AdminProgressPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [ready, setReady] = useState(false);
   const [tasks, setTasks] = useState<DevTask[]>([]);
-  const [view, setView] = useState<ViewMode>('board');
+  const [view, setView] = useState<ViewMode>('gantt');
   const [filterActionable, setFilterActionable] = useState(true);
   const [filterWeek, setFilterWeek] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
@@ -136,7 +180,7 @@ export default function AdminProgressPage() {
   }
 
   return (
-    <div className="min-h-screen cartoon-bg-blue p-4 sm:p-8 relative overflow-x-hidden">
+    <div className="min-h-screen cartoon-bg-blue text-gray-900 p-4 sm:p-8 relative overflow-x-hidden">
       <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
 
       <div className="max-w-7xl mx-auto relative z-10 space-y-8">
@@ -253,44 +297,19 @@ export default function AdminProgressPage() {
           </div>
         </section>
 
-        {/* Week Timeline */}
-        <section className="bg-white border-[5px] border-gray-900 rounded-[2rem] p-6 shadow-[0_10px_0_#2b221a] overflow-x-auto">
-          <h2 className="text-lg font-black uppercase tracking-tighter mb-4 flex items-center gap-2">
-            <Calendar size={20} />
-            Timeline รายสัปดาห์
-          </h2>
-          <div className="flex gap-3 min-w-max pb-2">
-            {seed.weeks.map((week) => {
-              const weekTasks = tasks.filter((t) => t.weekId === week.id && t.actionable);
-              const done = weekTasks.filter((t) => t.status === 'done').length;
-              const pct = weekTasks.length ? Math.round((done / weekTasks.length) * 100) : 0;
-              const isCurrent = todayStr >= week.start && todayStr <= week.end;
-              return (
-                <button
-                  key={week.id}
-                  type="button"
-                  onClick={() => setFilterWeek(filterWeek === week.id ? 'all' : week.id)}
-                  className={`w-44 shrink-0 text-left border-4 border-gray-900 rounded-2xl p-4 transition-all shadow-[0_6px_0_#2b221a] hover:translate-y-0.5 ${
-                    isCurrent ? 'bg-nintendo-yellow' : 'bg-gray-50'
-                  } ${filterWeek === week.id ? 'ring-4 ring-nintendo-blue' : ''}`}
-                >
-                  <p className="text-[10px] font-black uppercase text-gray-500">{week.id.toUpperCase()}</p>
-                  <p className="font-black text-sm uppercase tracking-tighter leading-tight mt-1">{week.label.split('—')[1]?.trim() || week.label}</p>
-                  <p className="text-xs font-bold text-gray-500 mt-2">{week.start.slice(5)} – {week.end.slice(5)}</p>
-                  <div className="mt-3 h-2 bg-gray-200 border-2 border-gray-900 rounded-full overflow-hidden">
-                    <div className="h-full bg-nintendo-green transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="text-[10px] font-black mt-1">{done}/{weekTasks.length} งาน · {pct}%</p>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        {/* Homework Gantt — รายการงานแนวตั้ง + แถบวัน */}
+        <HomeworkGanttChart
+          tasks={filtered}
+          todayStr={todayStr}
+          expandedTask={expandedTask}
+          setExpandedTask={setExpandedTask}
+          onPatch={patchTask}
+        />
 
         {/* Filters + View toggle */}
         <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
           <div className="flex flex-wrap gap-2">
-            {(['board', 'timeline', 'phases', 'domains', 'all'] as ViewMode[]).map((v) => (
+            {(['gantt', 'board', 'timeline', 'phases', 'domains', 'all'] as ViewMode[]).map((v) => (
               <button
                 key={v}
                 type="button"
@@ -299,6 +318,7 @@ export default function AdminProgressPage() {
                   view === v ? 'bg-nintendo-blue text-white' : 'bg-white text-gray-900 hover:translate-y-0.5'
                 }`}
               >
+                {v === 'gantt' && 'แผนงาน'}
                 {v === 'board' && 'Kanban'}
                 {v === 'timeline' && 'Deadline'}
                 {v === 'phases' && 'Phase'}
@@ -309,14 +329,14 @@ export default function AdminProgressPage() {
           </div>
           <div className="flex flex-wrap gap-2 items-center">
             <Filter size={16} className="text-gray-400" />
-            <label className="flex items-center gap-2 text-xs font-black uppercase cursor-pointer">
+            <label className="flex items-center gap-2 text-xs font-black uppercase cursor-pointer text-gray-900">
               <input type="checkbox" checked={filterActionable} onChange={(e) => setFilterActionable(e.target.checked)} className="w-4 h-4" />
               เฉพาะงานที่ต้องทำ
             </label>
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="border-4 border-gray-900 rounded-xl px-3 py-1.5 font-black text-xs uppercase bg-white"
+              className="border-4 border-gray-900 rounded-xl px-3 py-1.5 font-black text-xs uppercase bg-white text-gray-900"
             >
               <option value="all">ทุก Priority</option>
               <option value="P0">P0</option>
@@ -412,6 +432,269 @@ export default function AdminProgressPage() {
   );
 }
 
+function HomeworkGanttChart({
+  tasks,
+  todayStr,
+  expandedTask,
+  setExpandedTask,
+  onPatch,
+}: {
+  tasks: DevTask[];
+  todayStr: string;
+  expandedTask: string | null;
+  setExpandedTask: (id: string | null) => void;
+  onPatch: (id: string, patch: Parameters<typeof updateTaskOverride>[1]) => void;
+}) {
+  const timelineStart = seed.weeks[0]?.start ?? todayStr;
+  const timelineEnd = seed.weeks[seed.weeks.length - 1]?.end ?? todayStr;
+  const days = useMemo(() => enumerateDays(timelineStart, timelineEnd), [timelineStart, timelineEnd]);
+  const gridWidth = days.length * DAY_WIDTH;
+
+  const sortedTasks = useMemo(
+    () =>
+      [...tasks]
+        .filter((t) => getTaskSpan(t))
+        .sort((a, b) => {
+          const sa = getTaskSpan(a)!;
+          const sb = getTaskSpan(b)!;
+          const cmp = sa.start.localeCompare(sb.start);
+          return cmp !== 0 ? cmp : sa.end.localeCompare(sb.end);
+        }),
+    [tasks]
+  );
+
+  const weekSpans = useMemo(() => {
+    return seed.weeks.map((week) => {
+      const startIdx = Math.max(0, daysBetween(timelineStart, week.start));
+      const endIdx = Math.min(days.length - 1, daysBetween(timelineStart, week.end));
+      return { week, startIdx, colSpan: endIdx - startIdx + 1, left: startIdx * DAY_WIDTH };
+    });
+  }, [days, timelineStart]);
+
+  return (
+    <section className="bg-white border-[5px] border-gray-900 rounded-[2rem] shadow-[0_10px_0_#2b221a] overflow-hidden text-gray-900">
+      <div className="px-5 pt-5 pb-2 flex flex-wrap items-center justify-between gap-3 border-b-4 border-dashed border-gray-200">
+          <h2 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-gray-900">
+            <LayoutGrid size={20} className="text-nintendo-blue" />
+            แผนงานรายวัน
+          </h2>
+          <div className="flex flex-wrap gap-3 text-[10px] font-black uppercase">
+            {Object.entries(STATUS_LABELS).slice(0, 4).map(([k, label]) => (
+              <span key={k} className="flex items-center gap-1.5 text-gray-700">
+                <span className={`w-3 h-3 rounded-sm border-2 border-gray-900 ${STATUS_BAR_COLORS[k as TaskStatus].split(' ')[0]}`} />
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+      <div className="overflow-x-auto">
+        <div style={{ minWidth: LABEL_WIDTH + gridWidth }}>
+          {/* Week header row */}
+          <div className="flex border-b-2 border-gray-900 bg-gray-50 sticky top-0 z-20">
+            <div
+              className="shrink-0 border-r-4 border-gray-900 bg-gray-100 px-3 py-2 flex items-end"
+              style={{ width: LABEL_WIDTH }}
+            >
+              <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">งาน</span>
+            </div>
+            <div className="relative" style={{ width: gridWidth, height: 36 }}>
+              {weekSpans.map(({ week, left, colSpan }) => (
+                <button
+                  key={week.id}
+                  type="button"
+                  className="absolute top-0 h-full border-r-2 border-gray-300 px-1 flex items-center justify-center hover:bg-nintendo-yellow/30 transition-colors"
+                  style={{ left, width: colSpan * DAY_WIDTH }}
+                  title={week.label}
+                >
+                  <span className="text-[10px] font-black uppercase text-gray-700 truncate px-1">
+                    {week.id.toUpperCase()} · {week.label.split('—')[1]?.trim() || week.focus}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Day header row */}
+          <div className="flex border-b-4 border-gray-900 bg-white sticky top-9 z-20">
+            <div
+              className="shrink-0 border-r-4 border-gray-900 bg-gray-50 px-3 py-1.5 flex items-center"
+              style={{ width: LABEL_WIDTH }}
+            >
+              <span className="text-[10px] font-black uppercase text-gray-500">ชื่องาน</span>
+            </div>
+            <div className="flex">
+              {days.map((day) => {
+                const isToday = day === todayStr;
+                const dow = new Date(day + 'T12:00:00').getDay();
+                const isWeekend = dow === 0 || dow === 6;
+                return (
+                  <div
+                    key={day}
+                    className={`shrink-0 border-r border-gray-200 flex flex-col items-center justify-center py-1 ${
+                      isToday ? 'bg-nintendo-yellow/40 ring-2 ring-inset ring-nintendo-blue' : isWeekend ? 'bg-gray-100' : 'bg-white'
+                    }`}
+                    style={{ width: DAY_WIDTH }}
+                  >
+                    <span className={`text-[9px] font-bold leading-none ${isToday ? 'text-nintendo-blue' : 'text-gray-400'}`}>
+                      {THAI_DOW[dow]}
+                    </span>
+                    <span className={`text-[11px] font-black leading-tight ${isToday ? 'text-gray-900' : 'text-gray-700'}`}>
+                      {parseInt(day.slice(8), 10)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Task rows */}
+          <div className="relative">
+            {/* Today vertical line */}
+            {days.includes(todayStr) && (
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-nintendo-red/60 z-10 pointer-events-none"
+                style={{ left: LABEL_WIDTH + daysBetween(timelineStart, todayStr) * DAY_WIDTH + DAY_WIDTH / 2 }}
+              />
+            )}
+
+            {sortedTasks.length === 0 ? (
+              <div className="px-6 py-10 text-center text-sm font-bold text-gray-500">ไม่มีงานที่แสดงในแผน</div>
+            ) : (
+              sortedTasks.map((task) => (
+                <GanttTaskRow
+                  key={task.id}
+                  task={task}
+                  timelineStart={timelineStart}
+                  expanded={expandedTask === task.id}
+                  onToggle={() => setExpandedTask(expandedTask === task.id ? null : task.id)}
+                  onPatch={onPatch}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function GanttTaskRow({
+  task,
+  timelineStart,
+  expanded,
+  onToggle,
+  onPatch,
+}: {
+  task: DevTask;
+  timelineStart: string;
+  expanded: boolean;
+  onToggle: () => void;
+  onPatch: (id: string, patch: Parameters<typeof updateTaskOverride>[1]) => void;
+}) {
+  const span = getTaskSpan(task)!;
+  const overdue = isOverdue(task.deadline, task.status);
+  const offsetDays = daysBetween(timelineStart, span.start);
+  const durationDays = daysBetween(span.start, span.end) + 1;
+  const barLeft = offsetDays * DAY_WIDTH + 3;
+  const barWidth = durationDays * DAY_WIDTH - 6;
+
+  return (
+    <div className={`border-b border-gray-100 ${expanded ? 'bg-sky-50/50' : 'hover:bg-gray-50/80'}`}>
+      <div className="flex items-stretch" style={{ minHeight: ROW_HEIGHT }}>
+        {/* Task label */}
+        <div
+          className="shrink-0 border-r-4 border-gray-900 px-2 py-1.5 flex items-center gap-2 bg-white"
+          style={{ width: LABEL_WIDTH }}
+        >
+          <button
+            type="button"
+            onClick={() => onPatch(task.id, { status: cycleStatus(task.status) })}
+            className="shrink-0"
+            title="เปลี่ยนสถานะ"
+          >
+            {task.status === 'done' ? (
+              <CheckCircle2 size={16} className="text-nintendo-green" />
+            ) : task.status === 'in_progress' ? (
+              <Clock size={16} className="text-amber-600" />
+            ) : (
+              <Circle size={16} className="text-gray-400" />
+            )}
+          </button>
+          <button type="button" onClick={onToggle} className="flex-1 min-w-0 text-left">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black bg-gray-100 text-gray-800 px-1 py-0.5 rounded border border-gray-900 shrink-0">
+                {task.code}
+              </span>
+              {task.priority !== '—' && (
+                <span className={`text-[9px] font-black px-1 py-0.5 rounded shrink-0 ${PRIORITY_COLORS[task.priority]}`}>
+                  {task.priority}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] font-bold text-gray-900 truncate leading-tight mt-0.5">{task.title}</p>
+          </button>
+        </div>
+
+        {/* Bar track */}
+        <div className="relative flex-1" style={{ minWidth: 0 }}>
+          <div className="absolute inset-y-0 left-0 flex pointer-events-none">
+            {Array.from({ length: Math.ceil((barLeft + barWidth) / DAY_WIDTH) + 5 }).map((_, i) => (
+              <div key={i} className="shrink-0 border-r border-gray-100 h-full" style={{ width: DAY_WIDTH }} />
+            ))}
+          </div>
+          <div
+            className={`absolute top-1/2 -translate-y-1/2 h-6 rounded-lg border-2 shadow-[0_2px_0_rgba(0,0,0,0.15)] flex items-center px-1.5 overflow-hidden cursor-pointer transition-all hover:brightness-105 ${
+              STATUS_BAR_COLORS[task.status]
+            } ${overdue ? 'ring-2 ring-nintendo-red ring-offset-1' : ''}`}
+            style={{ left: barLeft, width: Math.max(barWidth, 20) }}
+            onClick={onToggle}
+            title={`${task.title} · ${span.start.slice(5)} → ${span.end.slice(5)}`}
+          >
+            <span className={`text-[9px] font-black truncate drop-shadow-sm ${task.status === 'done' ? 'text-white' : 'text-gray-900'}`}>
+              {task.status === 'done' ? '✓' : STATUS_LABELS[task.status]}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="px-4 pb-3 ml-[240px] space-y-2 border-t border-dashed border-gray-200 pt-2">
+          <p className="text-[11px] font-bold text-gray-600">
+            {task.domain} · {task.effort} · deadline {formatDeadline(task.deadline)}
+          </p>
+          <p className="text-[10px] font-mono text-gray-500">{task.files}</p>
+          {task.notes && (
+            <p className="text-[11px] font-bold text-gray-700 flex items-start gap-1">
+              <StickyNote size={12} className="shrink-0 mt-0.5" />
+              {task.notes}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={task.status}
+              onChange={(e) => onPatch(task.id, { status: e.target.value as TaskStatus })}
+              className="border-2 border-gray-900 rounded-lg px-2 py-1 text-xs font-black text-gray-900 bg-white"
+            >
+              {Object.entries(STATUS_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={task.deadline || ''}
+              onChange={(e) => onPatch(task.id, { deadline: e.target.value || null })}
+              className="border-2 border-gray-900 rounded-lg px-2 py-1 text-xs font-bold text-gray-900 bg-white"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StatCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent: string }) {
   return (
     <div className="bg-white border-4 border-gray-900 rounded-2xl p-4 shadow-[0_6px_0_#2b221a]">
@@ -472,10 +755,10 @@ function FocusPanel({
 }) {
   const bg = tone === 'red' ? 'bg-nintendo-red/10 border-nintendo-red' : tone === 'yellow' ? 'bg-nintendo-yellow/20 border-nintendo-yellow' : 'bg-white border-gray-900';
   return (
-    <div className={`border-4 rounded-2xl p-4 shadow-[0_6px_0_#2b221a] ${bg}`}>
-      <h3 className="font-black uppercase tracking-tighter text-sm flex items-center gap-2 mb-3">{icon}{title} ({tasks.length})</h3>
+    <div className={`border-4 rounded-2xl p-4 shadow-[0_6px_0_#2b221a] text-gray-900 ${bg}`}>
+      <h3 className="font-black uppercase tracking-tighter text-sm flex items-center gap-2 mb-3 text-gray-900">{icon}{title} ({tasks.length})</h3>
       {tasks.length === 0 ? (
-        <p className="text-sm font-bold text-gray-400">{empty}</p>
+        <p className="text-sm font-bold text-gray-500">{empty}</p>
       ) : (
         <ul className="space-y-2 max-h-48 overflow-y-auto">
           {tasks.slice(0, 8).map((t) => (
@@ -484,8 +767,8 @@ function FocusPanel({
                 {t.status === 'done' ? <CheckCircle2 size={16} className="text-nintendo-green" /> : <Circle size={16} className="text-gray-400" />}
               </button>
               <div className="min-w-0">
-                <p className="text-xs font-black truncate">{t.code} · {t.title}</p>
-                <p className="text-[10px] font-bold text-gray-500">{formatDeadline(t.deadline)}</p>
+                <p className="text-xs font-black truncate text-gray-900">{t.code} · {t.title}</p>
+                <p className="text-[10px] font-bold text-gray-600">{formatDeadline(t.deadline)}</p>
               </div>
             </li>
           ))}
@@ -538,7 +821,7 @@ function TaskCard({
 }) {
   const overdue = isOverdue(task.deadline, task.status);
   return (
-    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`bg-white border-4 rounded-xl p-3 shadow-[0_4px_0_#2b221a] ${overdue ? 'border-nintendo-red' : 'border-gray-900'}`}>
+    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`bg-white border-4 rounded-xl p-3 shadow-[0_4px_0_#2b221a] text-gray-900 ${overdue ? 'border-nintendo-red' : 'border-gray-900'}`}>
       <div className="flex items-start gap-2">
         <button type="button" onClick={() => onPatch(task.id, { status: cycleStatus(task.status) })} className="shrink-0 mt-0.5" title="เปลี่ยนสถานะ">
           {task.status === 'done' ? <CheckCircle2 size={18} className="text-nintendo-green" /> : task.status === 'in_progress' ? <Clock size={18} className="text-nintendo-yellow" /> : <Circle size={18} className="text-gray-400" />}
@@ -550,7 +833,7 @@ function TaskCard({
               <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border border-gray-900 ${PRIORITY_COLORS[task.priority]}`}>{task.priority}</span>
             )}
           </div>
-          <p className="text-xs font-black leading-snug">{task.title}</p>
+          <p className="text-xs font-black leading-snug text-gray-900">{task.title}</p>
           {task.deadline && (
             <p className={`text-[10px] font-bold mt-1 ${overdue ? 'text-nintendo-red' : 'text-gray-500'}`}>
               📅 {formatDeadline(task.deadline)}
@@ -565,7 +848,7 @@ function TaskCard({
           <select
             value={task.status}
             onChange={(e) => onPatch(task.id, { status: e.target.value as TaskStatus })}
-            className="w-full border-2 border-gray-900 rounded-lg px-2 py-1 text-xs font-black"
+            className="w-full border-2 border-gray-900 rounded-lg px-2 py-1 text-xs font-black text-gray-900 bg-white"
           >
             {Object.entries(STATUS_LABELS).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
@@ -575,7 +858,7 @@ function TaskCard({
             type="date"
             value={task.deadline || ''}
             onChange={(e) => onPatch(task.id, { deadline: e.target.value || null })}
-            className="w-full border-2 border-gray-900 rounded-lg px-2 py-1 text-xs font-bold"
+            className="w-full border-2 border-gray-900 rounded-lg px-2 py-1 text-xs font-bold text-gray-900 bg-white"
           />
           <textarea
             value={task.notes}
@@ -605,7 +888,7 @@ function TaskRow({
 }) {
   const overdue = isOverdue(task.deadline, task.status);
   return (
-    <div className={`bg-white border-4 rounded-2xl overflow-hidden shadow-[0_4px_0_#2b221a] ${overdue ? 'border-nintendo-red' : 'border-gray-900'}`}>
+    <div className={`bg-white border-4 rounded-2xl overflow-hidden shadow-[0_4px_0_#2b221a] text-gray-900 ${overdue ? 'border-nintendo-red' : 'border-gray-900'}`}>
       <div className="flex items-center gap-3 p-3">
         <button type="button" onClick={() => onPatch(task.id, { status: cycleStatus(task.status) })}>
           {task.status === 'done' ? <CheckCircle2 size={20} className="text-nintendo-green" /> : <Circle size={20} className="text-gray-400" />}
@@ -613,7 +896,7 @@ function TaskRow({
         <button type="button" onClick={onToggle} className="flex-1 text-left min-w-0 flex flex-wrap items-center gap-2">
           <span className="text-xs font-black bg-gray-100 px-2 py-0.5 rounded border-2 border-gray-900">{task.code}</span>
           {!compact && <span className="text-[10px] font-bold text-gray-400">{task.domain}</span>}
-          <span className="font-black text-sm flex-1 min-w-0 truncate">{task.title}</span>
+          <span className="font-black text-sm flex-1 min-w-0 truncate text-gray-900">{task.title}</span>
           {task.priority !== '—' && <span className={`text-[10px] font-black px-2 py-0.5 rounded ${PRIORITY_COLORS[task.priority]}`}>{task.priority}</span>}
           <span className={`text-xs font-bold ${overdue ? 'text-nintendo-red' : 'text-gray-500'}`}>{formatDeadline(task.deadline)}</span>
           <span className={`text-[10px] font-black px-2 py-0.5 rounded border-2 ${STATUS_COLORS[task.status]}`}>{STATUS_LABELS[task.status]}</span>
@@ -624,10 +907,10 @@ function TaskRow({
           <p className="text-xs font-bold text-gray-500 pt-2">{task.files}</p>
           {task.notes && <p className="text-xs font-bold flex items-start gap-1"><StickyNote size={14} />{task.notes}</p>}
           <div className="flex flex-wrap gap-2">
-            <select value={task.status} onChange={(e) => onPatch(task.id, { status: e.target.value as TaskStatus })} className="border-2 border-gray-900 rounded-lg px-2 py-1 text-xs font-black">
+            <select value={task.status} onChange={(e) => onPatch(task.id, { status: e.target.value as TaskStatus })} className="border-2 border-gray-900 rounded-lg px-2 py-1 text-xs font-black text-gray-900 bg-white">
               {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
-            <input type="date" value={task.deadline || ''} onChange={(e) => onPatch(task.id, { deadline: e.target.value || null })} className="border-2 border-gray-900 rounded-lg px-2 py-1 text-xs font-bold" />
+            <input type="date" value={task.deadline || ''} onChange={(e) => onPatch(task.id, { deadline: e.target.value || null })} className="border-2 border-gray-900 rounded-lg px-2 py-1 text-xs font-bold text-gray-900 bg-white" />
           </div>
         </div>
       )}
