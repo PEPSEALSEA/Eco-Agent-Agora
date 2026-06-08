@@ -20,7 +20,7 @@ const ADMIN_LINKS = [
   {
     href: '/admin/progress',
     title: 'Dev Progress',
-    desc: 'แผนงาน solo · deadline · kanban',
+    desc: 'แผนงาน solo · วางวันละงาน · kanban',
     icon: ListTodo,
     color: 'bg-nintendo-yellow text-gray-900',
   },

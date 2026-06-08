@@ -90,11 +90,8 @@ function enumerateDays(start: string, end: string): string[] {
 }
 
 function getTaskSpan(task: DevTask): { start: string; end: string } | null {
-  const week = task.weekId ? seed.weeks.find((w) => w.id === task.weekId) : null;
-  if (task.deadline && week) return { start: week.start, end: task.deadline };
-  if (task.deadline) return { start: addDays(task.deadline, -1), end: task.deadline };
-  if (week) return { start: week.start, end: week.end };
-  return null;
+  if (!task.deadline) return null;
+  return { start: task.deadline, end: task.deadline };
 }
 
 const BOARD_COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'partial', 'done'];
@@ -255,8 +252,8 @@ export default function AdminProgressPage() {
           <StatCard label="รอทำ" value={String(stats.todo)} accent="bg-gray-200" />
           <StatCard label="กำลังทำ" value={String(stats.inProgress)} accent="bg-nintendo-yellow" />
           <StatCard label="งานที่ต้องทำ" value={String(stats.actionable)} accent="bg-nintendo-blue" />
-          <StatCard label="ครบกำหนดวันนี้" value={String(stats.dueToday)} accent="bg-nintendo-pink" />
-          <StatCard label="เลย deadline" value={String(stats.overdue)} accent="bg-nintendo-red" />
+          <StatCard label="ทำวันนี้" value={String(stats.dueToday)} accent="bg-nintendo-pink" />
+          <StatCard label="เลยวัน" value={String(stats.overdue)} accent="bg-nintendo-red" />
         </div>
 
         {/* Blockers */}
@@ -279,9 +276,9 @@ export default function AdminProgressPage() {
 
         {/* Today / Overdue / Soon */}
         <div className="grid lg:grid-cols-3 gap-4">
-          <FocusPanel title="วันนี้" icon={<Calendar size={18} />} tasks={todayTasks} empty="ไม่มีงานครบกำหนดวันนี้" onPatch={patchTask} />
-          <FocusPanel title="เลย deadline" icon={<AlertTriangle size={18} />} tasks={overdueTasks} empty="ไม่มีงานค้างเลย!" tone="red" onPatch={patchTask} />
-          <FocusPanel title="ใกล้ครบ (3 วัน)" icon={<Clock size={18} />} tasks={soonTasks} empty="ไม่มีงานใกล้ครบ" tone="yellow" onPatch={patchTask} />
+          <FocusPanel title="วันนี้" icon={<Calendar size={18} />} tasks={todayTasks} empty="ยังไม่ได้วางงานวันนี้" onPatch={patchTask} />
+          <FocusPanel title="เลยวัน" icon={<AlertTriangle size={18} />} tasks={overdueTasks} empty="ไม่มีงานค้างเลย!" tone="red" onPatch={patchTask} />
+          <FocusPanel title="3 วันถัดไป" icon={<Clock size={18} />} tasks={soonTasks} empty="ไม่มีงานในช่วงนี้" tone="yellow" onPatch={patchTask} />
         </div>
 
         {/* Phase Timeline Diagram */}
@@ -710,7 +707,7 @@ function GanttTaskRow({
           <GanttTooltip
             text={task.title}
             prefix={task.code}
-            meta={`${span.start.slice(5)} → ${span.end.slice(5)} · ${STATUS_LABELS[task.status]}`}
+            meta={`${span.start.slice(5)} · ${STATUS_LABELS[task.status]}`}
             className={`absolute top-1/2 -translate-y-1/2 h-6 rounded-lg border-2 shadow-[0_2px_0_rgba(0,0,0,0.15)] flex items-center px-1.5 overflow-hidden cursor-pointer transition-all hover:brightness-105 ${
               STATUS_BAR_COLORS[task.status]
             } ${overdue ? 'ring-2 ring-nintendo-red ring-offset-1' : ''}`}
@@ -730,7 +727,7 @@ function GanttTaskRow({
       {expanded && (
         <div className="px-4 pb-3 ml-[240px] space-y-2 border-t border-dashed border-gray-200 pt-2">
           <p className="text-[11px] font-bold text-gray-600">
-            {task.domain} · {task.effort} · deadline {formatDeadline(task.deadline)}
+            {task.domain} · {task.effort} · วันที่ทำ {formatDeadline(task.deadline)}
           </p>
           <p className="text-[10px] font-mono text-gray-500">{task.files}</p>
           {task.notes && (
