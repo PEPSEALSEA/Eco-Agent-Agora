@@ -1,11 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { parseGeminiJson, repairGeminiJsonText } from "@/lib/parseGeminiJson";
 
 export const getGeminiResponse = async (
   systemInstruction: string,
   history: { role: string; parts: { text: string }[] }[],
   onStream?: (text: string) => void,
   apiKey?: string
-) => {
+): Promise<any> => {
   try {
     const contextKey = (apiKey && apiKey !== "undefined" && apiKey !== "null") ? apiKey : null;
     const envKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -43,46 +44,10 @@ export const getGeminiResponse = async (
       }
     }
 
-    // --- ROBUST JSON REPAIR LOGIC ---
-    let cleanText = fullText.trim();
-    
-    // 1. Remove Markdown code blocks
-    cleanText = cleanText.replace(/^```(json)?|```$/gm, '').trim();
-    
-    // 2. Isolate the JSON object (find first { and last })
-    const firstBrace = cleanText.indexOf('{');
-    const lastBrace = cleanText.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      cleanText = cleanText.substring(firstBrace, lastBrace + 1);
-    }
-
-    // 3. Fix specific AI hallucinations/errors
-    // Fix: } ", "state_delta" -> }], "state_delta"
-    cleanText = cleanText.replace(/\}\s*",\s*"state_delta"/g, '}], "state_delta"');
-    // Fix: Trailing commas in arrays or objects
-    cleanText = cleanText.replace(/,\s*([\]\}])/g, '$1');
-    // Fix: Missing quotes around keys (basic)
-    cleanText = cleanText.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
-    
-    // 4. Emergency Bracket Closure
-    // If the JSON is cut off or missing closing brackets, try to append them
-    let openBraces = (cleanText.match(/\{/g) || []).length;
-    let closeBraces = (cleanText.match(/\}/g) || []).length;
-    let openBrackets = (cleanText.match(/\[/g) || []).length;
-    let closeBrackets = (cleanText.match(/\]/g) || []).length;
-
-    while (openBrackets > closeBrackets) {
-      cleanText += ']';
-      closeBrackets++;
-    }
-    while (openBraces > closeBraces) {
-      cleanText += '}';
-      closeBraces++;
-    }
-
     try {
-      return JSON.parse(cleanText);
+      return parseGeminiJson(fullText);
     } catch (e: any) {
+      const cleanText = repairGeminiJsonText(fullText);
       // Last resort: If still failing, try to extract just the dialogue part via regex
       console.warn("Standard JSON parse failed, attempting emergency extraction...");
       try {
