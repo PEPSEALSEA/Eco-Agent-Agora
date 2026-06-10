@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { gasFetch, gasPost } from '@/lib/gas';
 import { getGeminiResponse } from '@/lib/gemini';
@@ -39,10 +39,11 @@ function DebriefContent() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [whatIfLoading, setWhatIfLoading] = useState<string | null>(null);
-  const [whatIfResponse, setWhatIfResponse] = useState<string | null>(null);
+  const [whatIfResponses, setWhatIfResponses] = useState<Record<string, string>>({});
   const [showLog, setShowLog] = useState(false);
   const [aiEvaluation, setAiEvaluation] = useState<any>(null);
   const [isReanalyzing, setIsReanalyzing] = useState(false);
+  const autoEvalTriggered = useRef(false);
 
   useEffect(() => {
     if (!sessionId) {
@@ -88,15 +89,14 @@ function DebriefContent() {
 
   const handleWhatIf = async (messageId: string, originalContent: string) => {
     setWhatIfLoading(messageId);
-    setWhatIfResponse(null);
     
     try {
-      // Use backend to generate what-if analysis (bypasses frontend proxy/API key issues)
       const result = await gasPost('generate_what_if', 'sessions', { originalContent });
       
       if (result.error) throw new Error(result.error);
       
-      setWhatIfResponse(result.feedback?.text || result.text || JSON.stringify(result));
+      const text = result.feedback?.text || result.text || JSON.stringify(result);
+      setWhatIfResponses(prev => ({ ...prev, [messageId]: text }));
     } catch (err) {
       console.error(err);
     } finally {
@@ -127,13 +127,12 @@ function DebriefContent() {
     return skills?.[key] ?? skills?.[legacyMap[key]] ?? 'N/A';
   };
 
-  const handleReanalyze = async () => {
+  const handleReanalyze = useCallback(async (silent = false) => {
+    if (!sessionId || messages.length === 0) return;
     setIsReanalyzing(true);
-    setAiEvaluation(null);
+    if (!silent) setAiEvaluation(null);
     try {
       const transcript = messages.map(buildTranscriptLine).join('\n');
-      
-      // Use backend to generate evaluation (bypasses frontend proxy/API key issues)
       const result = await gasPost('generate_evaluation', 'sessions', { transcript });
       
       if (result.error) throw new Error(result.error);
@@ -141,11 +140,9 @@ function DebriefContent() {
       setAiEvaluation(result);
       
       if (result.line_analysis && Array.isArray(result.line_analysis)) {
-        // Replace current local feedback with the new line-by-line analysis
         setFeedback(result.line_analysis);
       }
       
-      // Save everything to backend seamlessly
       gasPost('save_evaluation', 'sessions', {
         sessionId,
         evaluation: {
@@ -161,11 +158,19 @@ function DebriefContent() {
       }).catch(err => console.error('Failed to save evaluation to backend', err));
     } catch (err) {
       console.error(err);
-      alert('เกิดข้อผิดพลาดในการประเมินผล: ' + err);
+      if (!silent) alert('เกิดข้อผิดพลาดในการประเมินผล: ' + err);
     } finally {
       setIsReanalyzing(false);
     }
-  };
+  }, [sessionId, messages]);
+
+  useEffect(() => {
+    if (loading || !session || autoEvalTriggered.current) return;
+    if (session.ai_evaluation) return;
+    if (messages.length === 0) return;
+    autoEvalTriggered.current = true;
+    handleReanalyze(true);
+  }, [loading, session, messages, handleReanalyze]);
 
   if (loading) {
     return (
@@ -276,7 +281,7 @@ function DebriefContent() {
                    บทวิเคราะห์ภาพรวมจาก AI โค้ช
                  </h2>
                  <button 
-                   onClick={handleReanalyze}
+                   onClick={() => handleReanalyze(false)}
                    disabled={isReanalyzing || messages.length === 0}
                    className="flex items-center bg-nintendo-blue text-white px-4 py-2 rounded-xl border-4 border-gray-900 font-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                  >
@@ -378,7 +383,7 @@ function DebriefContent() {
               ) : (
                  <div className="py-8 text-center">
                     <p className="text-gray-500 font-bold mb-4">ยังไม่มีบทวิเคราะห์ภาพรวม หรือไม่พบข้อมูลการประเมินรายข้อ</p>
-                    <button onClick={handleReanalyze} className="bg-nintendo-yellow text-gray-900 px-6 py-3 rounded-xl border-4 border-gray-900 font-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none transition-all">
+                    <button onClick={() => handleReanalyze(false)} className="bg-nintendo-yellow text-gray-900 px-6 py-3 rounded-xl border-4 border-gray-900 font-black shadow-[0_4px_0_rgba(0,0,0,1)] hover:translate-y-1 active:shadow-none transition-all">
                       สร้างบทวิเคราะห์เลย
                     </button>
                  </div>
@@ -485,13 +490,13 @@ function DebriefContent() {
                         </div>
                       )}
                       
-                      {whatIfResponse && whatIfLoading === null && (
+                      {whatIfResponses[m.id] && whatIfLoading !== m.id && (
                         <div className="mt-6 p-6 bg-nintendo-yellow border-4 border-gray-900 rounded-2xl shadow-[0_6px_0_rgba(0,0,0,0.1)] slide-in-bottom">
                            <div className="flex items-center mb-3">
                              <Zap size={18} className="mr-2 text-gray-900" />
                              <p className="text-xs font-black text-gray-900 uppercase tracking-widest">บทวิเคราะห์แบบ What-If</p>
                            </div>
-                           <div className="text-gray-800 font-bold leading-relaxed" dangerouslySetInnerHTML={formatMarkdown(whatIfResponse)} />
+                           <div className="text-gray-800 font-bold leading-relaxed" dangerouslySetInnerHTML={formatMarkdown(whatIfResponses[m.id])} />
                         </div>
                       )}
                     </div>

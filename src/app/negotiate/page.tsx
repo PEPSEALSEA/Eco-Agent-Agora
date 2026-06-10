@@ -42,6 +42,34 @@ type Message = {
   voice_comment?: string;
 };
 
+const LEGACY_PHASE_LABELS: Record<string, string> = {
+  opening: 'เปิดบทสนทนา',
+  rapport: 'สานสัมพันธ์',
+  conflict: 'รับมือประเด็นร้อน',
+  listening: 'รับฟัง',
+  negotiation: 'แลกเปลี่ยนข้อเสนอ',
+  bargaining: 'ต่อรอง',
+  resolution: 'สรุปข้อตกลง',
+  agreement: 'สรุปข้อตกลง',
+  discovery: 'สำรวจความต้องการ',
+  closing: 'สรุปข้อตกลง',
+};
+
+function resolvePhaseLabel(scenario: any, phaseId: string): string {
+  const phases = scenario?.phase_rules?.phases;
+  if (!phaseId) return '—';
+  if (!Array.isArray(phases)) return LEGACY_PHASE_LABELS[phaseId] || phaseId;
+
+  const match = phases.find((p: string | { id?: string; name?: string }) => {
+    const id = typeof p === 'string' ? p : (p.id || p.name);
+    return String(id) === String(phaseId);
+  });
+
+  if (!match) return LEGACY_PHASE_LABELS[phaseId] || phaseId;
+  if (typeof match === 'string') return LEGACY_PHASE_LABELS[match] || match;
+  return match.name || match.id || phaseId;
+}
+
 function NegotiateContent(): React.ReactElement {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId');
@@ -122,6 +150,30 @@ function NegotiateContent(): React.ReactElement {
         setSession(sessionData);
         setScenario(scenarioData);
         setCharacters(scenarioData.characters.map((c: any) => ({ ...c, mood: 'neutral' })));
+
+        let loadedState: any = null;
+        try {
+          loadedState = typeof sessionData.state === 'string'
+            ? JSON.parse(sessionData.state || '{}')
+            : (sessionData.state || {});
+        } catch {
+          loadedState = {};
+        }
+        if (loadedState?.current_phase) setPhase(loadedState.current_phase);
+        if (loadedState) {
+          setRuntimeState(loadedState);
+          setCharacters(scenarioData.characters.map((c: any) => {
+            const rel = loadedState.relationships?.[c.id] || loadedState.relationships?.[c.name];
+            if (rel) {
+              return {
+                ...c,
+                mood: rel.anger > 7 ? 'resistant' : rel.trust > 7 ? 'open' : 'neutral',
+                stats: { trust: rel.trust, anger: rel.anger }
+              };
+            }
+            return { ...c, mood: 'neutral' };
+          }));
+        }
 
         // Sort messages by time
         const sortedMessages = (messagesData || [])
@@ -706,19 +758,11 @@ function NegotiateContent(): React.ReactElement {
             </h1>
             {kidGameplayActive ? (
               <span className="inline-flex mt-2 items-center gap-1.5 bg-white border-2 border-gray-900 text-gray-900 text-xs font-black uppercase tracking-wide px-3 py-1 rounded-full shadow-[0_3px_0_#2b221a]">
-                เฟส: {
-                  phase === 'rapport' ? 'สานสัมพันธ์' :
-                  phase === 'discovery' ? 'สำรวจความต้องการ' :
-                  phase === 'bargaining' ? 'ต่อรอง' : 'สรุปข้อตกลง'
-                }
+                เฟส: {resolvePhaseLabel(scenario, phase)}
               </span>
             ) : (
               <p className="text-sm mt-1 text-gray-300 drop-shadow-md">
-                เฟสปัจจุบัน: {
-                  phase === 'rapport' ? 'สานสัมพันธ์' :
-                  phase === 'discovery' ? 'สำรวจความต้องการ' :
-                  phase === 'bargaining' ? 'ต่อรอง' : 'สรุปข้อตกลง'
-                }
+                เฟสปัจจุบัน: {resolvePhaseLabel(scenario, phase)}
               </p>
             )}
           </div>

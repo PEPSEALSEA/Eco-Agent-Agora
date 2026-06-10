@@ -17,6 +17,7 @@ import { CartoonLoading } from '@/components/CartoonLoading';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LandingIntroOverlay } from '@/components/landing/LandingIntroOverlay';
 import { clearFromLanding, shouldPlayLandingIntro } from '@/lib/landingIntro';
+import campaignStage1 from '@/data/scenarios/campaign-stage-1.json';
 
 type Scenario = {
   id: string;
@@ -196,20 +197,7 @@ export default function ScenariosPage() {
     const sampleScenarios = [
       {
         id: uuid(),
-        title: "เส้นตายโครงการ",
-        description: "สมาชิกในทีมทำงานล่าช้ากว่ากำหนด จนอาจกระทบทั้งโครงการ คุณต้องเจรจาเพื่อหาทางออกโดยยังรักษาขวัญกำลังใจของทีมไว้",
-        target_group: "professional",
-        characters: [
-          { id: "char_alex", name: "อเล็กซ์ (นักพัฒนา)", role: "นักพัฒนาอาวุโสที่รับงานหนักเกินไป", agenda: "ต้องการเวลาเพิ่มหรือลดภาระงาน", personality: "ระมัดระวังแต่มีความสามารถ" },
-          { id: "char_sara", name: "ซาร่า (ผู้จัดการผลิตภัณฑ์)", role: "ผู้จัดการที่กำลังเครียด", agenda: "ต้องการให้โครงการเสร็จตรงเวลา", personality: "ตรงไปตรงมาและเน้นผลลัพธ์" }
-        ],
-        phase_rules: {
-          phases: ["opening", "conflict", "negotiation", "resolution"],
-          win_condition: "ทั้งสองฝ่ายตกลงร่วมกันได้",
-          fail_condition: "turn > 20"
-        },
-        mode: 'campaign',
-        difficulty: 1
+        ...campaignStage1,
       },
       {
         id: uuid(),

@@ -618,6 +618,12 @@ async function handleProcessChatResult(env, data, token) {
     state.turn_total = (state.turn_total || 0) + 1;
   }
 
+  if (aiResponse.state_delta) {
+    Object.keys(aiResponse.state_delta).forEach(path => {
+      applyPath(state, path, aiResponse.state_delta[path]);
+    });
+  }
+
   if (aiResponse.phase_event === 'advance_to_next_phase') {
     const phases = normalizePhaseRules(scenario.phase_rules).phases;
     const currentIndex = findPhaseIndex(phases, state.current_phase);
@@ -653,13 +659,46 @@ async function handleProcessChatResult(env, data, token) {
   return { success: true, state, game_over: gameOver, outcome, narrator: aiResponse.narrator };
 }
 
+function computeOutcomeScoreFromState(state) {
+  if (!state || typeof state !== 'object') return 50;
+  if (typeof state.score === 'number' && state.score > 0) {
+    return Math.min(100, Math.max(0, Math.round(state.score)));
+  }
+  const rels = Object.values(state.relationships || {});
+  if (rels.length === 0) return 50;
+  const avgTrust = rels.reduce((s, r) => s + (Number(r.trust) || 5), 0) / rels.length;
+  const avgAnger = rels.reduce((s, r) => s + (Number(r.anger) || 5), 0) / rels.length;
+  const agreements = Object.keys(state.agreements || {}).length;
+  const resolved = (state.resolved_issues || []).length;
+  const progress = Math.min(40, agreements * 15 + resolved * 10);
+  const relScore = avgTrust * 8 - avgAnger * 4;
+  return Math.min(100, Math.max(25, Math.round(30 + relScore + progress)));
+}
+
 async function handleEndSession(env, data, token) {
   const { sessionId } = data;
+  const context = await handleGetNegotiationData(env.SHEET_ID, sessionId, token);
+  if (context.error) return context;
+
+  let state = {};
+  try {
+    const raw = context.session?.state;
+    state = typeof raw === 'string' ? JSON.parse(raw || '{}') : (raw || {});
+  } catch {
+    state = {};
+  }
+
+  const existing = Number(context.session?.outcome_score);
+  const outcomeScore = Number.isFinite(existing) && existing > 0
+    ? existing
+    : computeOutcomeScoreFromState(state);
+
   await updateRow(env.SHEET_ID, "sessions", sessionId, {
     status: 'completed',
-    ended_at: new Date().toISOString()
+    ended_at: new Date().toISOString(),
+    outcome_score: outcomeScore
   }, token);
-  return { success: true };
+  return { success: true, outcome_score: outcomeScore };
 }
 
 async function handleSaveEvaluation(env, data, token) {
