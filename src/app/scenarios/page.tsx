@@ -17,8 +17,6 @@ import { CartoonLoading } from '@/components/CartoonLoading';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LandingIntroOverlay } from '@/components/landing/LandingIntroOverlay';
 import { clearFromLanding, shouldPlayLandingIntro } from '@/lib/landingIntro';
-import campaignStage1 from '@/data/scenarios/campaign-stage-1.json';
-
 type Scenario = {
   id: string;
   title: string;
@@ -197,43 +195,6 @@ export default function ScenariosPage() {
     const sampleScenarios = [
       {
         id: uuid(),
-        ...campaignStage1,
-      },
-      {
-        id: uuid(),
-        title: "การต่อรองเงินเดือน",
-        description: "คุณกำลังขอขึ้นเงินเดือน 20% หลังจากทำผลงานได้ดีตลอดปี แต่บริษัทกำลังอยู่ในช่วงควบคุมงบประมาณ",
-        target_group: "professional",
-        characters: [
-          { id: "char_henderson", name: "คุณเฮนเดอร์สัน", role: "หัวหน้าแผนก", agenda: "พยายามลดค่าใช้จ่ายในขณะที่ยังรักษาบุคลากรเก่งๆ ไว้", personality: "เป็นกันเองแต่มักจะตอบว่า 'ไม่'" }
-        ],
-        phase_rules: {
-          phases: ["rapport", "bargaining", "closing"],
-          win_condition: "ได้รับการขึ้นเงินเดือนที่น่าพอใจ",
-          fail_condition: "ความสัมพันธ์แย่ลงจนมองหน้ากันไม่ติด"
-        },
-        mode: 'campaign',
-        difficulty: 2
-      },
-      {
-        id: uuid(),
-        title: "โครงการร่วมกับเกษตรกร (สถานการณ์กดดัน)",
-        description: "บริษัทต้องการเช่าที่ดินเพื่อทำโครงการ แต่กลุ่มเกษตรกรยังไม่มั่นใจ และมีเงื่อนไขบางอย่างที่ยังไม่ยอมพูดตรงๆ",
-        target_group: "professional",
-        characters: [
-          { id: "char_boonsong", name: "ลุงบุญส่ง", role: "ผู้นำกลุ่มเกษตรกร", agenda: "มีข้อเสนอจากบริษัทอื่นที่ดีกว่าอยู่ในมือแล้ว", personality: "กดดันและตั้งเงื่อนไขเข้มงวด" },
-          { id: "char_somjai", name: "ป้าสมใจ", role: "ตัวแทนกลุ่มแม่บ้าน", agenda: "ไม่พอใจที่บริษัทไม่เคยใส่ใจชุมชน", personality: "ใช้อารมณ์และไม่ไว้วางใจ" }
-        ],
-        phase_rules: {
-          phases: ["listening", "negotiation", "agreement"],
-          win_condition: "เกษตรกรยอมรับเงื่อนไขและรู้สึกพอใจ",
-          fail_condition: "เกิดความขัดแย้งรุนแรงจนโครงการยุติ"
-        },
-        mode: 'campaign',
-        difficulty: 3
-      },
-      {
-        id: uuid(),
         title: "เล่นอิสระ: ต่อรองราคารถมือสอง",
         description: "คุณต้องการซื้อรถมือสองให้ได้ราคาดีขึ้น แต่เจ้าของเต็นท์รถมีเหตุผลมากมายที่ไม่อยากลดราคา โหมดนี้เปิดให้คุณลองใช้เทคนิคเจรจาได้อย่างอิสระ",
         target_group: "professional",
@@ -378,7 +339,9 @@ export default function ScenariosPage() {
 
     if (!isUnlocked) {
       setShakingNodeId(scenario.id);
-      setShowLockedAlert(`ช้าก่อน! ต้องผ่านด่านที่ 1 "${campaignScenarios[0]?.title || 'ด่านแรก'}" ก่อน จึงจะปลดล็อกเส้นทางถัดไปได้ 🔒`);
+      const prevScenario = campaignScenarios[index - 1];
+      const prevLabel = prevScenario?.difficulty ?? index;
+      setShowLockedAlert(`ช้าก่อน! ต้องผ่านด่านที่ ${prevLabel} "${prevScenario?.title || 'ด่านก่อนหน้า'}" ก่อน จึงจะปลดล็อกเส้นทางถัดไปได้ 🔒`);
 
       setTimeout(() => {
         setShakingNodeId(null);
@@ -914,19 +877,33 @@ export default function ScenariosPage() {
         )}
 
         {/* If no scenarios match tab */}
-        {((activeTab === 'campaign' && campaignScenarios.length === 0) ||
-          (activeTab === 'freeplay' && freeplayScenarios.length === 0)) && !loading && !error && (
+        {activeTab === 'campaign' && campaignScenarios.length === 0 && !loading && !error && (
             <div className="col-span-full py-16 text-center bg-white border-[6px] border-[#2b221a] rounded-[3rem] max-w-3xl mx-auto shadow-[0_10px_0_#2b221a] p-8">
               <HelpCircle size={56} className="mx-auto text-[#b45309] mb-4 animate-bounce" />
-              <h3 className="text-2xl font-black mb-2 text-gray-900">ยังไม่มีภารกิจในสมุดนี้</h3>
+              <h3 className="text-2xl font-black mb-2 text-gray-900">ยังไม่มีด่าน Campaign</h3>
               <p className="text-gray-500 font-bold mb-6 text-sm">
-                ยังไม่มีสถานการณ์สำหรับฝึกเจรจาในหมวดนี้
+                ด่านถูกจัดการผ่าน Admin / Database แล้ว — ลองโหลดข้อมูลใหม่ หรือเพิ่มด่านจากหน้า Admin
+              </p>
+              <button
+                onClick={fetchAllData}
+                className="bg-[#b45309] hover:bg-[#d97706] text-white font-black px-6 py-3.5 rounded-xl border-[4px] border-[#2b221a] shadow-[0_6px_0_#2b221a] active:shadow-none active:translate-y-1.5 active:translate-x-0.5 transition-all text-lg"
+              >
+                โหลดข้อมูลใหม่ 🔄
+              </button>
+            </div>
+          )}
+        {activeTab === 'freeplay' && freeplayScenarios.length === 0 && !loading && !error && (
+            <div className="col-span-full py-16 text-center bg-white border-[6px] border-[#2b221a] rounded-[3rem] max-w-3xl mx-auto shadow-[0_10px_0_#2b221a] p-8">
+              <HelpCircle size={56} className="mx-auto text-[#b45309] mb-4 animate-bounce" />
+              <h3 className="text-2xl font-black mb-2 text-gray-900">ยังไม่มีภารกิจ Freeplay</h3>
+              <p className="text-gray-500 font-bold mb-6 text-sm">
+                ยังไม่มีสถานการณ์เล่นอิสระ — เพิ่มผ่าน Admin หรือใช้ตัวอย่างด้านล่าง
               </p>
               <button
                 onClick={seedScenarios}
                 className="bg-[#b45309] hover:bg-[#d97706] text-white font-black px-6 py-3.5 rounded-xl border-[4px] border-[#2b221a] shadow-[0_6px_0_#2b221a] active:shadow-none active:translate-y-1.5 active:translate-x-0.5 transition-all text-lg"
               >
-                เพิ่มสถานการณ์ตัวอย่างทันที
+                เพิ่มตัวอย่าง Freeplay
               </button>
             </div>
           )}

@@ -157,7 +157,12 @@ export default {
         }
 
         if (action === "upsert") {
-          const result = await upsertRow(env.SHEET_ID, payload.table, payload.queryField, payload.queryValue, payload.data, token);
+          let rowData = payload.data;
+          if (payload.table === "users") {
+            const users = await readTable(env.SHEET_ID, "users", token);
+            rowData = applyStreakOnLogin(rowData, users, payload.queryField, payload.queryValue);
+          }
+          const result = await upsertRow(env.SHEET_ID, payload.table, payload.queryField, payload.queryValue, rowData, token);
           return jsonResponse(result);
         }
 
@@ -719,6 +724,90 @@ async function handleSaveEvaluation(env, data, token) {
         score: line.score,
         dimension: JSON.stringify(line.dimension),
         created_at: new Date().toISOString()
+      }, token);
+    }
+  }
+
+  if (evaluation?.skills_assessment) {
+    const sessions = await readTable(env.SHEET_ID, "sessions", token);
+    const session = sessions.find(s => String(s.id) === String(sessionId));
+    const userId = session?.user_id;
+    if (userId) {
+      await applySkillXpFromEvaluation(env, token, userId, evaluation.skills_assessment);
+    }
+  }
+}
+
+const SKILL_KEYS = [
+  "opening_conversation",
+  "handling_pushback",
+  "finding_common_ground",
+  "empathy_expression",
+  "logical_argument"
+];
+
+function toDateStr(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function addDays(dateStr, days) {
+  const d = new Date(dateStr + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return toDateStr(d);
+}
+
+function applyStreakOnLogin(incoming, existingUsers, queryField, queryValue) {
+  const today = toDateStr(new Date());
+  const existing = existingUsers.find(r => String(r[queryField]) === String(queryValue));
+  if (!existing) {
+    return { ...incoming, streak_count: 1, last_active_date: today };
+  }
+  const last = String(existing.last_active_date || "").slice(0, 10);
+  let streak = Number(existing.streak_count) || 0;
+  if (last === today) {
+    return { ...incoming, streak_count: streak, last_active_date: today };
+  }
+  if (last === addDays(today, -1)) {
+    streak += 1;
+  } else {
+    streak = 1;
+  }
+  return { ...incoming, streak_count: streak, last_active_date: today };
+}
+
+function levelFromXp(xp) {
+  return Math.floor(Math.max(0, xp) / 100) + 1;
+}
+
+async function applySkillXpFromEvaluation(env, token, userId, skillsAssessment) {
+  const progressRows = await readTable(env.SHEET_ID, "skill_progress", token);
+  const now = new Date().toISOString();
+
+  for (const skillName of SKILL_KEYS) {
+    const raw = skillsAssessment[skillName];
+    const score = Number(raw);
+    if (!Number.isFinite(score) || score <= 0) continue;
+
+    const xpGain = Math.round(score * 10);
+    const existing = progressRows.find(
+      r => String(r.user_id) === String(userId) && String(r.skill_name) === skillName
+    );
+
+    if (existing) {
+      const nextXp = (Number(existing.xp) || 0) + xpGain;
+      await updateRow(env.SHEET_ID, "skill_progress", existing.id, {
+        xp: nextXp,
+        level: levelFromXp(nextXp),
+        updated_at: now
+      }, token);
+    } else {
+      await createRow(env.SHEET_ID, "skill_progress", {
+        id: crypto.randomUUID(),
+        user_id: userId,
+        skill_name: skillName,
+        xp: xpGain,
+        level: levelFromXp(xpGain),
+        updated_at: now
       }, token);
     }
   }

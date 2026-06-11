@@ -7,7 +7,10 @@
     "dev:host": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:snapshot": "node scripts/fetch-db-snapshot.mjs",
+    "db:migrate-phases": "node scripts/migrate-campaign-phases.mjs",
+    "db:migrate-phases:apply": "node scripts/migrate-campaign-phases.mjs --apply"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
