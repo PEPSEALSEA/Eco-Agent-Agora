@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { gasPost } from '@/lib/gas';
 
 type User = {
   id: string;
@@ -28,11 +29,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load user from localStorage on init
     const savedUser = localStorage.getItem('eco-agent-user');
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        setUser(parsed);
+        const updateStreak = async () => {
+          try {
+            const isGuest = parsed.id?.startsWith('guest_');
+            await gasPost('upsert', 'users', {
+              id: parsed.id,
+              email: parsed.email,
+              name: parsed.name,
+              picture: parsed.picture,
+              created_at: parsed.created_at || new Date().toISOString()
+            }, {
+              queryField: isGuest ? 'id' : 'email',
+              queryValue: isGuest ? parsed.id : parsed.email
+            });
+          } catch (err) {
+            console.error(err);
+          }
+        };
+        updateStreak();
       } catch (e) {
         console.error('Failed to parse saved user');
         localStorage.removeItem('eco-agent-user');

@@ -130,11 +130,17 @@ export default function ProfilePage() {
     }
   };
 
+  const totalLevels = skillList.reduce((acc, item) => {
+    const skill = skills.find(s => s.skill_name === item.name);
+    return acc + (skill ? (Number(skill.level) || 1) : 1);
+  }, 0);
+  const displayLevel = Math.floor(totalLevels / 5) || 1;
+
   const radarData = skillList.map(item => {
     const skill = skills.find(s => s.skill_name === item.name) || { level: 1 };
     return {
       subject: item.label,
-      A: skill.level,
+      A: Number(skill.level) || 1,
       fullMark: 10
     };
   });
@@ -174,7 +180,7 @@ export default function ProfilePage() {
                  </div>
                  <div className="flex items-center bg-nintendo-yellow text-gray-900 px-5 py-2 rounded-2xl border-4 border-gray-900 shadow-[0_6px_0_rgba(0,0,0,1)]">
                    <Award size={18} className="mr-2" />
-                   <span className="font-black uppercase tracking-tighter">ระดับ {Math.floor(skills.reduce((acc, s) => acc + s.level, 0) / 5) || 1}</span>
+                   <span className="font-black uppercase tracking-tighter">ระดับ {displayLevel}</span>
                  </div>
               </div>
             </div>
@@ -241,13 +247,15 @@ export default function ProfilePage() {
 
               {skillList.map((skillItem) => {
                 const skill = skills.find(s => s.skill_name === skillItem.name) || { level: 1, xp: 0 };
-                const progress = skill.xp % 100;
+                const skillLevel = Number(skill.level) || 1;
+                const skillXp = Number(skill.xp) || 0;
+                const progress = skillXp % 100;
                 
                 return (
                   <div key={skillItem.name} className="bg-white border-[6px] border-gray-900 p-8 rounded-[2.5rem] shadow-[0_12px_0_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-[0_6px_0_rgba(0,0,0,1)] transition-all">
                     <div className="flex justify-between items-start mb-6">
                       <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter leading-snug">{skillItem.label}</h3>
-                      <span className="bg-nintendo-blue text-white px-4 py-1 border-4 border-gray-900 rounded-full text-sm font-black uppercase tracking-tighter">Lv.{skill.level}</span>
+                      <span className="bg-nintendo-blue text-white px-4 py-1 border-4 border-gray-900 rounded-full text-sm font-black uppercase tracking-tighter">Lv.{skillLevel}</span>
                     </div>
                     
                     <div className="relative w-full h-10 bg-gray-100 border-[6px] border-gray-900 rounded-2xl overflow-hidden mb-4 shadow-[inset_0_4px_0_rgba(0,0,0,0.1)]">
@@ -260,7 +268,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="flex justify-between text-xs font-black text-gray-400 uppercase tracking-widest">
-                      <span>{skill.xp} XP รวม</span>
+                      <span>{skillXp} XP รวม</span>
                       <span>Next: {100 - progress} XP</span>
                     </div>
                   </div>
