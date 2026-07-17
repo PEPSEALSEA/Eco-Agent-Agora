@@ -520,6 +520,37 @@ function ensureSessionState(scenario, session) {
  * --- GEMINI CHAT LOGIC ---
  */
 
+/** Gemini requires contents to start with 'user' and prefers alternating roles. */
+function sanitizeGeminiContents(contents) {
+  let start = 0;
+  while (start < contents.length && contents[start].role !== 'user') start++;
+
+  const merged = [];
+  for (const item of contents.slice(start)) {
+    const text = item.parts?.[0]?.text ?? '';
+    if (!String(text).trim()) continue;
+    const role = item.role === 'user' ? 'user' : 'model';
+    const last = merged[merged.length - 1];
+    if (last && last.role === role) {
+      last.parts[0].text += `\n${text}`;
+    } else {
+      merged.push({ role, parts: [{ text }] });
+    }
+  }
+  return merged;
+}
+
+function extractGeminiText(aiResult) {
+  const text = aiResult?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    const msg = aiResult?.error?.message
+      || aiResult?.promptFeedback?.blockReason
+      || JSON.stringify(aiResult).slice(0, 300);
+    throw new Error(`Gemini returned no content: ${msg}`);
+  }
+  return text;
+}
+
 async function handleChatAction(env, data, token) {
   const { sessionId, text, vibe, intensity } = data;
   const context = await handleGetNegotiationData(env.SHEET_ID, sessionId, token);
@@ -530,15 +561,16 @@ async function handleChatAction(env, data, token) {
   const state = ensureSessionState(scenario, session);
   const systemPrompt = buildSystemPrompt(scenario, state, session.history_summary);
 
-  const contents = messages.slice(-10).map(m => ({
-    role: m.sender === 'user' ? 'user' : 'model',
-    parts: [{ text: (m.sender === 'ai' && m.character_name ? `[${m.character_name}]: ${m.content}` : m.content) }]
-  }));
-
-  contents.push({
-    role: 'user',
-    parts: [{ text: `[Detected Vibe: ${vibe || 'Neutral'}, Intensity: ${intensity || '0.5'}]\nUser: ${text}` }]
-  });
+  const contents = sanitizeGeminiContents([
+    ...messages.slice(-10).map(m => ({
+      role: m.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: (m.sender === 'ai' && m.character_name ? `[${m.character_name}]: ${m.content}` : m.content) }]
+    })),
+    {
+      role: 'user',
+      parts: [{ text: `[Detected Vibe: ${vibe || 'Neutral'}, Intensity: ${intensity || '0.5'}]\nUser: ${text}` }]
+    }
+  ]);
 
   const response = await fetch(url, {
     method: "POST",
@@ -551,7 +583,7 @@ async function handleChatAction(env, data, token) {
   });
 
   const aiResult = await response.json();
-  const rawResponseText = aiResult.candidates[0].content.parts[0].text;
+  const rawResponseText = extractGeminiText(aiResult);
   const content = JSON.parse(rawResponseText);
 
   // Background save AI message
@@ -592,19 +624,18 @@ async function handleGetChatContext(env, data, token) {
   const state = ensureSessionState(scenario, session);
   const systemPrompt = buildSystemPrompt(scenario, state, session.history_summary);
 
-  const history = messages.slice(-10).map(m => ({
-    role: m.sender === 'user' ? 'user' : 'model',
-    parts: [{ text: (m.sender === 'ai' && m.character_name ? `[${m.character_name}]: ${m.content}` : m.content) }]
-  }));
-
-  // Append current user message if provided
-  if (text) {
-    const voiceNote = voiceComment ? `\nDetailed voice coach note: ${voiceComment}` : "";
-    history.push({
+  const history = sanitizeGeminiContents([
+    ...messages.slice(-10).map(m => ({
+      role: m.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: (m.sender === 'ai' && m.character_name ? `[${m.character_name}]: ${m.content}` : m.content) }]
+    })),
+    ...(text ? [{
       role: 'user',
-      parts: [{ text: `[Detected Vibe: ${vibe || 'Neutral'}, Intensity: ${intensity || '0.5'}${voiceNote}]\nUser: ${text}` }]
-    });
-  }
+      parts: [{
+        text: `[Detected Vibe: ${vibe || 'Neutral'}, Intensity: ${intensity || '0.5'}${voiceComment ? `\nDetailed voice coach note: ${voiceComment}` : ''}]\nUser: ${text}`
+      }]
+    }] : [])
+  ]);
 
   return { systemPrompt, history, state, geminiApiKey: env.GEMINI_API_KEY };
 }
@@ -862,7 +893,7 @@ async function handleGenerateEvaluation(env, data) {
     })
   });
   const res = await response.json();
-  return JSON.parse(res.candidates[0].content.parts[0].text);
+  return JSON.parse(extractGeminiText(res));
 }
 
 async function handleGenerateWhatIf(env, data) {
@@ -880,7 +911,7 @@ async function handleGenerateWhatIf(env, data) {
     })
   });
   const res = await response.json();
-  return JSON.parse(res.candidates[0].content.parts[0].text);
+  return JSON.parse(extractGeminiText(res));
 }
 
 function applyPath(obj, path, value) {
